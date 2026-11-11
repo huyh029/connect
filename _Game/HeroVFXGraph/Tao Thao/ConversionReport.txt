@@ -1,0 +1,56 @@
+Tao Thao: particle cache -> Visual Effect Graph, 30 FPS, 180 frames.
+Native graph outputs use unlit alpha/additive shading. Particle motion/color/size are captured; arbitrary original shader logic is not recreated.
+Unsupported renderers remain Particle Systems; this may produce a hybrid effect, not a full conversion.
+FALLBACK ATK 1/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 1/Effect_11_Slash_4: custom UV tiling/offset
+FALLBACK ATK 1/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 1/Effect_11_Slash_4: custom UV tiling/offset
+GPU ATK 1/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 1/Effect_11_Slash_3: 1 particles, 180 frames.
+GPU ATK 1/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 1/Effect_11_Slash_3: 1 particles, 180 frames.
+WARNING ATK 1: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+ATK 1: 4/8 GPU systems; hybrid, original CPU fallback retained
+FALLBACK ATK 2/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 2/Effect_11_Slash_4: custom UV tiling/offset
+FALLBACK ATK 2/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 2/Effect_11_Slash_4: custom UV tiling/offset
+FALLBACK ATK 2/Slash: custom UV tiling/offset
+FALLBACK ATK 2/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK ATK 2/CrackFragmentsStatic: multi-mesh particles
+FALLBACK ATK 2/WaveDecal: custom UV tiling/offset
+GPU ATK 2/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 2/Effect_11_Slash_3: 1 particles, 180 frames.
+GPU ATK 2/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 2/Effect_11_Slash_3: 1 particles, 180 frames.
+WARNING ATK 2: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+ATK 2: 4/12 GPU systems; hybrid, original CPU fallback retained
+FALLBACK GameObject (3)/LightningStrikeStart: unsupported renderer mode Stretch
+FALLBACK GameObject (3)/Distortion: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (3)/LightningStrikeEnd: unsupported renderer mode Stretch
+FALLBACK GameObject (3)/LightningCore: custom shader kriptofx/re2/lightning
+FALLBACK GameObject (3)/DistortionSphere: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (3)/Trails: unsupported renderer mode None
+FALLBACK GameObject (3)/LightningTrails: custom shader kriptofx/re2/lightning
+FALLBACK GameObject (3)/ParallaxDecal: custom UV tiling/offset
+FALLBACK GameObject (3)/Mobile Magic circle: custom shader hovl/particles/dissolvenoise
+FALLBACK GameObject (3)/ShockWave: non-camera-facing billboard
+FALLBACK GameObject (3)/Smoke: unsupported renderer mode Stretch
+FALLBACK GameObject (3)/TrailsLifetime: unsupported renderer mode Stretch
+FALLBACK GameObject (3)/SparksEnd: flipbook requires a flipbook graph
+FALLBACK GameObject (3)/GlassExplosion: trail rendering requires a strip graph
+FALLBACK GameObject (3)/WavesExplosion: custom UV tiling/offset
+GPU GameObject (3)/Effect_11_ParticleSlash: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_11_ParticleSlash_2: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_11_ParticleSlash_3: 1 particles, 180 frames.
+GPU GameObject (3)/CoreSmoke: 3 particles, 180 frames.
+GPU GameObject (3)/CoreSmoke2: 15 particles, 180 frames.
+GPU GameObject (3)/CoreWind: 6 particles, 180 frames.
+GPU GameObject (3)/CoreWind2: 6 particles, 180 frames.
+GPU GameObject (3)/SparksLifetime: 74 particles, 180 frames.
+GPU GameObject (3)/Petals: 92 particles, 180 frames.
+GPU GameObject (3)/Trails: 15 particles, 180 frames.
+WARNING GameObject (3): particles still alive at capture end. Increase Capture frames if the tail is cut off.
+GameObject (3): 10/25 GPU systems; hybrid, original CPU fallback retained
+Updated baked hero FX references. No VAT rebake required.
+COMPLETED. Review fallback entries and compare appearance in VAT preview.

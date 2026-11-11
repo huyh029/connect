@@ -1,0 +1,36 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/QUAN VU RIEL/FX ULTI/ULTI QUAN VU.prefab
+Rules: Max Particles > 500 becomes 30; disable small sparse billboard sparks/embers. Main slash, explosion, mesh and trail systems are preserved.
+Energy explosion: 1000 -> 30
+Energy explosion/StartSFlash: 1000 -> 30
+Energy explosion/StartSmoke: 1000 -> 30
+Energy explosion/EndShockWave: 1000 -> 30
+Energy explosion/EndShockWave2: 1000 -> 30
+Energy explosion/EndSmoke: 1000 -> 30
+Energy explosion/EndSTrails: 1000 -> 30
+Energy explosion/EndSFlash: 1000 -> 30
+Front spikes attack: 1000 -> 30
+Front spikes attack/CenterTrails: 1000 -> 30
+Front spikes attack/CenterFlash: 1000 -> 30
+Front spikes attack/CenterShockWave: 800 -> 30
+Front spikes attack/CenterDistortion: 1000 -> 30
+Front spikes attack/CenterSmoke: 800 -> 30
+Front spikes attack/CenterSparks: 1000 -> 30
+Front spikes attack/CenterSparksUp: 1000 -> 30
+Front spikes attack/CenterFlash: 1000 -> 30
+Front spikes attack/CenterLightning: 1000 -> 30
+Front spikes attack/CenterLightning2: 1000 -> 30
+MainSword (1)/DistortionSphere: 1000 -> 30
+MainSword (1)/WaveDecal: 1000 -> 30
+Buff 2: 1000 -> 30
+Buff 2/Trails: 1000 -> 30
+Buff 2/GroundOrbs: 1000 -> 30
+Buff 2/Sparks: 1000 -> 30
+Buff 2/Semicircles: 1000 -> 30
+Buff 2/Lightning: 1000 -> 30
+Buff 2/Smoke: 1000 -> 30
+Buff 2/Glow: 1000 -> 30
+Buff 2/Trail1: 1000 -> 30
+Buff 2/Trail2: 1000 -> 30
+Buff 2/Distortion: 1000 -> 30
+Changed systems: 32
+Disabled small ember systems: 0

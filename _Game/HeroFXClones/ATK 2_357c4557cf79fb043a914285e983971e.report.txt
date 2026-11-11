@@ -1,0 +1,14 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/LU BO/ATK FX/ATK 2.prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+SlashPortal (1)/Slash: 1000 -> 30
+SlashPortal (1)/CrackFragmentsExplosion: 1000 -> 30
+SlashPortal (1)/CrackFragmentsStatic: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (2)/Effect_11_Slash: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (2)/Effect_11_Slash_2: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (3)/Effect_11_Slash: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (3)/Effect_11_Slash_2: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (4)/Effect_11_Slash: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (4)/Effect_11_Slash_2: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (5)/Effect_11_Slash: 1000 -> 30
+Effect_11_ShiningSlashPart 1 (5)/Effect_11_Slash_2: 1000 -> 30
+Changed systems: 11

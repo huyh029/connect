@@ -1,0 +1,9 @@
+Luu Bi: single hero VAT; height 0.75; 30 FPS.
+Luu Bi: LOD family 25_body_0.3_0_0, using 25_body_0.3_0_0; skipped 5 lower/duplicate levels.
+Luu Bi: LOD family 25_body_0.3_0_0.001, using 25_body_0.3_0_0.001; skipped 5 lower/duplicate levels.
+Luu Bi: LOD family 25_body_0.3_0_0.002, using 25_body_0.3_0_0.002; skipped 5 lower/duplicate levels.
+Luu Bi/25_body_0.3_0_0: 77393 vertices; 4096x5301 RGBAHalf; 165,7 MiB
+Luu Bi/25_body_0.3_0_0.001: 1569 vertices; 2048x279 RGBAHalf; 4,4 MiB
+Luu Bi/25_body_0.3_0_0.002: 1569 vertices; 2048x279 RGBAHalf; 4,4 MiB
+Luu Bi: height=0,75; scale=0,4475682; 6 clips; 279 frames; FX=3
+SUCCESS: Luu Bi, Idle height 0.75.

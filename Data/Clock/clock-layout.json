@@ -1,0 +1,223 @@
+{
+    "rootPosition": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "rootScale": 1.4290000200271607,
+    "rotationCenter": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "layers": [
+        {
+            "label": "Bánh răng ngoài",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/bánh răng ngoài.png",
+            "spriteName": "bánh răng ngoài_0",
+            "visible": true,
+            "order": 1,
+            "size": {
+                "x": 640.0,
+                "y": 640.0
+            },
+            "scale": 2.0,
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "pivot": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "rotation": -10.75
+        },
+        {
+            "label": "Mặt đồng hồ",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/mặt đồng hồ.png",
+            "spriteName": "mặt đồng hồ_0",
+            "visible": true,
+            "order": 2,
+            "size": {
+                "x": 960.0,
+                "y": 640.0
+            },
+            "scale": 0.5,
+            "position": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "pivot": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "rotation": 0.0
+        },
+        {
+            "label": "Vòng giờ",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/giờ.png",
+            "spriteName": "giờ_0",
+            "visible": true,
+            "order": 3,
+            "size": {
+                "x": 960.0,
+                "y": 640.0
+            },
+            "scale": 1.059999942779541,
+            "position": {
+                "x": 5.0,
+                "y": -2.5399999618530275
+            },
+            "pivot": {
+                "x": 0.4947916567325592,
+                "y": 0.5039687752723694
+            },
+            "rotation": 0.9399999976158142
+        },
+        {
+            "label": "Vòng phút",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/phút.png",
+            "spriteName": "phút_0",
+            "visible": true,
+            "order": 4,
+            "size": {
+                "x": 800.0,
+                "y": 533.3333129882813
+            },
+            "scale": 1.722000002861023,
+            "position": {
+                "x": 3.7100000381469728,
+                "y": -6.429999828338623
+            },
+            "pivot": {
+                "x": 0.4953624904155731,
+                "y": 0.5120562314987183
+            },
+            "rotation": -44.91999816894531
+        },
+        {
+            "label": "Kim giờ",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/kim giờ.png",
+            "spriteName": "kim giờ_0",
+            "visible": true,
+            "order": 7,
+            "size": {
+                "x": 420.0,
+                "y": 210.0
+            },
+            "scale": 0.5,
+            "position": {
+                "x": 75.60000610351563,
+                "y": 0.0
+            },
+            "pivot": {
+                "x": 0.3199999928474426,
+                "y": 0.5
+            },
+            "rotation": 0.0
+        },
+        {
+            "label": "Kim phút",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/kim phút.png",
+            "spriteName": "kim phút_0",
+            "visible": true,
+            "order": 8,
+            "size": {
+                "x": 520.0,
+                "y": 260.0
+            },
+            "scale": 0.25,
+            "position": {
+                "x": 166.39999389648438,
+                "y": 0.0
+            },
+            "pivot": {
+                "x": 0.18000000715255738,
+                "y": 0.5
+            },
+            "rotation": 0.0
+        },
+        {
+            "label": "Chỉ báo",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/index.png",
+            "spriteName": "index_0",
+            "visible": true,
+            "order": 9,
+            "size": {
+                "x": 480.0,
+                "y": 320.0
+            },
+            "scale": 1.0,
+            "position": {
+                "x": 0.0,
+                "y": 500.0
+            },
+            "pivot": {
+                "x": 0.5,
+                "y": -1.0625
+            },
+            "rotation": -90.0
+        },
+        {
+            "label": "Vô hạn thời gian",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/vô hạn thời gian.png",
+            "spriteName": "vô hạn thời gian_0",
+            "visible": false,
+            "order": 10,
+            "size": {
+                "x": 560.0,
+                "y": 373.0
+            },
+            "scale": 1.0,
+            "position": {
+                "x": 20.31999969482422,
+                "y": -2.7899999618530275
+            },
+            "pivot": {
+                "x": 0.46371427178382876,
+                "y": 0.5074799060821533
+            },
+            "rotation": 0.0
+        },
+        {
+            "label": "Bánh răng trong lớn",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/bánh răng ngoài.png",
+            "spriteName": "bánh răng ngoài_0",
+            "visible": true,
+            "order": 5,
+            "size": {
+                "x": 640.0,
+                "y": 640.0
+            },
+            "scale": 0.11999999731779099,
+            "position": {
+                "x": -90.0,
+                "y": -90.0
+            },
+            "pivot": {
+                "x": 0.640625,
+                "y": 0.640625
+            },
+            "rotation": 0.0
+        },
+        {
+            "label": "Bánh răng trong nhỏ",
+            "spriteAssetPath": "Assets/_Game/UI/Clock/bánh răng ngoài.png",
+            "spriteName": "bánh răng ngoài_0",
+            "visible": true,
+            "order": 6,
+            "size": {
+                "x": 640.0,
+                "y": 640.0
+            },
+            "scale": 0.10000000149011612,
+            "position": {
+                "x": 120.0,
+                "y": 196.8000030517578
+            },
+            "pivot": {
+                "x": 0.3125,
+                "y": 0.19249999523162843
+            },
+            "rotation": 0.0
+        }
+    ]
+}

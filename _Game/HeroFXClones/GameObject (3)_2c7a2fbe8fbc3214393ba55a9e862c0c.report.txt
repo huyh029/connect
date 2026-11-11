@@ -1,0 +1,29 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/Ha hau don/FX ULTI/GameObject (3).prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+Effect_06_Slash (1)/Effect_06_Slash: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh_2: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh_3: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh_4: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh_5: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_Slash: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh_2: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh_3: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh_4: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh_5: 1000 -> 30
+Explosion (1)/WaveRingExplosion: 1000 -> 30
+Explosion (1)/ExplosionTrails: 1000 -> 30
+Explosion (1)/ExplosionTrailsBlack: 1000 -> 30
+Explosion (1)/Fire: 10000 -> 30
+Explosion (1)/FireBlack (1): 10000 -> 30
+BUM (1): 1000 -> 30
+BUM (1)/CenterShockWave: 800 -> 30
+BUM (1)/CenterDistortion: 1000 -> 30
+BUM (1)/CenterSmoke: 800 -> 30
+BUM (1)/CenterSparks: 1000 -> 30
+BUM (1)/CenterSparksUp: 1000 -> 30
+BUM (1)/CenterFlash: 1000 -> 30
+BUM (1)/CenterLightning: 1000 -> 30
+BUM (1)/CenterLightning2: 1000 -> 30
+Changed systems: 26

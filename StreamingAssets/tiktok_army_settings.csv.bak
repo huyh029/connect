@@ -1,0 +1,14 @@
+﻿Like;Follow;Share;Số xu;ID;Ngưỡng;Số lượng;Loại binh;Số lượng tích phe đỏ;Mã tướng phe đỏ;Số lượng tích phe xanh;Mã tướng phe xanh;Tên;Hành động;Giới thiệu;Combo phe 1;Combo phe 2;Bật;Quy định tướng;Quà ngẫu nhiên;Trọng số ngẫu nhiên;Hệ số ngẫu nhiên
+true;false;false;0;0;50;2;Dân binh;0;0;0;0;50 Tym;+2 Dân Binh;Intro quân lính nhỏ bằng khoảng 1/4 màn hình, thời gian tối đa 2s;;;true;"Mỗi user tặng quà đủ mốc sẽ ra tướng. Mỗi tướng có intro riêng khi xuất hiện.
+Nếu nhiều tướng khác nhau xuất hiện đồng thời: chưa chốt cách xử lý intro.
+Đạt mốc trước khi nhấn L: tướng đi ra và đứng trong đội hình. Đạt mốc sau khi trận bắt đầu: xuất hiện như quân tiếp viện.
+Mỗi user chỉ có một tướng của mỗi loại quà đang tồn tại. Tướng có HP cao, tên và avatar user, thanh máu riêng, VFX nhận diện; kỹ năng đánh gần, đánh xa hoặc sát thương AOE; có thể bị tiêu diệt và hồi sinh.";;;
+false;true;false;0;0;1;0;Không có;0;0;0;0;Follow;;;;;true;;;;
+false;false;false;1;0;1;50;Bộ binh;0;0;0;0;Hoa Hồng;+50 Bộ Binh;Intro Bộ binh + số lượng;;;true;;;;
+false;false;false;10;0;1;50;Cung binh;20;3;20;8;Rosa;+50 Cung Binh;Intro Cung binh + số lượng;x10 ra tướng Triệu Tử Long (hoặc tích đủ 20 Rosa) — đánh gần;x10 ra tướng Hạ Hầu Đôn (hoặc tích đủ 20 Rosa) — đánh gần;true;;;;
+false;false;false;20;0;1;20;Giáo binh;20;4;20;6;Perfume;+20 Giáo Binh;Intro Giáo binh + số lượng;x10 ra tướng Quan Vũ (hoặc tích đủ 20 Perfume) — đánh gần;x10 ra tướng Lữ Bố (hoặc tích đủ 20 Perfume) — đánh gần;true;;;;
+false;false;false;30;5879;1;20;Kỵ binh;20;1;20;2;Doughnut;+20 Kỵ Binh;Intro Kỵ binh + số lượng;x10 ra tướng Gia Cát Lượng (hoặc tích đủ 20 Doughnut) — đánh xa;x10 ra tướng Chu Du (hoặc tích đủ 20 Doughnut) — đánh xa;true;;;;
+false;false;false;99;8913;1;10;Voi chiến;10;7;10;5;Hạc Giấy;+10 Voi Chiến;Intro Voi chiến + số lượng;x5 ra tướng Lưu Bị (hoặc tích đủ 10 Hạc Giấy) — đánh xa;x5 ra tướng Tào Tháo (hoặc tích đủ 10 Hạc Giấy) — đánh xa;true;;;;
+false;false;false;199;5509;1;4;Máy bắn đá;0;0;0;0;Kính Râm;+4 Máy Bắn Đá;Intro Máy bắn đá + số lượng;;;true;;;;
+false;false;false;299;6267;1;2;Pháp sư;0;0;0;0;Corgi;+2 Pháp Sư;Intro Pháp sư + số lượng;;;true;;;;
+false;false;false;10;8825;1;0;Không có;0;0;0;0;Heo;"Random số lượng bằng 1/2 so với quà trực tiếp: 40% Rosa; 34% Perfume; 20% Doughnut; 4% Hạc Giấy; 2% Kính Râm";;;;true;;Rosa|Perfume|Doughnut|Hạc Giấy|Kính Râm;40|34|20|4|2;0.5|0.5|0.5|0.5|0.5

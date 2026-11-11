@@ -1,0 +1,7 @@
+Ha Hau Don: single hero VAT; height 0.75; 30 FPS.
+Ha Hau Don: LOD family bodyhahaudon, using bodyhahaudon; skipped 5 lower/duplicate levels.
+Ha Hau Don: LOD family daokiemhauhaudon, using daokiemhauhaudon; skipped 6 lower/duplicate levels.
+Ha Hau Don/bodyhahaudon: 70106 vertices; 4096x5256 RGBAHalf; 164,3 MiB
+Ha Hau Don/daokiemhauhaudon: 6067 vertices; 4096x584 RGBAHalf; 18,3 MiB
+Ha Hau Don: height=0,75; scale=0,3124959; 5 clips; 292 frames; FX=2
+SUCCESS: Ha Hau Don, Idle height 0.75.

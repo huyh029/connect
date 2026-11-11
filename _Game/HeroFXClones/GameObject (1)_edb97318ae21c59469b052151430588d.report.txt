@@ -1,0 +1,8 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/CHU DU/FX ULTI/GameObject (1).prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+Effect_43_DarkDimensionAttack/Effect_43_DarkLine: 1000 -> 30
+Effect_43_DarkDimensionAttack/Effect_43_Plane: 1000 -> 30
+Effect_11_SlashPart/Effect_11_Slash: 1000 -> 30
+Effect_11_SlashPart/Effect_11_Slash_2: 1000 -> 30
+Effect_11_SlashPart/Effect_11_Slash_3: 1000 -> 30
+Changed systems: 5

@@ -1,0 +1,1070 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b53f69dc3b24e54d9176cf2726affd1, type: 3}
+  m_Name: RecoilHeroSkills
+  m_EditorClassIdentifier: 
+  Heroes:
+  - HeroId: 1
+    Name: Chu Du
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 10
+        EndFrame: 17
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6.12
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 259
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 60
+        SweepEndAngle: -60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 10
+        EndFrame: 17
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6.12
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 259
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 34
+        EndFrame: 49
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6.12
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 259
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "H\xECnh qu\u1EA1t"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 84
+        EndFrame: 86
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 5.254046}
+        Yaw: 0
+        Radius: 4
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 360
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 4
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 4
+        EndFrame: 41
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 11.31
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+  - HeroId: 2
+    Name: Gia Cat Luong
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 3
+        ProjectileSpeed: 15
+        StartFrame: 14
+        EndFrame: 30
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: -0.107608795}
+        Yaw: 0
+        Radius: 2
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 1
+        ProjectileSpeed: 15
+        StartFrame: 22
+        EndFrame: 33
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 23.99
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 2
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 24
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 5
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 4
+        ProjectileSpeed: 13.38
+        StartFrame: 8
+        EndFrame: 29
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0.5}
+        Yaw: 0
+        Radius: 2
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+  - HeroId: 3
+    Name: Ha Hau Don
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 60
+        SweepEndAngle: -60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 23
+        EndFrame: 34
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6.83
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 40
+        EndFrame: 48
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6.83
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT \u2014 b\u1EA3n sao
+          2"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 60
+        SweepEndAngle: -60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 58
+        EndFrame: 67
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6.83
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 90
+        SweepEndAngle: -90
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 21
+        EndFrame: 30
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 180
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -90
+        SweepEndAngle: 90
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 36
+        EndFrame: 46
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 6
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 180
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "H\xECnh qu\u1EA1t"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 59
+        EndFrame: 60
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 9.659558}
+        Yaw: 0
+        Radius: 6
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 360
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 2
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+  - HeroId: 4
+    Name: Lu Bo
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 60
+        SweepEndAngle: -60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 28
+        EndFrame: 34
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 5.15
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 60
+        SweepEndAngle: -60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 53
+        EndFrame: 61
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 5.15
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 48
+        EndFrame: 59
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 6.657078}
+        Yaw: 0
+        Radius: 10.37
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 2
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 10.37
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 5
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -90
+        SweepEndAngle: 90
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 4
+        EndFrame: 13
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 4.66
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 90
+        SweepEndAngle: -90
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 27
+        EndFrame: 32
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 4.66
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT \u2014 b\u1EA3n sao
+          \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 90
+        SweepEndAngle: -90
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 48
+        EndFrame: 62
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 4.66
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 360
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT \u2014 b\u1EA3n sao
+          \u2014 b\u1EA3n sao \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: 90
+        SweepEndAngle: -90
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 75
+        EndFrame: 86
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 1.4423685, y: 0, z: 6.920922}
+        Yaw: 23.79
+        Radius: 3.14
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 184
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+  - HeroId: 5
+    Name: Luu Bi
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 8
+        EndFrame: 18
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 13.24
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 101
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 2
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 52
+        EndFrame: 62
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: -0.7111926, y: 0, z: 4.42}
+        Yaw: 0
+        Radius: 6
+        InnerRadius: 0
+        BoxSize: {x: 5.18, y: 81.93}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 5
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 10
+        EndFrame: 17
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 11.73
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 129
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+  - HeroId: 6
+    Name: Quan Vu
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 18
+        EndFrame: 24
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0.6570256}
+        Yaw: 0
+        Radius: 13.12
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 201
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 41
+        EndFrame: 48
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0.6570256}
+        Yaw: 0
+        Radius: 13.12
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 201
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 30
+        EndFrame: 59
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 12.59
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 2
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 12.59
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+  - HeroId: 7
+    Name: Tao Thao
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 15
+        EndFrame: 21
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 16.39
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 205
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 48
+        EndFrame: 53
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 16.39
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 205
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 2
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 70
+        EndFrame: 80
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 18.6}
+        Yaw: 0
+        Radius: 6
+        InnerRadius: 0
+        BoxSize: {x: 1.07, y: 198.12}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "H\xECnh qu\u1EA1t"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 72
+        EndFrame: 88
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 24.207338}
+        Yaw: 0
+        Radius: 8.3
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 2
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 8
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 5
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 0
+        EndFrame: 13
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 15.04
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 303
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 2 - m\u1EABu VAT \u2014 b\u1EA3n sao"
+        Enabled: 1
+        Shape: 3
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 31
+        EndFrame: 54
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 15.04
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 28
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+  - HeroId: 8
+    Name: Trieu Van
+    Enabled: 1
+    Clips:
+    - ClipIndex: 2
+      Zones:
+      - Name: "\u0110\xE1nh th\u01B0\u1EDDng 1 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 0
+        EndFrame: 75
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 9.77
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 0
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 6
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8
+    - ClipIndex: 4
+      Zones:
+      - Name: "Tuy\u1EC7t k\u1EF9 - m\u1EABu VAT"
+        Enabled: 1
+        Shape: 0
+        Mode: 0
+        SweepStartAngle: -60
+        SweepEndAngle: 60
+        SweepWidth: 6
+        Anchor: 0
+        ProjectileSpeed: 15
+        StartFrame: 60
+        EndFrame: 74
+        RepeatFrames: 0
+        EffectIndex: 0
+        Offset: {x: 0, y: 0, z: 0}
+        Yaw: 0
+        Radius: 7.33
+        InnerRadius: 0
+        BoxSize: {x: 4, y: 6}
+        Angle: 90
+        DamageMultiplier: 1
+        EdgeDamage: 1
+        Force: 2
+        ForceDistance: 3
+        ForceDuration: 0.25
+        PushStartRadius: 0
+        PushEndRadius: 7.33
+        KnockUpHeight: 4
+        KnockUpDuration: 0.8

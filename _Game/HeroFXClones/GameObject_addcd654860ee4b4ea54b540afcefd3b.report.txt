@@ -1,0 +1,19 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/CHU DU/FX ATK/GameObject.prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+Effect_11_SlashPart/Effect_11_Slash: 1000 -> 30
+Effect_11_SlashPart/Effect_11_Slash_2: 1000 -> 30
+Effect_11_SlashPart (1)/Effect_11_Slash: 1000 -> 30
+Effect_11_SlashPart (1)/Effect_11_Slash_2: 1000 -> 30
+Effect_11_SlashPart (1)/Effect_11_Slash_3: 1000 -> 30
+ImpactExplosion/ExplosionRing: 1000 -> 30
+ImpactExplosion/ImpactLightnings: 1000 -> 30
+BUM (1): 1000 -> 30
+BUM (1)/CenterShockWave: 800 -> 30
+BUM (1)/CenterDistortion: 1000 -> 30
+BUM (1)/CenterSmoke: 800 -> 30
+BUM (1)/CenterSparks: 1000 -> 30
+BUM (1)/CenterSparksUp: 1000 -> 30
+BUM (1)/CenterFlash: 1000 -> 30
+BUM (1)/CenterLightning: 1000 -> 30
+BUM (1)/CenterLightning2: 1000 -> 30
+Changed systems: 16

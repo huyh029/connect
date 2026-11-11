@@ -1,0 +1,12 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/TAO THAO/FX ATK/ATK 1.prefab
+Rules: Max Particles > 500 becomes 30; disable small sparse billboard sparks/embers. Main slash, explosion, mesh and trail systems are preserved.
+Effect_11_SlashPart_3/Effect_11_Slash: 1000 -> 30
+Effect_11_SlashPart_3/Effect_11_Slash_2: 1000 -> 30
+Effect_11_SlashPart_3/Effect_11_Slash_3: 1000 -> 30
+Effect_11_SlashPart_3/Effect_11_Slash_4: 1000 -> 30
+Effect_11_SlashPart_3 (1)/Effect_11_Slash: 1000 -> 30
+Effect_11_SlashPart_3 (1)/Effect_11_Slash_2: 1000 -> 30
+Effect_11_SlashPart_3 (1)/Effect_11_Slash_3: 1000 -> 30
+Effect_11_SlashPart_3 (1)/Effect_11_Slash_4: 1000 -> 30
+Changed systems: 8
+Disabled small ember systems: 0

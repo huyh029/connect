@@ -1,0 +1,21 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/GIA CAT LUONG/FX ULTI/GameObject (2).prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+Mobile Light bomb: 1000 -> 30
+Mobile Light bomb/Glow: 1000 -> 30
+Mobile Light bomb/Aura: 1000 -> 30
+Mobile Light bomb/EnergyAccumulating: 1000 -> 30
+Mobile Light bomb/Smoke: 1000 -> 30
+Mobile Light bomb/SideSmoke: 1000 -> 30
+Mobile Light bomb/SideSmokeDissolve: 1000 -> 30
+Mobile Light bomb/Trails: 1000 -> 30
+Mobile Light bomb/EndSideSmoke: 1000 -> 30
+Mobile Light bomb/EndDissolve: 1000 -> 30
+Mobile Light bomb/EndWave: 1000 -> 30
+Mobile Light bomb/Distortion(Delete for Mobile): 1000 -> 30
+EndAccumulation (1)/LightningStrikeEnd: 1000 -> 30
+EndAccumulation (1)/LightningCore: 1000 -> 30
+EndAccumulation (1)/DistortionSphere: 1000 -> 30
+EndAccumulation (1)/Trails: 1000 -> 30
+EndAccumulation (1)/Trails/LightningTrails: 1000 -> 30
+EndAccumulation (1)/Trails/ParallaxDecal: 1000 -> 30
+Changed systems: 18

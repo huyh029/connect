@@ -1,0 +1,512 @@
+{
+    "version": 1,
+    "savedUtc": "2026-11-07T03:53:48.6066484Z",
+    "effects": [
+        {
+            "hero": "Chu Du",
+            "action": "Attack1",
+            "prefabGuid": "addcd654860ee4b4ea54b540afcefd3b",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": 0.0,
+                "y": 1.409999966621399,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Chu Du",
+            "action": "Ulti",
+            "prefabGuid": "edb97318ae21c59469b052151430588d",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": 0.0,
+                "y": 0.020020000636577607,
+                "z": -0.15000000596046449
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Gia Cat Luong",
+            "action": "Attack1",
+            "prefabGuid": "e23a1f22f04e10647800835f7fa90901",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": -19,
+            "position": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 0.5
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Gia Cat Luong",
+            "action": "Attack1",
+            "prefabGuid": "8e072a94c13cb3e4a91d02c31989ee61",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 10,
+            "position": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 2.0
+            },
+            "rotation": {
+                "x": 270.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Gia Cat Luong",
+            "action": "Attack2",
+            "prefabGuid": "720d2f378eae7f24994a5ad1ad60758b",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 6,
+            "position": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 0.5
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Gia Cat Luong",
+            "action": "Attack2",
+            "prefabGuid": "3866b4696fa16d04dbf0eca26ad37293",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 6,
+            "position": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 2.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Gia Cat Luong",
+            "action": "Ulti",
+            "prefabGuid": "8ba98ed7eb034294c8ef77af0122e95d",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": 0.0,
+                "y": -0.4739699959754944,
+                "z": 9.149999618530274
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Ha Hau Don",
+            "action": "Attack1",
+            "prefabGuid": "8cf6c28153628234c80837158f73d992",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": -3,
+            "position": {
+                "x": 0.0,
+                "y": 1.0800000429153443,
+                "z": -1.1699999570846558
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Ha Hau Don",
+            "action": "Ulti",
+            "prefabGuid": "2c7a2fbe8fbc3214393ba55a9e862c0c",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": -1,
+            "position": {
+                "x": -0.07000000029802323,
+                "y": 0.949999988079071,
+                "z": -4.400000095367432
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Lu Bo",
+            "action": "Attack1",
+            "prefabGuid": "2b3e5bc77d46d22438aa7bae1fb44756",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": 0.23580999672412873,
+                "y": 0.23833000659942628,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Lu Bo",
+            "action": "Attack2",
+            "prefabGuid": "357c4557cf79fb043a914285e983971e",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": 0.45179998874664309,
+                "y": 1.386299967765808,
+                "z": 3.0927999019622804
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Lu Bo",
+            "action": "Ulti",
+            "prefabGuid": "11412f8175f58a340ad952746068ba17",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 37,
+            "position": {
+                "x": 0.0,
+                "y": -0.06800000369548798,
+                "z": 2.359999895095825
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Luu Bi",
+            "action": "Attack1",
+            "prefabGuid": "a44a7792ba623fe428c00adc38bf2e5b",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": -0.09480667114257813,
+                "y": 0.75,
+                "z": -1.0800000429153443
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 180.0
+            },
+            "scale": {
+                "x": 0.8385084867477417,
+                "y": 0.462039053440094,
+                "z": 0.462039053440094
+            }
+        },
+        {
+            "hero": "Luu Bi",
+            "action": "Attack2",
+            "prefabGuid": "4e9cd38d97df243499bf980d76b6e30b",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": -0.09480667114257813,
+                "y": 0.75,
+                "z": -1.0800000429153443
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 0.8385084867477417,
+                "y": 0.462039053440094,
+                "z": 0.462039053440094
+            }
+        },
+        {
+            "hero": "Luu Bi",
+            "action": "Ulti",
+            "prefabGuid": "09e7d7ae58f0f3d4e948f907fbbcb457",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 5,
+            "position": {
+                "x": -0.36000001430511477,
+                "y": -0.5379999876022339,
+                "z": 0.9399999976158142
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Quan Vu",
+            "action": "Attack1",
+            "prefabGuid": "3b22650987ee1f7439a15c18b1df56a0",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": 0.0,
+                "y": 0.9100000262260437,
+                "z": 0.3799999952316284
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Quan Vu",
+            "action": "Ulti",
+            "prefabGuid": "643094aaa9df6a14c827e1ed3da0b06e",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 2,
+            "position": {
+                "x": 0.0,
+                "y": -0.1899999976158142,
+                "z": 0.5099999904632568
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 0.6110900044441223,
+                "y": 0.6110900044441223,
+                "z": 0.6110900044441223
+            }
+        },
+        {
+            "hero": "Tao Thao",
+            "action": "Attack1",
+            "prefabGuid": "4f12121945e969a48bd130cda38668cd",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": -4,
+            "position": {
+                "x": 0.2308325320482254,
+                "y": 0.7699999809265137,
+                "z": -0.8600000143051148
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Tao Thao",
+            "action": "Attack2",
+            "prefabGuid": "90642b698f95540488ea382f489c1880",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": -3,
+            "position": {
+                "x": 0.2308325320482254,
+                "y": 0.7699999809265137,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Tao Thao",
+            "action": "Ulti",
+            "prefabGuid": "db8ede3e90c26b448be097488193b56c",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 8,
+            "position": {
+                "x": -0.4581897556781769,
+                "y": 1.0,
+                "z": 7.299946308135986
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Trieu Van",
+            "action": "Attack1",
+            "prefabGuid": "ce8697137b5b9d340b083adb741e5929",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 0,
+            "position": {
+                "x": 0.07999999821186066,
+                "y": 1.0399999618530274,
+                "z": 3.9100000858306886
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        },
+        {
+            "hero": "Trieu Van",
+            "action": "Ulti",
+            "prefabGuid": "7850691876ad8594ba312c9d31e6f43a",
+            "attachmentPath": "",
+            "occurrence": 0,
+            "triggerFrame": 48,
+            "position": {
+                "x": 0.6899999976158142,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
+        }
+    ]
+}

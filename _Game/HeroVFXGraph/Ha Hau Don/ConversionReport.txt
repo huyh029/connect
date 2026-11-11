@@ -1,0 +1,48 @@
+Ha Hau Don: particle cache -> Visual Effect Graph, 30 FPS, 180 frames.
+Native graph outputs use unlit alpha/additive shading. Particle motion/color/size are captured; arbitrary original shader logic is not recreated.
+Unsupported renderers remain Particle Systems; this may produce a hybrid effect, not a full conversion.
+FALLBACK GameObject (2)/Effect_06_Slash: flipbook requires a flipbook graph
+FALLBACK GameObject (2)/Effect_06_Slash: flipbook requires a flipbook graph
+FALLBACK GameObject (2)/Effect_06_Slash: flipbook requires a flipbook graph
+GPU GameObject (2)/Effect_06_SlashMesh: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh_4: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh_5: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh_4: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh_5: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh_4: 1 particles, 180 frames.
+GPU GameObject (2)/Effect_06_SlashMesh_5: 1 particles, 180 frames.
+WARNING GameObject (2): particles still alive at capture end. Increase Capture frames if the tail is cut off.
+GameObject (2): 9/12 GPU systems; hybrid, original CPU fallback retained
+FALLBACK GameObject (3)/Effect_06_Slash: flipbook requires a flipbook graph
+FALLBACK GameObject (3)/Effect_06_Slash: flipbook requires a flipbook graph
+FALLBACK GameObject (3)/WaveExplosion: custom UV tiling/offset
+FALLBACK GameObject (3)/ExplosionTrails: flipbook requires a flipbook graph
+FALLBACK GameObject (3)/ExplosionTrailsBlack: flipbook requires a flipbook graph
+FALLBACK GameObject (3)/Fire: flipbook requires a flipbook graph
+FALLBACK GameObject (3)/FireBlack (1): flipbook requires a flipbook graph
+FALLBACK GameObject (3)/BUM (1): non-camera-facing billboard
+FALLBACK GameObject (3)/CenterShockWave: non-camera-facing billboard
+FALLBACK GameObject (3)/CenterDistortion: inactive or hidden source
+FALLBACK GameObject (3)/CenterLightning: flipbook requires a flipbook graph
+FALLBACK GameObject (3)/CenterLightning2: flipbook requires a flipbook graph
+GPU GameObject (3)/Effect_06_SlashMesh: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_2: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_3: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_4: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_5: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_2: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_3: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_4: 1 particles, 180 frames.
+GPU GameObject (3)/Effect_06_SlashMesh_5: 1 particles, 180 frames.
+GPU GameObject (3)/WaveRingExplosion: 7 particles, 180 frames.
+GPU GameObject (3)/CenterSmoke: 15 particles, 180 frames.
+GPU GameObject (3)/CenterSparks: 53 particles, 180 frames.
+GPU GameObject (3)/CenterSparksUp: 40 particles, 180 frames.
+GPU GameObject (3)/CenterFlash: 1 particles, 180 frames.
+WARNING GameObject (3): particles still alive at capture end. Increase Capture frames if the tail is cut off.
+GameObject (3): 15/27 GPU systems; hybrid, original CPU fallback retained
+Updated baked hero FX references. No VAT rebake required.
+COMPLETED. Review fallback entries and compare appearance in VAT preview.

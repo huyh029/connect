@@ -1,0 +1,68 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/LUU BI/ULTI/GameObject (4).prefab
+Rules: Max Particles > 500 becomes 30; disable small sparse billboard sparks/embers. Main slash, explosion, mesh and trail systems are preserved.
+Effect3/Root/TransformMotion/Rocks: 1500 -> 30
+Effect3/Root/TransformMotion/RocksFrontWave: 1500 -> 30
+Effect3/Root/Explosion/DistortionSphere: 1000 -> 30
+Effect_11_ShiningSlashPart_2/Effect_11_ParticleSlash: 1000 -> 30
+Effect_11_ShiningSlashPart_2/Effect_11_ParticleSlash_2: 1000 -> 30
+Effect_11_ShiningSlashPart_2/Effect_11_ParticleSlash_3: 1000 -> 30
+Effect_11_ShiningSlashPart_2 (1)/Effect_11_ParticleSlash: 1000 -> 30
+Effect_11_ShiningSlashPart_2 (1)/Effect_11_ParticleSlash_2: 1000 -> 30
+Effect_11_ShiningSlashPart_2 (1)/Effect_11_ParticleSlash_3: 1000 -> 30
+Effect12/Root/DragonsStart/Portal/CrackPortal: 1000 -> 30
+Effect12/Root/DragonsStart/Portal/CrackFragments: 1000 -> 30
+Effect12/Root/DragonsStart/Portal/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut1/PortalOut/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut1/PortalOut/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut1/PortalOut/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut1/PortalIn/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut1/PortalIn/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut1/PortalIn/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut2/PortalOut/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut2/PortalOut/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut2/PortalOut/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut2/PortalIn/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut2/PortalIn/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut2/PortalIn/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut3/PortalOut/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut3/PortalOut/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut3/PortalOut/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut3/PortalIn/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut3/PortalIn/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut3/PortalIn/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut4/PortalOut/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut4/PortalOut/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut4/PortalOut/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonOut4/PortalIn/CrackPortal: 1000 -> 30
+Effect12/Root/DragonOut4/PortalIn/CrackFragments: 1000 -> 30
+Effect12/Root/DragonOut4/PortalIn/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/DragonsEnd/Portal_Out/CrackPortal: 1000 -> 30
+Effect12/Root/DragonsEnd/Portal_Out/CrackFragments: 1000 -> 30
+Effect12/Root/DragonsEnd/Portal_Out/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/ImpactExplosion/CrackFragmentsExplosion: 1000 -> 30
+Effect12/Root/ImpactExplosion/ExplosionRing: 1000 -> 30
+Effect12/Root/ImpactExplosion/PortalExplosion: 1000 -> 30
+Effect12/Root/ImpactExplosion/ImpactLightnings: 1000 -> 30
+Effect12/Root/ImpactExplosion/Trails: 1000 -> 30
+Effect12/Root/ImpactExplosion/Trails/ParallaxDecal: 1000 -> 30
+Effect12/Root/ImpactExplosion/Trails/GroundSmokeWaves: 10000 -> 30
+Effect30/Root/AccumulationEffect/ExplosionTrails (1): 1000 -> 30
+Effect30/Root/AccumulationEffect/WaveDecalIn: 1000 -> 30
+Effect30/Root/AccumulationEffect/Intersection: 1000 -> 30
+Effect30/Root/AccumulationEffect/Sphere: 1000 -> 30
+Effect30/Root/AccumulationEffect/SphereDistortion: 1000 -> 30
+Effect30/Root/Explosion/ExplosionTrails (1): 1000 -> 30
+Effect30/Root/Explosion/Sphere: 1000 -> 30
+Effect30/Root/Explosion/SphereDistortion: 1000 -> 30
+Effect30/Root/Explosion/Intersection: 1000 -> 30
+Effect30/Root/Explosion/Waves: 1000 -> 30
+Magic circle 27: 1000 -> 30
+Magic circle 27/Light: 1000 -> 30
+Magic circle 27/CoreGlow: 1000 -> 30
+Magic circle 27/CoreWind: 1000 -> 30
+Magic circle 27/CoreWind2: 1000 -> 30
+Magic circle 27/SmokeDark: 1000 -> 30
+Magic circle 27/Trails: 1000 -> 30
+Magic circle 27/Wind: 1000 -> 30
+Changed systems: 64
+Disabled small ember systems: 0

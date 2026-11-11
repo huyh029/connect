@@ -1,0 +1,15 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/TRIEU VAN/FX ULTI/Effect5.prefab
+Rules: Max Particles > 500 becomes 30; disable small sparse billboard sparks/embers. Main slash, explosion, mesh and trail systems are preserved.
+Root/CloudLightningStrikes: 1000 -> 30
+Root/MainLightning/Decal: 1000 -> 30
+Root/MainLightning/LightningStrike: 1000 -> 30
+Root/MainLightning/LightningParticlesDecal : 1000 -> 30
+Root/MainLightning/ImpactLightnings: 1000 -> 30
+Root/MainLightning/WaveDecal: 1000 -> 30
+Root/Trails: 1000 -> 30
+Root/Trails/LightningTrails: 1000 -> 30
+Root/Trails/LightParticles: 1000 -> 30
+Root/Trails/ParallaxDecal: 1000 -> 30
+Root/Trails/GroundWaves: 10000 -> 30
+Changed systems: 11
+Disabled small ember systems: 0

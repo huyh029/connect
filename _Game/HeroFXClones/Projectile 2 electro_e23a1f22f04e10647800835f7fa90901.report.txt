@@ -1,0 +1,14 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/GIA CAT LUONG/FX ATK/Projectile 2 electro.prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+Visuals/Projectile: 1000 -> 30
+Visuals/Projectile/ElectroCore: 1000 -> 30
+Visuals/Projectile/Electricy: 1000 -> 30
+Visuals/Flash 2 electro: 1000 -> 30
+Visuals/Flash 2 electro/Sparks: 1000 -> 30
+Visuals/Hit 2 electro/SparksDonw: 1000 -> 30
+Visuals/Hit 2 electro/SparksUp: 1000 -> 30
+Visuals/Hit 2 electro/Smoke: 1000 -> 30
+Visuals/Hit 2 electro/Flash: 1000 -> 30
+Visuals/Hit 2 electro/Lightning: 1000 -> 30
+Visuals/Sparks: 1000 -> 30
+Changed systems: 11

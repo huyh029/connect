@@ -1,0 +1,50 @@
+Quan Vu: particle cache -> Visual Effect Graph, 30 FPS, 180 frames.
+Native graph outputs use unlit alpha/additive shading. Particle motion/color/size are captured; arbitrary original shader logic is not recreated.
+Unsupported renderers remain Particle Systems; this may produce a hybrid effect, not a full conversion.
+FALLBACK GameObject/Effect_11_Slash: custom UV tiling/offset
+FALLBACK GameObject/Effect_11_Slash_4: custom UV tiling/offset
+FALLBACK GameObject/Effect_11_Slash: custom UV tiling/offset
+FALLBACK GameObject/Effect_11_Slash_4: custom UV tiling/offset
+GPU GameObject/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU GameObject/Effect_11_Slash_3: 1 particles, 180 frames.
+GPU GameObject/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU GameObject/Effect_11_Slash_3: 1 particles, 180 frames.
+WARNING GameObject: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+GameObject: 4/8 GPU systems; hybrid, original CPU fallback retained
+FALLBACK ULTI QUAN VU/Energy explosion: inactive or hidden source
+FALLBACK ULTI QUAN VU/EndShockWave: custom UV tiling/offset
+FALLBACK ULTI QUAN VU/EndShockWave2: custom UV tiling/offset
+FALLBACK ULTI QUAN VU/EndSTrails: flipbook requires a flipbook graph
+FALLBACK ULTI QUAN VU/Front spikes attack: non-camera-facing billboard
+FALLBACK ULTI QUAN VU/CenterTrails: unsupported renderer mode Stretch
+FALLBACK ULTI QUAN VU/CenterFlash: unsupported renderer mode Stretch
+FALLBACK ULTI QUAN VU/CenterShockWave: non-camera-facing billboard
+FALLBACK ULTI QUAN VU/CenterDistortion: inactive or hidden source
+FALLBACK ULTI QUAN VU/CenterLightning: flipbook requires a flipbook graph
+FALLBACK ULTI QUAN VU/CenterLightning2: flipbook requires a flipbook graph
+FALLBACK ULTI QUAN VU/RocksExplosion: multi-mesh particles
+FALLBACK ULTI QUAN VU/WaveDecal: unsupported renderer mode HorizontalBillboard
+FALLBACK ULTI QUAN VU/Trails: unsupported renderer mode Stretch
+FALLBACK ULTI QUAN VU/GroundOrbs: non-camera-facing billboard
+FALLBACK ULTI QUAN VU/Lightning: flipbook requires a flipbook graph
+FALLBACK ULTI QUAN VU/Distortion: inactive or hidden source
+GPU ULTI QUAN VU/StartSFlash: 1 particles, 180 frames.
+GPU ULTI QUAN VU/StartSmoke: 80 particles, 180 frames.
+GPU ULTI QUAN VU/EndSmoke: 45 particles, 180 frames.
+GPU ULTI QUAN VU/EndSFlash: 1 particles, 180 frames.
+GPU ULTI QUAN VU/CenterSmoke: 15 particles, 180 frames.
+GPU ULTI QUAN VU/CenterSparks: 55 particles, 180 frames.
+GPU ULTI QUAN VU/CenterSparksUp: 40 particles, 180 frames.
+GPU ULTI QUAN VU/CenterFlash: 1 particles, 180 frames.
+GPU ULTI QUAN VU/DistortionSphere: 1 particles, 180 frames.
+GPU ULTI QUAN VU/Buff 2: 30 particles, 180 frames.
+GPU ULTI QUAN VU/Sparks: 40 particles, 180 frames.
+GPU ULTI QUAN VU/Semicircles: 7 particles, 180 frames.
+GPU ULTI QUAN VU/Smoke: 15 particles, 180 frames.
+GPU ULTI QUAN VU/Glow: 1 particles, 180 frames.
+GPU ULTI QUAN VU/Trail1: 1 particles, 180 frames.
+GPU ULTI QUAN VU/Trail2: 1 particles, 180 frames.
+WARNING ULTI QUAN VU: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+ULTI QUAN VU: 16/33 GPU systems; hybrid, original CPU fallback retained
+Updated baked hero FX references. No VAT rebake required.
+COMPLETED. Review fallback entries and compare appearance in VAT preview.

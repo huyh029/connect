@@ -1,0 +1,32 @@
+Lu Bo: particle cache -> Visual Effect Graph, 30 FPS, 180 frames.
+Native graph outputs use unlit alpha/additive shading. Particle motion/color/size are captured; arbitrary original shader logic is not recreated.
+Unsupported renderers remain Particle Systems; this may produce a hybrid effect, not a full conversion.
+FALLBACK ATK 1/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 1/Effect_11_Slash: custom UV tiling/offset
+GPU ATK 1/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 1/Effect_11_Slash_2: 1 particles, 180 frames.
+WARNING ATK 1: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+ATK 1: 2/4 GPU systems; hybrid, original CPU fallback retained
+FALLBACK ATK 2/Slash: custom UV tiling/offset
+FALLBACK ATK 2/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK ATK 2/CrackFragmentsStatic: multi-mesh particles
+FALLBACK ATK 2/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 2/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 2/Effect_11_Slash: custom UV tiling/offset
+FALLBACK ATK 2/Effect_11_Slash: custom UV tiling/offset
+GPU ATK 2/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 2/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 2/Effect_11_Slash_2: 1 particles, 180 frames.
+GPU ATK 2/Effect_11_Slash_2: 1 particles, 180 frames.
+WARNING ATK 2: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+ATK 2: 4/11 GPU systems; hybrid, original CPU fallback retained
+FALLBACK Effect28/WaveDecalIn: unsupported renderer mode HorizontalBillboard
+FALLBACK Effect28/Decal: unsupported renderer mode HorizontalBillboard
+FALLBACK Effect28/RocksExplosion: multi-mesh particles
+FALLBACK Effect28/LavaExplosion: flipbook requires a flipbook graph
+FALLBACK Effect28/LavaExplosionCore: unsupported renderer mode Stretch
+FALLBACK Effect28/DistortionSphere: custom shader kriptofx/re2/distortion
+WARNING Effect28: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+Effect28: 0/6 GPU systems; hybrid, original CPU fallback retained
+Updated baked hero FX references. No VAT rebake required.
+COMPLETED. Review fallback entries and compare appearance in VAT preview.

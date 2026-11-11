@@ -1,0 +1,92 @@
+Luu Bi: particle cache -> Visual Effect Graph, 30 FPS, 180 frames.
+Native graph outputs use unlit alpha/additive shading. Particle motion/color/size are captured; arbitrary original shader logic is not recreated.
+Unsupported renderers remain Particle Systems; this may produce a hybrid effect, not a full conversion.
+FALLBACK ATK 1/Effect_06_Slash: flipbook requires a flipbook graph
+GPU ATK 1/Effect_06_SlashMesh: 1 particles, 180 frames.
+GPU ATK 1/Effect_06_SlashMesh_2: 1 particles, 180 frames.
+GPU ATK 1/Effect_06_SlashMesh_3: 1 particles, 180 frames.
+GPU ATK 1/Effect_06_SlashMesh_4: 1 particles, 180 frames.
+GPU ATK 1/Effect_06_SlashMesh_5: 1 particles, 180 frames.
+WARNING ATK 1: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+ATK 1: 5/6 GPU systems; hybrid, original CPU fallback retained
+FALLBACK ATK 2/Effect_06_Slash: flipbook requires a flipbook graph
+GPU ATK 2/Effect_06_SlashMesh: 1 particles, 180 frames.
+GPU ATK 2/Effect_06_SlashMesh_2: 1 particles, 180 frames.
+GPU ATK 2/Effect_06_SlashMesh_3: 1 particles, 180 frames.
+GPU ATK 2/Effect_06_SlashMesh_4: 1 particles, 180 frames.
+GPU ATK 2/Effect_06_SlashMesh_5: 1 particles, 180 frames.
+WARNING ATK 2: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+ATK 2: 5/6 GPU systems; hybrid, original CPU fallback retained
+FALLBACK GameObject (4)/Rocks: multi-mesh particles
+FALLBACK GameObject (4)/RocksFrontWave: multi-mesh particles
+FALLBACK GameObject (4)/RocksExplosion: multi-mesh particles
+FALLBACK GameObject (4)/LavaExplosion: flipbook requires a flipbook graph
+FALLBACK GameObject (4)/LavaExplosion: inactive or hidden source
+FALLBACK GameObject (4)/LavaExplosionCore: unsupported renderer mode Stretch
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragments: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/CrackFragmentsExplosion: multi-mesh particles
+FALLBACK GameObject (4)/ExplosionRing: unsupported renderer mode HorizontalBillboard
+FALLBACK GameObject (4)/ExplosionWave: custom UV tiling/offset
+FALLBACK GameObject (4)/ImpactLightnings: unsupported renderer mode Stretch
+FALLBACK GameObject (4)/Trails: unsupported renderer mode None
+FALLBACK GameObject (4)/ParallaxDecal: custom UV tiling/offset
+FALLBACK GameObject (4)/GroundSmokeWaves: unsupported renderer mode Stretch
+FALLBACK GameObject (4)/WaveDecalIn: unsupported renderer mode HorizontalBillboard
+FALLBACK GameObject (4)/Sphere: custom UV tiling/offset
+FALLBACK GameObject (4)/SphereDistortion: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/Sphere: custom UV tiling/offset
+FALLBACK GameObject (4)/SphereDistortion: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (4)/Light: unsupported renderer mode None
+FALLBACK GameObject (4)/Trails: trail rendering requires a strip graph
+GPU GameObject (4)/DistortionSphere: 1 particles, 180 frames.
+GPU GameObject (4)/Effect_11_ParticleSlash: 1 particles, 180 frames.
+GPU GameObject (4)/Effect_11_ParticleSlash_2: 1 particles, 180 frames.
+GPU GameObject (4)/Effect_11_ParticleSlash_3: 1 particles, 180 frames.
+GPU GameObject (4)/Effect_11_ParticleSlash: 1 particles, 180 frames.
+GPU GameObject (4)/Effect_11_ParticleSlash_2: 1 particles, 180 frames.
+GPU GameObject (4)/Effect_11_ParticleSlash_3: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/CrackPortal: 1 particles, 180 frames.
+GPU GameObject (4)/PortalExplosion: 10 particles, 180 frames.
+GPU GameObject (4)/ExplosionTrails (1): 24 particles, 180 frames.
+GPU GameObject (4)/Intersection: 1 particles, 180 frames.
+GPU GameObject (4)/ExplosionTrails (1): 10 particles, 180 frames.
+GPU GameObject (4)/Intersection: 1 particles, 180 frames.
+GPU GameObject (4)/Waves: 44 particles, 180 frames.
+GPU GameObject (4)/Magic circle 27: 50 particles, 180 frames.
+GPU GameObject (4)/CoreGlow: 40 particles, 180 frames.
+GPU GameObject (4)/CoreWind: 1 particles, 180 frames.
+GPU GameObject (4)/CoreWind2: 1 particles, 180 frames.
+GPU GameObject (4)/SmokeDark: 60 particles, 180 frames.
+GPU GameObject (4)/Wind: 30 particles, 180 frames.
+WARNING GameObject (4): particles still alive at capture end. Increase Capture frames if the tail is cut off.
+GameObject (4): 29/69 GPU systems; hybrid, original CPU fallback retained
+Updated baked hero FX references. No VAT rebake required.
+COMPLETED. Review fallback entries and compare appearance in VAT preview.

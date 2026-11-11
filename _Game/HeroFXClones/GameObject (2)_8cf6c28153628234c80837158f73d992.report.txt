@@ -1,0 +1,15 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/Ha hau don/FX ATK/GameObject (2).prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+Effect_06_Slash (1)/Effect_06_Slash: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh_4: 1000 -> 30
+Effect_06_Slash (1)/Effect_06_SlashMesh_5: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_Slash: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh_4: 1000 -> 30
+Effect_06_Slash (2)/Effect_06_SlashMesh_5: 1000 -> 30
+Effect_06_Slash (3)/Effect_06_Slash: 1000 -> 30
+Effect_06_Slash (3)/Effect_06_SlashMesh: 1000 -> 30
+Effect_06_Slash (3)/Effect_06_SlashMesh_4: 1000 -> 30
+Effect_06_Slash (3)/Effect_06_SlashMesh_5: 1000 -> 30
+Changed systems: 12

@@ -1,0 +1,67 @@
+Gia Cat Luong: particle cache -> Visual Effect Graph, 30 FPS, 180 frames.
+Native graph outputs use unlit alpha/additive shading. Particle motion/color/size are captured; arbitrary original shader logic is not recreated.
+Unsupported renderers remain Particle Systems; this may produce a hybrid effect, not a full conversion.
+FALLBACK Projectile 2 electro/Projectile: trail rendering requires a strip graph
+FALLBACK Projectile 2 electro/ElectroCore: flipbook requires a flipbook graph
+FALLBACK Projectile 2 electro/Electricy: flipbook requires a flipbook graph
+FALLBACK Projectile 2 electro/Sparks: unsupported renderer mode Stretch
+FALLBACK Projectile 2 electro/Hit 2 electro: missing material
+FALLBACK Projectile 2 electro/SparksDonw: unsupported renderer mode Stretch
+FALLBACK Projectile 2 electro/SparksUp: unsupported renderer mode Stretch
+FALLBACK Projectile 2 electro/Lightning: flipbook requires a flipbook graph
+FALLBACK Projectile 2 electro/Sparks: unsupported renderer mode Stretch
+GPU Projectile 2 electro/Flash 2 electro: 1 particles, 180 frames.
+GPU Projectile 2 electro/Smoke: 5 particles, 180 frames.
+GPU Projectile 2 electro/Flash: 1 particles, 180 frames.
+WARNING Projectile 2 electro: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+Projectile 2 electro: 3/12 GPU systems; hybrid, original CPU fallback retained
+FALLBACK Magic hit (1)/8e072a94c13cb3e4a91d02c31989ee61: non-camera-facing billboard
+FALLBACK Magic hit (1)/Distortion: inactive or hidden source
+FALLBACK Magic hit (1)/ShockWave: non-camera-facing billboard
+FALLBACK Magic hit (1)/Glow(Optional): non-camera-facing billboard
+FALLBACK Magic hit (1)/Fire: flipbook requires a flipbook graph
+FALLBACK Magic hit (1)/RombsExp: unsupported renderer mode Stretch
+FALLBACK Magic hit (1)/BigSparks: unsupported renderer mode Stretch
+FALLBACK Magic hit (1)/WhiteSparks: unsupported renderer mode Stretch
+GPU Magic hit (1)/Flash: 1 particles, 180 frames.
+GPU Magic hit (1)/Smoke: 5 particles, 180 frames.
+WARNING Magic hit (1): particles still alive at capture end. Increase Capture frames if the tail is cut off.
+Magic hit (1): 2/10 GPU systems; hybrid, original CPU fallback retained
+FALLBACK Projectile 2 electro (1)/720d2f378eae7f24994a5ad1ad60758b: trail rendering requires a strip graph
+FALLBACK Projectile 2 electro (1)/ElectroCore: flipbook requires a flipbook graph
+FALLBACK Projectile 2 electro (1)/Electricy: flipbook requires a flipbook graph
+FALLBACK Projectile 2 electro (1)/Sparks: unsupported renderer mode Stretch
+FALLBACK Projectile 2 electro (1)/SparksUp: unsupported renderer mode Stretch
+GPU Projectile 2 electro (1)/Shockwave: 1 particles, 180 frames.
+WARNING Projectile 2 electro (1): particles still alive at capture end. Increase Capture frames if the tail is cut off.
+Projectile 2 electro (1): 1/6 GPU systems; hybrid, original CPU fallback retained
+FALLBACK Projectile 25 orange explosion/3866b4696fa16d04dbf0eca26ad37293: trail rendering requires a strip graph
+FALLBACK Projectile 25 orange explosion/Debris: flipbook requires a flipbook graph
+GPU Projectile 25 orange explosion/Flash: 1 particles, 180 frames.
+GPU Projectile 25 orange explosion/Smoke: 8 particles, 180 frames.
+WARNING Projectile 25 orange explosion: particles still alive at capture end. Increase Capture frames if the tail is cut off.
+Projectile 25 orange explosion: 2/4 GPU systems; hybrid, original CPU fallback retained
+FALLBACK GameObject (2)/Mobile Light bomb: non-camera-facing billboard
+FALLBACK GameObject (2)/Glow: particle lights
+FALLBACK GameObject (2)/Lightning: missing material
+FALLBACK GameObject (2)/EndLightning: missing material
+FALLBACK GameObject (2)/Distortion(Delete for Mobile): inactive or hidden source
+FALLBACK GameObject (2)/LightningStrikeEnd: unsupported renderer mode Stretch
+FALLBACK GameObject (2)/LightningCore: custom shader kriptofx/re2/lightning
+FALLBACK GameObject (2)/DistortionSphere: custom shader kriptofx/re2/distortion
+FALLBACK GameObject (2)/Trails: unsupported renderer mode None
+FALLBACK GameObject (2)/LightningTrails: custom shader kriptofx/re2/lightning
+FALLBACK GameObject (2)/ParallaxDecal: custom UV tiling/offset
+GPU GameObject (2)/Aura: 1 particles, 180 frames.
+GPU GameObject (2)/EnergyAccumulating: 3 particles, 180 frames.
+GPU GameObject (2)/Smoke: 30 particles, 180 frames.
+GPU GameObject (2)/SideSmoke: 5 particles, 180 frames.
+GPU GameObject (2)/SideSmokeDissolve: 5 particles, 180 frames.
+GPU GameObject (2)/Trails: 20 particles, 180 frames.
+GPU GameObject (2)/EndSideSmoke: 2 particles, 180 frames.
+GPU GameObject (2)/EndDissolve: 2 particles, 180 frames.
+GPU GameObject (2)/EndWave: 1 particles, 180 frames.
+WARNING GameObject (2): particles still alive at capture end. Increase Capture frames if the tail is cut off.
+GameObject (2): 9/20 GPU systems; hybrid, original CPU fallback retained
+Updated baked hero FX references. No VAT rebake required.
+COMPLETED. Review fallback entries and compare appearance in VAT preview.

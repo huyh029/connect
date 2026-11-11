@@ -1,0 +1,6 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/LU BO/ULTI FX/Effect28.prefab
+Rule: Max Particles > 500 becomes 30. Other systems and emission settings are unchanged.
+Root/StartDecal/WaveDecalIn: 1000 -> 30
+Root/StartDecal/Decal: 1000 -> 30
+Root/Explosion/DistortionSphere: 1000 -> 30
+Changed systems: 3

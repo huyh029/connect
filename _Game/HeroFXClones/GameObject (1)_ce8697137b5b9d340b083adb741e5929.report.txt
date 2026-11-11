@@ -1,0 +1,25 @@
+Source: Assets/_Game/ALL TUONG NHI QUOC/TRIEU VAN/FX ATK/GameObject (1).prefab
+Rules: Max Particles > 500 becomes 30; disable small sparse billboard sparks/embers. Main slash, explosion, mesh and trail systems are preserved.
+Effect_31_Spear (1)/Effect_31_Spear: 1000 -> 30
+Effect_31_Spear (1)/Effect_31_Impact: 1000 -> 30
+Effect_31_Spear (1)/Effect_31_Impact: 1000 -> 30
+Effect_31_Spear (1)/Effect_31_Particle: 1000 -> 30
+Effect_25_CriticalSlash/Effect_25_SlashPart/Effect_25_Slash: 1000 -> 30
+Effect_25_CriticalSlash/Effect_25_SlashPart/Effect_25_Slash_2: 1000 -> 30
+Effect_25_CriticalSlash/Effect_25_SlashPart/Effect_25_Slash_3: 1000 -> 30
+Effect_25_CriticalSlash/Effect_25_SlashPart_2/Effect_25_Slash: 1000 -> 30
+Effect_25_CriticalSlash/Effect_25_SlashPart_2/Effect_25_Slash_2: 1000 -> 30
+Effect_25_CriticalSlash/Effect_25_SlashPart_2/Effect_25_Slash_3: 1000 -> 30
+Effect_25_CriticalSlash (1)/Effect_25_SlashPart/Effect_25_Slash: 1000 -> 30
+Effect_25_CriticalSlash (1)/Effect_25_SlashPart/Effect_25_Slash_2: 1000 -> 30
+Effect_25_CriticalSlash (1)/Effect_25_SlashPart/Effect_25_Slash_3: 1000 -> 30
+Effect_25_CriticalSlash (1)/Effect_25_SlashPart_2/Effect_25_Slash: 1000 -> 30
+Effect_25_CriticalSlash (1)/Effect_25_SlashPart_2/Effect_25_Slash_2: 1000 -> 30
+Effect_25_CriticalSlash (1)/Effect_25_SlashPart_2/Effect_25_Slash_3: 1000 -> 30
+Effect_11_SlashPart_2/Effect_11_Slash: 1000 -> 30
+Effect_11_SlashPart_2/Effect_11_Slash_2: 1000 -> 30
+Effect_11_SlashPart_2/Effect_11_Slash_3: 1000 -> 30
+Effect_11_ShiningSlashPart/Effect_11_Slash: 1000 -> 30
+Effect_11_ShiningSlashPart/Effect_11_Slash_2: 1000 -> 30
+Changed systems: 21
+Disabled small ember systems: 0

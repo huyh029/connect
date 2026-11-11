@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f52a4cf5c7e4e51900795a158a8724c, type: 3}
+  m_Name: RecoilHeroPrefabs
+  Skills: {fileID: 11400000, guid: 328e9e4cefac40c9837a8ebda135d7d8, type: 2}
+  m_EditorClassIdentifier: 
+  Heroes:
+  - Id: 1
+    Prefab: {fileID: 8175707481768003947, guid: 0f01d98c786319449af33d624185f08b, type: 3}
+  - Id: 2
+    Prefab: {fileID: 7191576133144675626, guid: c387a4a77d2c54c45b008db5c684ff0f, type: 3}
+  - Id: 3
+    Prefab: {fileID: 7978067629935456066, guid: f2ae595ab60350548969f76b5ae38761, type: 3}
+  - Id: 4
+    Prefab: {fileID: 7880518832717263033, guid: cc6fe3d0bfb29f3478a93958388ec8a1, type: 3}
+  - Id: 5
+    Prefab: {fileID: 1530800701378627500, guid: 1cc6de288b438654aa301b181bef1b1f, type: 3}
+  - Id: 6
+    Prefab: {fileID: 2832876034027737306, guid: 57ef2a547d1135d4481c9ada7d9aa286, type: 3}
+  - Id: 7
+    Prefab: {fileID: 7389566194039020965, guid: 43b36d6f55ff3c94b8b1f98a8e9b4d70, type: 3}
+  - Id: 8
+    Prefab: {fileID: 2336768330783635434, guid: 2a0ee7ecdfcab1540ba960c9280df294, type: 3}

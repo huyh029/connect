@@ -1,0 +1,445 @@
+using System.Collections.Generic;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace RecoilPathfinding
+{
+    public sealed partial class RecoilAutoBattleDemo
+    {
+        private sealed class HeroCast
+        {
+            public Soldier Caster;
+            public HeroSkillClip Skill;
+            public NhiQuoc.Tools.HeroVatPlayer.Clip Clip;
+            public float Started;
+            public Vector3 Target;
+            public Vector3 Origin;
+            public Vector3[] LaunchOrigins;
+            public bool[] Launched;
+            public Soldier TargetUnit;
+            public Vector3 FollowPosition;
+            public Quaternion Facing;
+            public int[] NextFrames;
+            public RecoilUnitCombatStats Stats;
+            public bool Castle;
+            public Bounds CastleBounds;
+            public HashSet<Entity>[] SweptTargets;
+            public bool[] SweptCastle;
+        }
+        private sealed class HeroDisplacement
+        {
+            public Soldier Target;
+            public Vector3 Remaining;
+            public float Seconds;
+            public bool Impulse;
+            public Vector3 Velocity;
+        }
+        private sealed class HeroKnockUp
+        {
+            public Soldier Target;
+            public float Started, Duration, Height, InitialHeight;
+        }
+        private readonly List<HeroKnockUp> _heroKnockUps = new();
+        private readonly List<HeroCast> _heroCasts = new();
+        private readonly List<HeroDisplacement> _heroDisplacements = new();
+        private RecoilHeroSkillLibrary _heroSkills;
+        private bool _heroSkillsLoaded;
+
+        private float HeroEngagementRange(Soldier hero, float fallback)
+        {
+            var config = lobbyHeroStats != null ? System.Array.Find(lobbyHeroStats, h => h.Id == hero.HeroId) : null;
+            float configured = config != null ? config.Stats.Range : fallback;
+            var profile = _heroSkills != null ? _heroSkills.Find(hero.HeroId) : null;
+            if (profile == null || hero.HeroVat == null) return configured;
+            int clipIndex = hero.HeroUltiCooldown > 0 && SimulationNow >= hero.NextHeroUlti ? 4 : hero.HeroVat.NextAttackClipIndex;
+            if (SimulationNow < hero.HeroAnimationUntil &&
+                (hero.HeroAnimation == 2 || hero.HeroAnimation == 4 || hero.HeroAnimation == 5))
+                clipIndex = hero.HeroAnimation;
+            var skill = profile.Find(clipIndex);
+            if (skill == null) return configured;
+            float reach = 0;
+            foreach (var zone in skill.Zones)
+                if (zone.Enabled) reach = Mathf.Max(reach, zone.EngagementReach(configured));
+            if (reach <= 0) return configured;
+            return Mathf.Max(.1f, reach - Mathf.Min(.15f, reach * .05f));
+        }
+
+        private void ClearHeroSkillCasts()
+        {
+            ReleaseRootedHeroes();
+            foreach (var flight in _heroKnockUps) SetHeroAirborne(flight.Target, false, 0);
+            foreach (var movement in _heroDisplacements) SetForcedDisplacement(movement.Target, false);
+            _heroKnockUps.Clear(); _heroCasts.Clear(); _heroDisplacements.Clear();
+        }
+
+        private readonly List<Soldier> _rootedHeroes = new();
+
+        /// <summary>A hero performing a skill (any attack / skill / ulti clip still playing) does not move.</summary>
+        private bool HeroPerformingSkill(Soldier hero) =>
+            hero != null && !hero.Retired && hero.HeroVat != null && hero.HeroAnimation >= 2 &&
+            SimulationNow < hero.HeroAnimationUntil;
+
+        /// <summary>
+        /// Holds every hero in place while it performs a skill and releases it afterwards. The movement system keeps
+        /// its order and path, so it walks on as soon as the clip ends.
+        /// </summary>
+        private void UpdateHeroRooting()
+        {
+            for (int i = _rootedHeroes.Count - 1; i >= 0; i--)
+            {
+                var hero = _rootedHeroes[i];
+                if (HeroPerformingSkill(hero)) continue;
+                SetHeroRooted(hero, false);
+                _rootedHeroes.RemoveAt(i);
+            }
+            if (_matchFinished) return;
+            for (int i = 0; i < _combatSoldiers.Count; i++)
+            {
+                var hero = _combatSoldiers[i];
+                if (hero == null || hero.HeroRooted || !HeroPerformingSkill(hero)) continue;
+                SetHeroRooted(hero, true);
+                if (hero.HeroRooted) _rootedHeroes.Add(hero);
+            }
+        }
+
+        private void ReleaseRootedHeroes()
+        {
+            foreach (var hero in _rootedHeroes) SetHeroRooted(hero, false);
+            _rootedHeroes.Clear();
+        }
+
+        private void SetHeroRooted(Soldier hero, bool rooted)
+        {
+            hero.HeroRooted = false;
+            if (!_hasEntityManager || _world == null || !_world.IsCreated || hero.Simulation == null || !hero.Simulation.Exists) return;
+            var navigation = _entityManager.GetComponentData<RecoilUnitNavigation>(hero.Entity);
+            navigation.Rooted = (byte)(rooted ? 1 : 0);
+            _entityManager.SetComponentData(hero.Entity, navigation);
+            if (rooted)
+            {
+                // Stop where it stands this very tick, not after the movement system brakes it.
+                var pose = _entityManager.GetComponentData<RecoilUnitPose>(hero.Entity);
+                pose.Speed = 0f;
+                pose.Velocity = float3.zero;
+                _entityManager.SetComponentData(hero.Entity, pose);
+            }
+            hero.HeroRooted = rooted;
+        }
+
+        private void SetForcedDisplacement(Soldier target, bool active)
+        {
+            if (!_hasEntityManager || _world == null || !_world.IsCreated || target?.Simulation == null || !target.Simulation.Exists) return;
+            var navigation = _entityManager.GetComponentData<RecoilUnitNavigation>(target.Entity);
+            navigation.ForcedDisplacement = (byte)(active ? 1 : 0);
+            _entityManager.SetComponentData(target.Entity, navigation);
+        }
+
+        private void RemoveHeroDisplacement(int index)
+        {
+            var target = _heroDisplacements[index].Target;
+            _heroDisplacements.RemoveAt(index);
+            if (!_heroDisplacements.Exists(m => ReferenceEquals(m.Target, target))) SetForcedDisplacement(target, false);
+        }
+
+        private void SetHeroAirborne(Soldier target, bool airborne, float height)
+        {
+            if (!_hasEntityManager || _world == null || !_world.IsCreated || target?.Simulation == null || !target.Simulation.Exists) return;
+            var pose = target.Simulation.Pose;
+            pose.PresentationLift = height;
+            pose.Velocity = float3.zero; pose.Speed = 0;
+            var navigation = _entityManager.GetComponentData<RecoilUnitNavigation>(target.Entity);
+            navigation.Airborne = (byte)(airborne ? 1 : 0);
+            var state = _entityManager.GetComponentData<RecoilBattleEcsState>(target.Entity);
+            state.Airborne = navigation.Airborne;
+            _entityManager.SetComponentData(target.Entity, pose);
+            _entityManager.SetComponentData(target.Entity, navigation);
+            _entityManager.SetComponentData(target.Entity, state);
+        }
+
+        private void LaunchHeroKnockUp(Soldier target, HeroHitZone zone)
+        {
+            var flight = _heroKnockUps.Find(f => ReferenceEquals(f.Target, target));
+            if (flight == null) { flight = new HeroKnockUp { Target = target }; _heroKnockUps.Add(flight); }
+            flight.InitialHeight = target.Simulation.Pose.PresentationLift;
+            flight.Started = SimulationNow;
+            flight.Height = Mathf.Max(.01f, zone.KnockUpHeight);
+            flight.Duration = Mathf.Max(.03f, zone.KnockUpDuration);
+            SetHeroAirborne(target, true, flight.InitialHeight);
+            if (target.HeroVat != null)
+            {
+                target.HeroVat.Play(0); target.HeroAnimation = 0;
+                target.HeroAnimationUntil = SimulationNow + flight.Duration;
+            }
+        }
+
+        private void PrepareHeroSkillAttacks()
+        {
+            if (!_heroSkillsLoaded)
+            {
+                if (_heroPrefabs == null) _heroPrefabs = Resources.Load<RecoilHeroPrefabCatalog>("RecoilHeroPrefabs");
+                _heroSkills = _heroPrefabs != null ? _heroPrefabs.Skills : null;
+                _heroSkillsLoaded = true;
+            }
+            if (_heroSkills == null) return;
+            for (int i = 0; i < _combatSoldiers.Count; i++)
+            {
+                var hero = _combatSoldiers[i];
+                if (hero.HeroVat == null || hero.HeroId <= 0) continue;
+                var profile = _heroSkills.Find(hero.HeroId);
+                if (profile == null) continue;
+                var attack = _contactAttacks[i];
+                // Configured heroes never also apply the ordinary contact/projectile damage.
+                var suppressed = attack;
+                suppressed.Damage = 0;
+                suppressed.TargetIndex = -1;
+                _contactAttacks[i] = suppressed;
+                if (hero.Retired || attack.Damage <= 0 || attack.TargetIndex < 0 ||
+                    attack.TargetIndex >= _combatSoldiers.Count || SimulationNow < hero.HeroAnimationUntil) continue;
+                var target = _combatSoldiers[attack.TargetIndex];
+                BeginHeroSkill(hero, target.Simulation.Position, _combatSnapshots[i].Stats, targetUnit: target);
+            }
+        }
+
+        private void BeginHeroSkill(Soldier hero, Vector3 targetPosition, RecoilUnitCombatStats stats,
+            bool castle = false, Bounds castleBounds = default, Soldier targetUnit = null)
+        {
+            if (!castle)
+            {
+                if (!HeroSkillAlive(targetUnit)) return;
+                targetPosition = targetUnit.Simulation.Position;
+                float range = HeroEngagementRange(hero, stats.Range);
+                var offset = targetPosition - hero.Simulation.Position;
+                offset.y = 0;
+                if (offset.sqrMagnitude > range * range)
+                {
+                    var waiting = _entityManager.GetComponentData<RecoilBattleEcsState>(hero.Entity);
+                    waiting.AttackCooldown = 0;
+                    _entityManager.SetComponentData(hero.Entity, waiting);
+                    hero.Simulation.SetDestination(targetPosition);
+                    return;
+                }
+            }
+            int requestedClip = hero.HeroUltiCooldown > 0 && SimulationNow >= hero.NextHeroUlti ? 4 : 2;
+            var clips = hero.HeroVat.clips;
+            if (clips == null || requestedClip >= clips.Length) return;
+            var direction = targetPosition - hero.Agent.transform.position;
+            direction.y = 0;
+            if (direction.sqrMagnitude > .0001f) hero.Agent.transform.rotation = Quaternion.LookRotation(direction);
+            hero.HeroVat.SetAttackTarget(targetPosition, targetUnit?.Agent != null ? targetUnit.Agent.transform : null);
+            hero.HeroVat.Play(requestedClip);
+            int actualClip = hero.HeroVat.ActiveClipIndex;
+            var clip = clips[actualClip];
+            var skill = _heroSkills.Find(hero.HeroId)?.Find(actualClip);
+            hero.HeroVat.ExternalProjectileEffects = skill != null && System.Array.Exists(skill.Zones, z => z.Enabled && z.IsProjectile);
+            hero.HeroAnimation = actualClip;
+            hero.HeroAnimationUntil = SimulationNow + clip.duration;
+            if (requestedClip == 4) hero.NextHeroUlti = SimulationNow + hero.HeroUltiCooldown;
+            if (skill == null) return;
+            var frames = new int[skill.Zones.Length];
+            for (int z = 0; z < frames.Length; z++) frames[z] = Mathf.Max(0, skill.Zones[z].StartFrame);
+            _heroCasts.Add(new HeroCast { Caster = hero, Skill = skill, Clip = clip,
+                Started = SimulationNow, Origin = hero.Simulation.Position, Target = targetPosition, TargetUnit = targetUnit,
+                FollowPosition = targetPosition, Facing = hero.Agent.transform.rotation,
+                NextFrames = frames, Stats = stats, Castle = castle, CastleBounds = castleBounds,
+                SweptTargets = new HashSet<Entity>[frames.Length], SweptCastle = new bool[frames.Length],
+                LaunchOrigins = new Vector3[frames.Length], Launched = new bool[frames.Length] });
+            var state = _entityManager.GetComponentData<RecoilBattleEcsState>(hero.Entity);
+            state.AttackCooldown = Mathf.Max(state.AttackCooldown, clip.duration);
+            _entityManager.SetComponentData(hero.Entity, state);
+        }
+
+        private void ProcessHeroSkillHits()
+        {
+            UpdateHeroRooting();
+            if (_matchFinished) { ClearHeroSkillCasts(); return; }
+            for (int i = _heroCasts.Count - 1; i >= 0; i--)
+            {
+                var cast = _heroCasts[i];
+                if (!HeroSkillAlive(cast.Caster) || _entityManager.GetComponentData<RecoilBattleEcsState>(cast.Caster.Entity).Airborne != 0)
+                { _heroCasts.RemoveAt(i); continue; }
+                if (HeroSkillAlive(cast.TargetUnit)) cast.FollowPosition = cast.TargetUnit.Simulation.Position;
+                if (System.Array.Exists(cast.Skill.Zones, zone => zone.Enabled && zone.Anchor == HeroHitAnchor.FollowTarget))
+                    cast.Caster.HeroVat.UpdateActiveEffectTarget(cast.FollowPosition);
+                float elapsed = SimulationNow - cast.Started;
+                int frame = HeroSkillTimeline.FrameAt(elapsed, cast.Clip.duration, cast.Clip.frameCount);
+                for (int z = 0; z < cast.Skill.Zones.Length; z++)
+                {
+                    var zone = cast.Skill.Zones[z];
+                    int end = Mathf.Clamp(Mathf.Max(zone.StartFrame, zone.EndFrame), 0, cast.Clip.frameCount - 1);
+                    while (zone.Enabled && cast.NextFrames[z] <= frame && cast.NextFrames[z] <= end)
+                    {
+                        int hitFrame = cast.NextFrames[z];
+                        if (zone.IsProjectile && !cast.Launched[z])
+                        {
+                            cast.LaunchOrigins[z] = cast.Caster.Simulation.Position; cast.Launched[z] = true;
+                            LaunchHeroCombatProjectile(cast, zone);
+                            cast.NextFrames[z] = int.MaxValue;
+                            break;
+                        }
+                        ResolveHeroSkillZone(cast, zone, hitFrame, z);
+                        cast.NextFrames[z] = HeroSkillTimeline.NextPulse(hitFrame, zone.IsSweep || zone.IsProjectile ? 1 : zone.RepeatFrames, end);
+                    }
+                }
+                if (elapsed >= cast.Clip.duration) _heroCasts.RemoveAt(i);
+            }
+            float dt = Mathf.Max(.001f, SimulationDelta);
+            for (int i = _heroDisplacements.Count - 1; i >= 0; i--)
+            {
+                var movement = _heroDisplacements[i];
+                if (!HeroSkillAlive(movement.Target)) { RemoveHeroDisplacement(i); continue; }
+                var step = movement.Impulse
+                    ? movement.Velocity * Mathf.Min(dt, Mathf.Max(0, movement.Seconds))
+                    : movement.Remaining * Mathf.Clamp01(dt / Mathf.Max(.001f, movement.Seconds));
+                if (pathService.TryApplyHeroDisplacement(movement.Target.Simulation, step)) _projectileGridStale = true;
+                movement.Remaining -= step;
+                movement.Seconds -= dt;
+                if (movement.Seconds <= 0) RemoveHeroDisplacement(i);
+            }
+            for (int i = _heroKnockUps.Count - 1; i >= 0; i--)
+            {
+                var flight = _heroKnockUps[i];
+                float t = (SimulationNow - flight.Started) / flight.Duration;
+                bool active = HeroSkillAlive(flight.Target) && t < 1;
+                SetHeroAirborne(flight.Target, active, active ?
+                    HeroSkillTimeline.AirborneHeight(t, flight.Height, flight.InitialHeight) : 0);
+                if (!active) _heroKnockUps.RemoveAt(i);
+            }
+        }
+
+        private bool HeroSkillAlive(Soldier soldier)
+        {
+            if (soldier == null || soldier.Retired || soldier.Simulation == null || !soldier.Simulation.Exists) return false;
+            var state = _entityManager.GetComponentData<RecoilBattleEcsState>(soldier.Entity);
+            return state.Active != 0 && state.Health > 0;
+        }
+
+        private void LaunchHeroCombatProjectile(HeroCast cast, HeroHitZone zone)
+        {
+            var hero = cast.Caster;
+            float speed = Mathf.Max(.01f, zone.ProjectileSpeed);
+            Vector3 origin = hero.Simulation.Position + cast.Facing * zone.Offset + Vector3.up;
+            var facing = cast.Facing * Quaternion.Euler(0, zone.Yaw, 0);
+            float range = Mathf.Max(cast.Stats.Range + 2, Vector3.Distance(origin, cast.Target) + 2);
+            var destination = origin + facing * Vector3.forward * range;
+            if (cast.Castle)
+            {
+                destination = new Vector3(cast.Target.x, origin.y, cast.Target.z);
+                range = Vector2.Distance(new Vector2(origin.x, origin.z), new Vector2(destination.x, destination.z));
+            }
+            float duration = RecoilCombatProjectileTrajectory.TravelDuration(range, speed);
+            GameObject visual = null;
+            int fxIndex = Mathf.Clamp(zone.EffectIndex, 0, Mathf.Max(0, cast.Clip.effects.Length - 1));
+            if (cast.Clip.effects.Length > 0 && cast.Clip.effects[fxIndex].prefab != null)
+                visual = GetOrCreateVisualProjectilePool().Spawn(cast.Clip.effects[fxIndex].prefab, origin, facing,
+                    hero.HeroVat.transform.lossyScale.x, destination, speed, true);
+            _pendingCombatProjectiles.Add(new PendingCombatProjectile
+            {
+                FlightStartTime = SimulationNow, LastProcessedTime = SimulationNow,
+                FlightStartPoint = origin, ImpactPoint = destination, TravelDuration = duration,
+                ImpactTime = SimulationNow + duration, ArcHeight = 0, Attacker = hero.Entity,
+                Team = hero.IsBlue ? 0 : 1, IntendedTarget = cast.TargetUnit != null ? cast.TargetUnit.Entity : Entity.Null,
+                Damage = Mathf.Max(0, Mathf.RoundToInt(cast.Stats.Damage * zone.DamageMultiplier)),
+                AttackerStats = cast.Stats, SecondaryDamage = RecoilUnitDamage.UsesRangedArmor(cast.Stats),
+                AreaRadius = 0, CollisionRadius = Mathf.Max(.01f, zone.Radius), CastleTarget = cast.Castle,
+                CastleTeam = hero.IsBlue ? RecoilCastleTeam.Red : RecoilCastleTeam.Blue, HeroVisual = visual
+            });
+        }
+
+        public static void HeroZonePose(HeroHitZone zone, NhiQuoc.Tools.HeroVatPlayer.Clip clip, int frame,
+            Vector3 caster, Vector3 target, Quaternion facing, Vector3 scale, out Vector3 center, out Quaternion rotation)
+        {
+            center = zone.OriginPosition(caster, target);
+            rotation = facing;
+            // The selected origin changes the center; all damage areas remain on XZ.
+            var planarForward = rotation * Vector3.forward;
+            planarForward.y = 0;
+            if (planarForward.sqrMagnitude < .0001f)
+            { planarForward = facing * Vector3.forward; planarForward.y = 0; }
+            rotation = planarForward.sqrMagnitude > .0001f ? Quaternion.LookRotation(planarForward) : Quaternion.identity;
+            center += rotation * zone.Offset;
+            rotation *= Quaternion.Euler(0, zone.Yaw, 0);
+            if (zone.IsProjectile)
+                center += rotation * Vector3.forward * zone.ProjectileTravel(frame, clip.duration, clip.frameCount);
+            if (zone.IsSweep)
+            {
+                zone.SweepSample(frame, out var sweepYaw, out _);
+                rotation *= Quaternion.Euler(0, sweepYaw, 0);
+            }
+        }
+
+        private void ResolveHeroSkillZone(HeroCast cast, HeroHitZone zone, int frame, int zoneIndex)
+        {
+            HeroZonePose(zone, cast.Clip, frame, zone.IsProjectile ? cast.LaunchOrigins[zoneIndex] : cast.Caster.Simulation.Position,
+                zone.Anchor == HeroHitAnchor.FollowTarget ? cast.FollowPosition : cast.Target,
+                cast.Facing, cast.Caster.HeroVat.transform.lossyScale, out var center, out var rotation);
+            var inverse = Quaternion.Inverse(rotation);
+            float angle = -1;
+            if (zone.IsSweep) zone.SweepSample(frame, out _, out angle);
+            bool once = zone.IsSweep || zone.IsProjectile;
+            var hitTargets = once ? cast.SweptTargets[zoneIndex] ??= new HashSet<Entity>() : null;
+            float segment = zone.IsProjectile && frame > zone.StartFrame ?
+                zone.ProjectileTravel(frame, cast.Clip.duration, cast.Clip.frameCount) -
+                zone.ProjectileTravel(frame - 1, cast.Clip.duration, cast.Clip.frameCount) : 0;
+            var enemies = cast.Caster.IsBlue ? _redTeam : _blueTeam;
+            if (cast.Castle)
+            {
+                var point = cast.CastleBounds.ClosestPoint(center);
+                var local = inverse * (point - center);
+                bool castleHit = zone.IsProjectile ? zone.ContainsProjectileSegment(local, segment, 0) : zone.Contains(local, 0, angle);
+                if (castleHit && (!once || !cast.SweptCastle[zoneIndex]))
+                {
+                    if (once) cast.SweptCastle[zoneIndex] = true;
+                    int damage = Mathf.Max(0, Mathf.RoundToInt(cast.Stats.Damage * zone.DamageScale(local)));
+                    if (cast.Caster.IsBlue) _redCastleHealthRemaining = Mathf.Max(0, _redCastleHealthRemaining - damage);
+                    else _blueCastleHealthRemaining = Mathf.Max(0, _blueCastleHealthRemaining - damage);
+                    if (damage > 0) { _castleAttackCount++; _castleDamageTotal += damage; }
+                }
+            }
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                var target = enemies[i];
+                if (!HeroSkillAlive(target)) continue;
+                var position = target.Simulation.Position;
+                var local = inverse * (position - center);
+                bool hit = zone.IsProjectile ? zone.ContainsProjectileSegment(local, segment, GetCombatBodyRadius(target)) :
+                    zone.Contains(local, GetCombatBodyRadius(target), angle);
+                if (!hit ||
+                    hitTargets != null && !hitTargets.Add(target.Entity)) continue;
+                var state = _entityManager.GetComponentData<RecoilBattleEcsState>(target.Entity);
+                int damage = RecoilUnitDamage.Calculate(cast.Stats.Damage * zone.DamageScale(local), cast.Stats, state.Stats);
+                if (damage > 0)
+                {
+                    state.Health = Mathf.Max(0, state.Health - damage);
+                    state.LastAttacker = cast.Caster.Entity;
+                    state.LastAttackedTime = SimulationNow;
+                    if (state.Health == 0) { state.Active = 0; state.Target = Entity.Null; }
+                    _entityManager.SetComponentData(target.Entity, state);
+                    if (state.Health == 0) { KillSoldier(target); continue; }
+                }
+                // Heroes receive skill damage, but are immune to displacement and knock-up.
+                if (target.HeroId > 0) continue;
+                if (zone.Force == HeroHitForce.KnockUp ||
+                    zone.Force == HeroHitForce.RadialPush || zone.Force == HeroHitForce.ForwardPush)
+                    LaunchHeroKnockUp(target, zone);
+                if (zone.Force == HeroHitForce.None) continue;
+                var direction = zone.Force == HeroHitForce.ForwardPush ? cast.Facing * Vector3.forward : position - center;
+                direction.y = 0;
+                float distance = zone.Force == HeroHitForce.RadialPush ?
+                    zone.RadialPushDistance(direction.magnitude) : zone.ForceDistance;
+                if (distance <= 0) continue;
+                if (zone.Force == HeroHitForce.Pull)
+                { distance = Mathf.Min(distance, direction.magnitude); direction = -direction; }
+                if (direction.sqrMagnitude <= .0001f) direction = cast.Facing * Vector3.forward;
+                bool impulse = zone.Force == HeroHitForce.RadialPush || zone.Force == HeroHitForce.ForwardPush;
+                float duration = Mathf.Max(.03f,
+                    impulse || zone.Force == HeroHitForce.KnockUp ? zone.KnockUpDuration : zone.ForceDuration);
+                SetForcedDisplacement(target, true);
+                _heroDisplacements.Add(new HeroDisplacement { Target = target,
+                    // Capture the launch velocity once; airborne motion then carries the target.
+                    Impulse = impulse, Velocity = direction.normalized * (distance / duration),
+                    Remaining = direction.normalized * distance, Seconds = duration });
+            }
+        }
+    }
+}

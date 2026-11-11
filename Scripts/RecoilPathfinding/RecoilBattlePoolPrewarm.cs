@@ -1,0 +1,301 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Profiling;
+
+namespace RecoilPathfinding
+{
+    public sealed partial class RecoilAutoBattleDemo
+    {
+        [Header("Pool chuẩn bị trước trận")]
+        [SerializeField] private bool prewarmSoldierPools = true;
+        [SerializeField, Min(0)] private int prewarmPerTypePerTeam = 1500;
+        [SerializeField, Min(1)] private int prewarmHeroesPerTypePerTeam = 8;
+        [SerializeField, Min(1)] private int prewarmMaxCreatesPerFrame = 16;
+        [SerializeField, Min(0.5f)] private float prewarmFrameBudgetMs = 4f;
+        [SerializeField, Min(1f)] private float prewarmMaxSeconds = 90f;
+        [SerializeField, Min(64)] private int prewarmMemoryBudgetMb = 1536;
+        private Transform _inactiveUnitPoolRoot;
+        private Coroutine _poolPrewarmCoroutine;
+        private bool _poolPrewarmRunning, _poolPrewarmFinished;
+        private string _poolPrewarmStatus;
+        private float _poolPrewarmProgress;
+        private string _poolPrewarmLabel = "Đang tải… 0%";
+        private GUIStyle _poolPrewarmLabelStyle;
+        public string PoolPrewarmSummary => _poolPrewarmStatus;
+
+        private sealed class PrewarmPool
+        {
+            public GameObject Template;
+            public bool Blue;
+            public Queue<GameObject> Pool;
+            public int Target;
+        }
+
+        private GameObject CreateInactivePooledUnit(GameObject template, bool blue)
+        {
+            if (_inactiveUnitPoolRoot == null)
+            {
+                var root = new GameObject("Inactive Soldier Pool");
+                root.SetActive(false);
+                root.transform.SetParent(transform, false);
+                _inactiveUnitPoolRoot = root.transform;
+            }
+            // Instantiating under an inactive parent prevents OnEnable from registering
+            // animation/rendering work before this model is actually bound to a soldier.
+            var unit = Instantiate(ResolvePresentationTemplate(template), _inactiveUnitPoolRoot);
+            unit.SetActive(false);
+            var hero = unit.GetComponent<NhiQuoc.Tools.HeroVatPlayer>();
+            if (hero != null) { hero.keyboardPreview = false; hero.PrepareForPool(); }
+            var type = Mathf.Clamp(GetCharacterType(template), 0, CharacterTypeCount - 1);
+            if (blue) _bluePresentationModelsCreatedByType[type]++;
+            else _redPresentationModelsCreatedByType[type]++;
+            return unit;
+        }
+
+        private void BeginPoolPrewarm()
+        {
+            if (_poolPrewarmRunning) return;
+            _poolPrewarmRunning = true;
+            _poolPrewarmProgress = 0f;
+            _poolPrewarmLabel = "Đang tải… 0%";
+            _poolPrewarmCoroutine = StartCoroutine(PrewarmPoolsBeforeMatch());
+        }
+
+        private IEnumerator PrewarmPoolsBeforeMatch()
+        {
+            // First yield lets the lobby display its loading state before creating any models.
+            _lobbyError = null;
+            yield return null;
+            var pools = new List<PrewarmPool>();
+            var blueTemplates = new HashSet<GameObject>();
+            var redTemplates = new HashSet<GameObject>();
+            if (_heroPrefabs == null)
+            {
+                var catalogRequest = Resources.LoadAsync<RecoilHeroPrefabCatalog>("RecoilHeroPrefabs");
+                yield return catalogRequest;
+                _heroPrefabs = catalogRequest.asset as RecoilHeroPrefabCatalog;
+            }
+            if (_heroPrefabs != null && _heroPrefabs.Heroes != null)
+                foreach (var hero in _heroPrefabs.Heroes)
+                    for (int team = 0; team < 2; team++)
+                        if (hero.Prefab != null)
+                        {
+                            bool blue = team == 0;
+                            (blue ? blueTemplates : redTemplates).Add(hero.Prefab);
+                            pools.Add(new PrewarmPool { Template = hero.Prefab, Blue = blue, Pool = GetUnitPool(blue, hero.Prefab), Target = Mathf.Max(1, prewarmHeroesPerTypePerTeam) });
+                        }
+            for (var type = 0; type < CharacterTypeCount; type++)
+                for (var team = 0; team < 2; team++)
+                {
+                    var blue = team == 0;
+                    var template = FindTemplateForType(blue, type);
+                    var seen = blue ? blueTemplates : redTemplates;
+                    if (template != null && seen.Add(template))
+                        pools.Add(new PrewarmPool { Template = template, Blue = blue, Pool = GetUnitPool(blue, template), Target = Mathf.Max(0, prewarmPerTypePerTeam) });
+                }
+            var target = Mathf.Max(0, prewarmPerTypePerTeam);
+            var baselineMemory = Profiler.GetTotalAllocatedMemoryLong();
+            var budgetBytes = (long)Mathf.Max(64, prewarmMemoryBudgetMb) * 1024 * 1024;
+            if (SystemInfo.systemMemorySize > 0)
+                budgetBytes = System.Math.Min(budgetBytes, (long)SystemInfo.systemMemorySize * 1024 * 1024 / 4);
+            var totalMemoryLimit = SystemInfo.systemMemorySize > 0
+                ? (long)SystemInfo.systemMemorySize * 1024 * 1024 * 3 / 4 : long.MaxValue;
+            var start = Time.realtimeSinceStartupAsDouble;
+            var lastStatus = -1d;
+            var cursor = 0;
+            var created = 0;
+            var stopReason = "đủ số lượng";
+            var finished = false;
+            var watch = new System.Diagnostics.Stopwatch();
+            while (!finished && pools.Count > 0)
+            {
+                var hasShortfall = false;
+                foreach (var pool in pools) if (pool.Pool.Count < pool.Target) { hasShortfall = true; break; }
+                if (!hasShortfall) break;
+                watch.Restart();
+                var creates = 0;
+                var inspected = 0;
+                while (creates < Mathf.Max(1, prewarmMaxCreatesPerFrame) &&
+                    watch.Elapsed.TotalMilliseconds < Mathf.Max(0.5f, prewarmFrameBudgetMs))
+                {
+                    var memory = Profiler.GetTotalAllocatedMemoryLong();
+                    if (memory - baselineMemory >= budgetBytes || memory >= totalMemoryLimit)
+                    { stopReason = "giới hạn bộ nhớ"; finished = true; break; }
+                    if (Time.realtimeSinceStartupAsDouble - start >= Mathf.Max(1f, prewarmMaxSeconds))
+                    { stopReason = "giới hạn thời gian tải"; finished = true; break; }
+                    var pool = pools[cursor];
+                    cursor = (cursor + 1) % pools.Count;
+                    if (pool.Pool.Count >= pool.Target)
+                    {
+                        if (++inspected >= pools.Count) { finished = true; break; }
+                        continue;
+                    }
+                    inspected = 0;
+                    GameObject model = null;
+                    try { model = CreateInactivePooledUnit(pool.Template, pool.Blue); }
+                    catch (System.Exception e) { Debug.LogException(e, this); stopReason = "không tạo được prefab"; }
+                    if (model == null) { finished = true; break; }
+                    pool.Pool.Enqueue(model);
+                    creates++; created++;
+                }
+                var ready = 0;
+                int totalTarget = 0;
+                foreach (var pool in pools) { ready += Mathf.Min(pool.Target, pool.Pool.Count); totalTarget += pool.Target; }
+                _poolPrewarmProgress = totalTarget > 0 ? Mathf.Clamp01(ready / (float)totalTarget) : 1f;
+                if (Time.realtimeSinceStartupAsDouble - lastStatus >= 0.25d || finished)
+                {
+                    _poolPrewarmLabel = $"Đang tải… {_poolPrewarmProgress * 100f:F0}%";
+                    lastStatus = Time.realtimeSinceStartupAsDouble;
+                }
+                if (!finished) yield return null;
+            }
+            yield return PrepareEndgamePresentation();
+            yield return PreloadPoolRenderAssets(pools);
+            var minimum = pools.Count > 0 ? int.MaxValue : 0;
+            foreach (var pool in pools) minimum = Mathf.Min(minimum, pool.Pool.Count);
+            var seconds = Time.realtimeSinceStartupAsDouble - start;
+            var addedMb = (Profiler.GetTotalAllocatedMemoryLong() - baselineMemory) / (1024d * 1024d);
+            int heroesReady = 0, heroesTarget = 0;
+            foreach (var pool in pools) if (pool.Template.GetComponent<NhiQuoc.Tools.HeroVatPlayer>() != null)
+            { heroesReady += Mathf.Min(pool.Pool.Count, pool.Target); heroesTarget += pool.Target; }
+            _poolPrewarmStatus = $"Pool tướng: {heroesReady}/{heroesTarget}; lính: mục tiêu {target:N0} mỗi mẫu/phe; {stopReason}.";
+            Debug.Log($"[Soldier pool prewarm] Created={created:N0}, minimum per template/team={minimum}/{target}, " +
+                $"elapsed={seconds:F1}s, added Unity allocated memory={addedMb:F1} MB, stop={stopReason}. " +
+                "Hidden models have no simulation entities or GPU skin registrations; normal spawn fills any shortfall.", this);
+            _poolPrewarmFinished = true;
+            _poolPrewarmProgress = 1f;
+            _poolPrewarmRunning = false;
+            _poolPrewarmCoroutine = null;
+            if (isActiveAndEnabled && !_lobbyStarted) StartMatchFromLobby();
+        }
+
+        private void CancelPoolPrewarm()
+        {
+            if (_poolPrewarmCoroutine != null) StopCoroutine(_poolPrewarmCoroutine);
+            _poolPrewarmCoroutine = null;
+            _poolPrewarmRunning = false;
+        }
+
+        private Texture2D _fantasyLoadingAtlas;
+        private bool _fantasyLoadingAtlasLoaded;
+        private Material _fantasyLoadingFillMaterial;
+
+        private void DrawPoolLoadingBar(Rect rect)
+        {
+            var previousEnabled = GUI.enabled;
+            GUI.enabled = true;
+            if (!_fantasyLoadingAtlasLoaded)
+            {
+                _fantasyLoadingAtlas = Resources.Load<Texture2D>("Loading/FantasyLoadingAtlas");
+                _fantasyLoadingAtlasLoaded = true;
+            }
+            _poolPrewarmLabelStyle ??= new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold
+            };
+            _poolPrewarmLabelStyle.fontSize = Mathf.Clamp(Mathf.RoundToInt(Screen.width / 70f), 20, 30);
+            SetLabelTextColor(_poolPrewarmLabelStyle, Color.white);
+            var old = GUI.color;
+            GUI.color = Color.white;
+            var progress = Mathf.Clamp01(_poolPrewarmProgress);
+            var visualHeight = _fantasyLoadingAtlas != null
+                ? rect.width * _fantasyLoadingAtlas.height / (_fantasyLoadingAtlas.width * 2f)
+                : rect.height * 3f;
+            var art = new Rect(rect.x, rect.center.y - visualHeight * .5f, rect.width, visualHeight);
+            if (_fantasyLoadingAtlas != null)
+            {
+                // Use only the empty frame. The fill is a rounded, solid purple shape.
+                GUI.DrawTextureWithTexCoords(art, _fantasyLoadingAtlas, new Rect(0, .4668f, 1, .5f), true);
+                var opening = new Rect(.175f, .445f, .65f, .135f);
+                const float leftOverlap = .035f;
+                var fill = new Rect(art.x + art.width * (opening.x - leftOverlap), art.y + art.height * opening.y,
+                    art.width * (opening.width + leftOverlap) * progress, art.height * opening.height * .75f);
+                fill.y += art.height * opening.height * .125f - 3f;
+                DrawPurpleLoadingFill(fill);
+                // Redraw the frame above the fill, excluding its inner opening.
+                DrawLoadingFramePatch(art, new Rect(0, 0, 1, opening.y));
+                DrawLoadingFramePatch(art, new Rect(0, opening.yMax, 1, 1 - opening.yMax));
+                DrawLoadingFramePatch(art, new Rect(0, opening.y, opening.x, opening.height));
+                DrawLoadingFramePatch(art, new Rect(opening.xMax, opening.y, 1 - opening.xMax, opening.height));
+            }
+            else
+            {
+                GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0,
+                    new Color(.06f, .04f, .15f), 0, rect.height * .5f);
+                DrawPurpleLoadingFill(new Rect(rect.x, rect.y, rect.width * progress, rect.height));
+            }
+            GUI.color = Color.white;
+            var label = new Rect(rect.x, art.center.y - visualHeight * .26f - 42f, rect.width, 38f);
+            DrawHighlightedLabel(label, _poolPrewarmLabel, _poolPrewarmLabelStyle, 1f);
+            GUI.enabled = previousEnabled;
+            GUI.color = old;
+        }
+        private void DrawPurpleLoadingFill(Rect fill)
+        {
+            if (fill.width <= 0f || fill.height <= 0f) return;
+            if (Event.current.type != EventType.Repaint) return;
+            if (_fantasyLoadingFillMaterial == null)
+            {
+                var shader = Resources.Load<Shader>("Loading/FantasyLoadingFill");
+                if (shader != null && shader.isSupported)
+                    _fantasyLoadingFillMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+            }
+            if (_fantasyLoadingFillMaterial != null)
+            {
+                _fantasyLoadingFillMaterial.SetVector("_Size", new Vector4(fill.width, fill.height, 0, 0));
+                _fantasyLoadingFillMaterial.SetFloat("_Phase", Time.unscaledTime);
+                Graphics.DrawTexture(fill, Texture2D.whiteTexture, _fantasyLoadingFillMaterial);
+                return;
+            }
+            GUI.DrawTexture(fill, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0,
+                new Color(.64f, .16f, .95f, 1f), 0, Mathf.Min(fill.height, fill.width) * .5f);
+        }
+
+        private void DrawLoadingFramePatch(Rect art, Rect patch)
+        {
+            GUI.DrawTextureWithTexCoords(new Rect(art.x + art.width * patch.x,
+                art.y + art.height * patch.y, art.width * patch.width, art.height * patch.height),
+                _fantasyLoadingAtlas,
+                new Rect(patch.x, .4668f + (1f - patch.yMax) * .5f, patch.width, patch.height * .5f), true);
+        }
+#if UNITY_EDITOR
+        public static void ValidateInactiveSoldierPool()
+        {
+            var owner = new GameObject("Temporary soldier pool check");
+            owner.SetActive(false);
+            var template = new GameObject("BO_BINH_blue");
+            template.SetActive(false);
+            template.AddComponent<RecoilNavMeshPathAgent>();
+            try
+            {
+                var battle = owner.AddComponent<RecoilAutoBattleDemo>();
+                var prepared = battle.CreateInactivePooledUnit(template, true);
+                if (prepared.activeSelf || prepared.activeInHierarchy ||
+                    prepared.GetComponent<RecoilNavMeshPathAgent>().Simulation != null || battle._gpuSkinnedCrowd != null)
+                    throw new System.InvalidOperationException("Prewarmed models must stay inactive without simulation or GPU registrations.");
+                battle.GetUnitPool(true, template).Enqueue(prepared);
+                // Pool hits bypass the creation budget and preserve the existing instance.
+                battle._newUnitsCreatedThisFrame = int.MaxValue;
+                var reused = battle.GetOrCreatePooledUnit(template, true);
+                if (reused != prepared || reused.activeSelf || reused.transform.parent != battle.transform)
+                    throw new System.InvalidOperationException("Pool checkout must reuse and reparent the inactive model.");
+                battle._newUnitsCreatedThisFrame = 0;
+                var fresh = battle.GetOrCreatePooledUnit(template, false);
+                if (fresh == null || fresh.activeSelf || fresh.transform.parent != battle.transform ||
+                    fresh.transform.parent == battle._inactiveUnitPoolRoot)
+                    throw new System.InvalidOperationException("A new model must leave the inactive pool root before spawning.");
+                if (battle._newUnitsCreatedThisFrame != 1 || battle.GetUnitPool(true, template).Count != 0)
+                    throw new System.InvalidOperationException("Creation budgeting and pool counts must remain correct.");
+                Debug.Log("Soldier pool checks passed: inactive prewarm, no simulation/GPU registration, pool reuse, active-root parenting and creation budget. Test 500/type/team through Start to measure actual loading time and memory.");
+            }
+            finally
+            {
+                DestroyImmediate(owner);
+                DestroyImmediate(template);
+            }
+        }
+#endif
+    }
+}

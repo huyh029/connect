@@ -1,0 +1,6 @@
+Trieu Van: single hero VAT; height 0.75; 30 FPS.
+Trieu Van: LOD family 24_body_0.3_0_0, using 24_body_0.3_0_0; skipped 5 lower/duplicate levels.
+Trieu Van/24_body_0.3_0_0: 97486 vertices; 4096x9576 RGBAHalf; 299,3 MiB
+Trieu Van/24_body_0.3_0_0.001: 3238 vertices; 4096x399 RGBAHalf; 12,5 MiB
+Trieu Van: height=0,75; scale=0,3986506; 5 clips; 399 frames; FX=2
+SUCCESS: Trieu Van, Idle height 0.75.
