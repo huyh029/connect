@@ -257,6 +257,7 @@ namespace RecoilPathfinding
                 suppressed.Damage = 0;
                 suppressed.TargetIndex = -1;
                 _contactAttacks[i] = suppressed;
+                if (attack.Damage > 0 && attack.TargetIndex >= 0) hero.DiagFired++;
                 if (hero.Retired || attack.Damage <= 0 || attack.TargetIndex < 0 ||
                     attack.TargetIndex >= _combatSoldiers.Count || SimulationNow < hero.HeroAnimationUntil) continue;
                 var target = _combatSoldiers[attack.TargetIndex];
@@ -281,6 +282,7 @@ namespace RecoilPathfinding
                 if (chosenClip < 0)
                 {
                     // None reaches yet: walk in (the hero's range already covers its longest skill).
+                    hero.DiagWalkIns++;
                     var waiting = _entityManager.GetComponentData<RecoilBattleEcsState>(hero.Entity);
                     waiting.AttackCooldown = 0;
                     _entityManager.SetComponentData(hero.Entity, waiting);
@@ -303,6 +305,8 @@ namespace RecoilPathfinding
             if (direction.sqrMagnitude > .0001f) hero.Agent.transform.rotation = Quaternion.LookRotation(direction);
             hero.HeroVat.SetAttackTarget(targetPosition, targetUnit?.Agent != null ? targetUnit.Agent.transform : null);
             hero.HeroVat.PlayExact(chosenClip);
+            hero.DiagCasts++;
+            hero.TotalCasts++;
             int actualClip = hero.HeroVat.ActiveClipIndex;
             var clip = clips[actualClip];
             var skill = _heroSkills.Find(hero.HeroId)?.Find(actualClip);
@@ -327,6 +331,7 @@ namespace RecoilPathfinding
         private void ProcessHeroSkillHits()
         {
             UpdateHeroRooting();
+            LogHeroDiagnostics();
             if (_matchFinished) { ClearHeroSkillCasts(); return; }
             for (int i = _heroCasts.Count - 1; i >= 0; i--)
             {

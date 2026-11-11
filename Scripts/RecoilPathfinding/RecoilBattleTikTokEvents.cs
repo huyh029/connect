@@ -77,7 +77,8 @@ namespace RecoilPathfinding
                 reward.Active = team[team.Count - 1];
                 reward.Active.DonorName = reward.DisplayName ?? reward.User;
                 reward.Active.DonorId = reward.User;
-                QueueHeroSummonIntro(reward.User, reward.Active.DonorName, reward.Id, reward.Blue);
+                if (!_testSkipIntroUsers.Contains(reward.User))
+                    QueueHeroSummonIntro(reward.User, reward.Active.DonorName, reward.Id, reward.Blue);
                 reward.Pending = false;
                 budget--;
                 Debug.Log($"TikTok: {reward.User} triệu hồi {config.Name} (ID {config.Id}) → {(reward.Blue ? "Xanh" : "Đỏ")}.", this);

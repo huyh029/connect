@@ -72,13 +72,19 @@ namespace RecoilPathfinding
 
         public bool IsSweep => Mode == HeroHitMode.Sweep && Shape == HeroHitShape.Cone;
         public bool IsProjectile => Anchor == HeroHitAnchor.StraightProjectile;
+        /// <summary>Hero body radius (2) + the largest target body (another hero, 2): centers this far apart are touching.</summary>
+        public const float ContactPadding = 4f;
+
         public float EngagementReach(float configuredRange)
         {
             if (Anchor == HeroHitAnchor.Target || Anchor == HeroHitAnchor.FollowTarget || IsProjectile)
                 return Mathf.Max(.1f, configuredRange);
             float extent = Shape == HeroHitShape.Box ? BoxSize.magnitude * .5f : Radius;
             float reach = new Vector2(Offset.x, Offset.z).magnitude + Mathf.Max(.01f, extent);
-            return Mathf.Max(.1f, Mathf.Min(configuredRange, reach));
+            // The configured range is the gap between bodies, but reach is measured center to center: add both bodies
+            // (the hero's and, at most, another hero's). Capping at the bare range (1.5 for melee heroes) made every
+            // melee skill unusable, since two heroes' centers never get closer than their bodies allow.
+            return Mathf.Max(.1f, Mathf.Min(configuredRange + ContactPadding, reach));
         }
         public float ProjectileTravel(float frame, float duration, int frames) =>
             Mathf.Max(0, frame - StartFrame) * duration / Mathf.Max(1, frames - 1) * Mathf.Max(.01f, ProjectileSpeed);

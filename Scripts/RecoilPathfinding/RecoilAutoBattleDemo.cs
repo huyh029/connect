@@ -1329,6 +1329,7 @@ namespace RecoilPathfinding
             Mathf.Min(MaximumStagedPerTypePerTeam, RequestedPreparedTypeCount(blue, type));
         private int RequestedPreparedTypeCount(bool blue, int type)
         {
+            if (_testHeroesOnly) return 0; // hero test: heroes only, no soldiers
             var customCount = CustomInitialTypeCount(type);
             if (customCount >= 0) return customCount;
             var total = Mathf.Max(2, preparedArmyTotal);
@@ -1565,6 +1566,8 @@ namespace RecoilPathfinding
             public float HeroAnimationUntil, NextHeroUlti;
             public int HeroAnimation = -1;
             public bool HeroRooted; // held in place while performing a skill
+            public int DiagFired, DiagCasts, DiagWalkIns; // hero diagnostics counters
+            public int TotalCasts; // skills cast since spawn (hero test tool)
             public float HeroUltiCooldown;
             public Vector3 FormationDestination;
             public bool FormationAssigned;
