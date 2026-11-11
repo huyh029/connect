@@ -327,7 +327,7 @@ namespace RecoilPathfinding
                                          "thành các hàng đều nhau, hàng nào cũng trải hết chiều ngang).")]
         private int formationUnitsPerLine = 50;
         [SerializeField, Min(4f), Tooltip("Chiều rộng (m) của đội hình tập kết mỗi phe, ngang so với hướng hai phe tiến vào " +
-                                         "nhau (bề rộng map khoảng 508 m). Chiều sâu tự ra theo số lính.")]
+                                         "nhau. Tự thu lại cho vừa bề rộng map thật (map hiện tại khoảng 85 m). Chiều sâu tự ra theo số lính.")]
         private float formationWidth = 390f;
 
         private bool TryBuildCustomInitialArmy(out string error, int[] runtimeCounts = null)
@@ -348,7 +348,9 @@ namespace RecoilPathfinding
             // Spots that cannot hold a unit (the castle, water, off the map) are skipped and the lines go on further
             // back, so the army spills around the castle instead of stopping at its wall. A spot is used only when it
             // is free on both sides, so the two armies stay mirror images.
-            var width = Mathf.Max(widest, Mathf.Min(formationWidth, MapWidthAcross(lateral)));
+            // Never wider than the ground on both sides of the middle line (the real map is far narrower than the
+            // spawn bounds), or the outer blocks would find no place at all.
+            var width = Mathf.Max(widest, Mathf.Min(formationWidth, UsableWidthAcross(middle, lateral)));
             var placements = new List<RecoilInitialArmyPlanner.Placement>();
             var projectedBlue = new Dictionary<(float, float), (Vector3 Blue, Vector3 Red)>();
             bool CanPlace(float cross, float depth, float radius)
@@ -444,18 +446,28 @@ namespace RecoilPathfinding
                 Convert(CreateDefaultInitialArmyLayout().Blocks), counts, radii);
         }
 
-        /// <summary>Width of the playable map measured along <paramref name="lateral"/> (across the battle axis).</summary>
-        private static float MapWidthAcross(Vector3 lateral)
+        /// <summary>
+        /// Width of the map across the battle axis that is usable on both sides of <paramref name="middle"/>: twice the
+        /// shorter distance from the middle to the map's edge along <paramref name="lateral"/>, less a small margin.
+        /// Uses the terrain map's real extent when there is one, else the spawn bounds.
+        /// </summary>
+        private float UsableWidthAcross(Vector3 middle, Vector3 lateral)
         {
-            float min = float.MaxValue, max = float.MinValue;
-            foreach (var x in new[] { SpawnMinX, SpawnMaxX })
-            foreach (var z in new[] { SpawnMinZ, SpawnMaxZ })
+            float minX = SpawnMinX, maxX = SpawnMaxX, minZ = SpawnMinZ, maxZ = SpawnMaxZ;
+            if (terrainMap != null && terrainMap.HasValidData)
             {
-                var along = x * lateral.x + z * lateral.z;
-                min = Mathf.Min(min, along);
-                max = Mathf.Max(max, along);
+                minX = Mathf.Max(minX, terrainMap.WorldOrigin.x);
+                minZ = Mathf.Max(minZ, terrainMap.WorldOrigin.z);
+                maxX = Mathf.Min(maxX, terrainMap.WorldOrigin.x + terrainMap.WorldSize.x);
+                maxZ = Mathf.Min(maxZ, terrainMap.WorldOrigin.z + terrainMap.WorldSize.y);
             }
-            return max - min;
+            // Distance from the middle to the box edge going +lateral and -lateral.
+            static float Reach(float from, float direction, float min, float max) =>
+                Mathf.Abs(direction) < 1e-4f ? float.MaxValue
+                    : direction > 0f ? (max - from) / direction : (min - from) / direction;
+            var forward = Mathf.Min(Reach(middle.x, lateral.x, minX, maxX), Reach(middle.z, lateral.z, minZ, maxZ));
+            var backward = Mathf.Min(Reach(middle.x, -lateral.x, minX, maxX), Reach(middle.z, -lateral.z, minZ, maxZ));
+            return Mathf.Max(4f, 2f * Mathf.Min(forward, backward) - 2f);
         }
 
         private bool TryProjectInitialArmyPoint(Vector3 point, bool blue, float radius, out Vector3 projected)
