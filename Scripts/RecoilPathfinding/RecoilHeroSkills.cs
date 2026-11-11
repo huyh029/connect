@@ -46,23 +46,86 @@ namespace RecoilPathfinding
         private RecoilHeroSkillLibrary _heroSkills;
         private bool _heroSkillsLoaded;
 
-        private float HeroEngagementRange(Soldier hero, float fallback)
+        private readonly List<int> _heroSkillCandidates = new();
+
+        private float ConfiguredHeroRange(Soldier hero, float fallback)
         {
             var config = lobbyHeroStats != null ? System.Array.Find(lobbyHeroStats, h => h.Id == hero.HeroId) : null;
-            float configured = config != null ? config.Stats.Range : fallback;
-            var profile = _heroSkills != null ? _heroSkills.Find(hero.HeroId) : null;
-            if (profile == null || hero.HeroVat == null) return configured;
-            int clipIndex = hero.HeroUltiCooldown > 0 && SimulationNow >= hero.NextHeroUlti ? 4 : hero.HeroVat.NextAttackClipIndex;
-            if (SimulationNow < hero.HeroAnimationUntil &&
-                (hero.HeroAnimation == 2 || hero.HeroAnimation == 4 || hero.HeroAnimation == 5))
-                clipIndex = hero.HeroAnimation;
-            var skill = profile.Find(clipIndex);
-            if (skill == null) return configured;
+            return config != null ? config.Stats.Range : fallback;
+        }
+
+        private bool HeroUltiReady(Soldier hero) =>
+            hero.HeroUltiCooldown > 0 && SimulationNow >= hero.NextHeroUlti &&
+            hero.HeroVat != null && hero.HeroVat.clips != null && hero.HeroVat.clips.Length > 4;
+
+        /// <summary>
+        /// Skills the hero may use now, in the order it prefers them: the ulti when ready, then the attack whose turn
+        /// it is, then the other attack.
+        /// </summary>
+        private void HeroSkillCandidates(Soldier hero, List<int> into)
+        {
+            into.Clear();
+            if (hero.HeroVat == null || hero.HeroVat.clips == null) return;
+            if (HeroUltiReady(hero)) into.Add(4);
+            int next = hero.HeroVat.NextAttackClipIndex;
+            into.Add(next);
+            int other = next == 5 ? 2 : 5;
+            if (other < hero.HeroVat.clips.Length) into.Add(other);
+        }
+
+        /// <summary>How far skill clip <paramref name="clipIndex"/> reaches, with a small safety margin; -1 without hit data.</summary>
+        private float HeroSkillReach(Soldier hero, int clipIndex, float configured)
+        {
+            var clips = hero.HeroVat != null ? hero.HeroVat.clips : null;
+            if (clips == null || clipIndex < 0 || clipIndex >= clips.Length) return -1;
+            var skill = _heroSkills != null ? _heroSkills.Find(hero.HeroId)?.Find(clipIndex) : null;
+            if (skill == null) return -1;
             float reach = 0;
             foreach (var zone in skill.Zones)
                 if (zone.Enabled) reach = Mathf.Max(reach, zone.EngagementReach(configured));
-            if (reach <= 0) return configured;
+            if (reach <= 0) return -1;
             return Mathf.Max(.1f, reach - Mathf.Min(.15f, reach * .05f));
+        }
+
+        /// <summary>
+        /// The hero's attack range: the longest reach among every skill it may use now (attack 1, attack 2 and the ulti
+        /// when ready). Combat stops the hero inside this range, so at least one skill always lands from there; it no
+        /// longer stands idle because the one skill that was probed happens to fall short.
+        /// </summary>
+        private float HeroEngagementRange(Soldier hero, float fallback)
+        {
+            float configured = ConfiguredHeroRange(hero, fallback);
+            if (_heroSkills == null || _heroSkills.Find(hero.HeroId) == null || hero.HeroVat == null) return configured;
+            HeroSkillCandidates(hero, _heroSkillCandidates);
+            float best = -1;
+            foreach (var clip in _heroSkillCandidates) best = Mathf.Max(best, HeroSkillReach(hero, clip, configured));
+            return best > 0 ? best : configured;
+        }
+
+        /// <summary>The first usable skill (ulti first) that reaches <paramref name="distance"/>; -1 if none does.</summary>
+        private int ChooseHeroSkill(Soldier hero, float distance, float configured)
+        {
+            HeroSkillCandidates(hero, _heroSkillCandidates);
+            foreach (var clip in _heroSkillCandidates)
+            {
+                var reach = HeroSkillReach(hero, clip, configured);
+                if (reach > 0 && distance <= reach) return clip;
+            }
+            return -1;
+        }
+
+        /// <summary>The usable skill reaching farthest; the plain attack when no skill has hit data.</summary>
+        private int LongestHeroSkill(Soldier hero, float configured)
+        {
+            HeroSkillCandidates(hero, _heroSkillCandidates);
+            int best = -1;
+            float bestReach = 0;
+            foreach (var clip in _heroSkillCandidates)
+            {
+                var reach = HeroSkillReach(hero, clip, configured);
+                if (reach > bestReach) { bestReach = reach; best = clip; }
+            }
+            return best >= 0 ? best : HeroUltiReady(hero) ? 4 : hero.HeroVat.NextAttackClipIndex;
         }
 
         private void ClearHeroSkillCasts()
@@ -204,15 +267,20 @@ namespace RecoilPathfinding
         private void BeginHeroSkill(Soldier hero, Vector3 targetPosition, RecoilUnitCombatStats stats,
             bool castle = false, Bounds castleBounds = default, Soldier targetUnit = null)
         {
+            // Pick among all three skills the first (ulti first) that actually reaches, so the ulti is only fired when
+            // it lands and a short attack never leaves the hero idle while another one would hit.
+            float configured = ConfiguredHeroRange(hero, stats.Range);
+            int chosenClip;
             if (!castle)
             {
                 if (!HeroSkillAlive(targetUnit)) return;
                 targetPosition = targetUnit.Simulation.Position;
-                float range = HeroEngagementRange(hero, stats.Range);
                 var offset = targetPosition - hero.Simulation.Position;
                 offset.y = 0;
-                if (offset.sqrMagnitude > range * range)
+                chosenClip = ChooseHeroSkill(hero, offset.magnitude, configured);
+                if (chosenClip < 0)
                 {
+                    // None reaches yet: walk in (the hero's range already covers its longest skill).
                     var waiting = _entityManager.GetComponentData<RecoilBattleEcsState>(hero.Entity);
                     waiting.AttackCooldown = 0;
                     _entityManager.SetComponentData(hero.Entity, waiting);
@@ -220,21 +288,28 @@ namespace RecoilPathfinding
                     return;
                 }
             }
-            int requestedClip = hero.HeroUltiCooldown > 0 && SimulationNow >= hero.NextHeroUlti ? 4 : 2;
+            else
+            {
+                // The castle: the first skill that reaches its walls, otherwise the one that reaches farthest.
+                var offset = castleBounds.ClosestPoint(hero.Simulation.Position) - hero.Simulation.Position;
+                offset.y = 0;
+                chosenClip = ChooseHeroSkill(hero, offset.magnitude, configured);
+                if (chosenClip < 0) chosenClip = LongestHeroSkill(hero, configured);
+            }
             var clips = hero.HeroVat.clips;
-            if (clips == null || requestedClip >= clips.Length) return;
+            if (clips == null || chosenClip < 0 || chosenClip >= clips.Length) return;
             var direction = targetPosition - hero.Agent.transform.position;
             direction.y = 0;
             if (direction.sqrMagnitude > .0001f) hero.Agent.transform.rotation = Quaternion.LookRotation(direction);
             hero.HeroVat.SetAttackTarget(targetPosition, targetUnit?.Agent != null ? targetUnit.Agent.transform : null);
-            hero.HeroVat.Play(requestedClip);
+            hero.HeroVat.PlayExact(chosenClip);
             int actualClip = hero.HeroVat.ActiveClipIndex;
             var clip = clips[actualClip];
             var skill = _heroSkills.Find(hero.HeroId)?.Find(actualClip);
             hero.HeroVat.ExternalProjectileEffects = skill != null && System.Array.Exists(skill.Zones, z => z.Enabled && z.IsProjectile);
             hero.HeroAnimation = actualClip;
             hero.HeroAnimationUntil = SimulationNow + clip.duration;
-            if (requestedClip == 4) hero.NextHeroUlti = SimulationNow + hero.HeroUltiCooldown;
+            if (actualClip == 4) hero.NextHeroUlti = SimulationNow + hero.HeroUltiCooldown; // only a real ulti spends it
             if (skill == null) return;
             var frames = new int[skill.Zones.Length];
             for (int z = 0; z < frames.Length; z++) frames[z] = Mathf.Max(0, skill.Zones[z].StartFrame);

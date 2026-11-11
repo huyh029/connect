@@ -163,12 +163,22 @@ namespace NhiQuoc.Tools
         public void Play(int index)
         {
             if (clips == null || index < 0 || index >= clips.Length) return;
+            // Attack 1 and Attack 2 take turns when both exist.
+            if (index == 2 && clips.Length > 5 && alternate) index = 5;
+            PlayExact(index);
+        }
+
+        /// <summary>Plays exactly clip <paramref name="index"/> (no attack alternation); the turns continue after it.</summary>
+        public void PlayExact(int index)
+        {
+            if (clips == null || index < 0 || index >= clips.Length) return;
             if (index == 3)
             {
                 foreach (var item in live) ResetEffect(item);
                 live.Clear();
             }
-            if (index == 2 && clips.Length > 5) { if (alternate) index = 5; alternate = !alternate; }
+            if (index == 2) alternate = true;
+            else if (index == 5) alternate = false;
             state = index; started = Time.time;
             var clip = clips[index];
             if (emitted == null || emitted.Length < clip.effects.Length)

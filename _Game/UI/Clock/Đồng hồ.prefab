@@ -35,7 +35,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 936.27954, y: 334.86328}
+  m_SizeDelta: {x: 936.27954, y: 334.86392}
   m_Pivot: {x: 0.19767353, y: 0.5}
 --- !u!222 &8084587057715164234
 CanvasRenderer:
@@ -2635,21 +2635,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecoilPathfinding.RecoilClockImagePreview
   clockRoot: {fileID: 7184435771441549497}
   layers:
-  - label: "N\xFAt Time"
-    sprite: {fileID: 21300000, guid: c9a08b0178bb33a4697fea8ef06b4eda, type: 3}
-    visible: 1
-    order: 0
-    size: {x: 640, y: 228.898}
-    scale: 1.4629368
-    position: {x: 193.48894, y: 0}
-    rotation: 0
-    attachTo: 
-    keepUpright: 0
-    pivot: {x: 0.5, y: 0.5}
   - label: "B\xE1nh r\u0103ng ngo\xE0i"
     sprite: {fileID: -3864289755627329464, guid: 0873346c6303aeb4cb7abb49dbaff8c4, type: 3}
     visible: 1
-    order: 1
+    order: 2
     size: {x: 640, y: 640}
     scale: 2
     position: {x: 0, y: 0}
@@ -2660,7 +2649,7 @@ MonoBehaviour:
   - label: "M\u1EB7t \u0111\u1ED3ng h\u1ED3"
     sprite: {fileID: -7077671757793278456, guid: 7836e6485d154b548b29d0362461e218, type: 3}
     visible: 1
-    order: 2
+    order: 3
     size: {x: 960, y: 640}
     scale: 0.5
     position: {x: 0, y: 0}
@@ -2671,7 +2660,7 @@ MonoBehaviour:
   - label: "V\xF2ng gi\u1EDD"
     sprite: {fileID: 21300000, guid: 1a15b17b874bb9a499905920069edfba, type: 3}
     visible: 1
-    order: 3
+    order: 4
     size: {x: 960, y: 640}
     scale: 1.06
     position: {x: 1.44, y: -2.34}
@@ -2682,7 +2671,7 @@ MonoBehaviour:
   - label: "V\xF2ng ph\xFAt"
     sprite: {fileID: 21300000, guid: 5cdf909683401ca4589af27f3a4dc7e4, type: 3}
     visible: 1
-    order: 4
+    order: 5
     size: {x: 800, y: 533.3333}
     scale: 1.722
     position: {x: 3.71, y: -6.43}
@@ -2693,7 +2682,7 @@ MonoBehaviour:
   - label: "Kim gi\u1EDD"
     sprite: {fileID: 4239695605362742889, guid: e35a4473e8d540642aa4c39c2d7eaee7, type: 3}
     visible: 1
-    order: 7
+    order: 8
     size: {x: 420, y: 210}
     scale: 0.5
     position: {x: 75.600006, y: 0}
@@ -2704,7 +2693,7 @@ MonoBehaviour:
   - label: "Kim ph\xFAt"
     sprite: {fileID: -6304326621345825750, guid: 40751a4992d409447852a84d82589fe1, type: 3}
     visible: 1
-    order: 8
+    order: 9
     size: {x: 520, y: 260}
     scale: 0.25
     position: {x: 166.4, y: 0}
@@ -2715,7 +2704,7 @@ MonoBehaviour:
   - label: "Ch\u1EC9 b\xE1o"
     sprite: {fileID: 4759230444655229854, guid: e867fa5602ca8ac448ee3cf0605c8893, type: 3}
     visible: 1
-    order: 9
+    order: 10
     size: {x: 480, y: 320}
     scale: 1
     position: {x: 0, y: 500}
@@ -2726,7 +2715,7 @@ MonoBehaviour:
   - label: "V\xF4 h\u1EA1n th\u1EDDi gian"
     sprite: {fileID: -2681072376003803787, guid: 692b4f0836110f94e84f1cd5cbf63a9b, type: 3}
     visible: 0
-    order: 10
+    order: 11
     size: {x: 560, y: 373}
     scale: 1
     position: {x: 20.32, y: -2.79}
@@ -2737,7 +2726,7 @@ MonoBehaviour:
   - label: "B\xE1nh r\u0103ng trong l\u1EDBn"
     sprite: {fileID: -3864289755627329464, guid: 0873346c6303aeb4cb7abb49dbaff8c4, type: 3}
     visible: 1
-    order: 5
+    order: 6
     size: {x: 640, y: 640}
     scale: 0.12
     position: {x: -90, y: -90}
@@ -2748,7 +2737,7 @@ MonoBehaviour:
   - label: "B\xE1nh r\u0103ng trong nh\u1ECF"
     sprite: {fileID: -3864289755627329464, guid: 0873346c6303aeb4cb7abb49dbaff8c4, type: 3}
     visible: 1
-    order: 6
+    order: 7
     size: {x: 640, y: 640}
     scale: 0.1
     position: {x: 120, y: 196.8}
@@ -3020,6 +3009,17 @@ MonoBehaviour:
     attachTo: "V\xF2ng ph\xFAt"
     keepUpright: 1
     pivot: {x: 0.5, y: 0.5}
+  - label: "N\xFAt Time"
+    sprite: {fileID: 21300000, guid: c9a08b0178bb33a4697fea8ef06b4eda, type: 3}
+    visible: 1
+    order: 1
+    size: {x: 640, y: 228.89842}
+    scale: 1.4629368
+    position: {x: 193.48894, y: 0}
+    rotation: 0
+    attachTo: 
+    keepUpright: 0
+    pivot: {x: 0.5, y: 0.5}
   rootPosition: {x: 0, y: 0}
   rootScale: 1.429
   layoutVersion: 1
@@ -3088,8 +3088,11 @@ MonoBehaviour:
   clankSound: {fileID: 8300000, guid: 356f6fd22824ec741bfc059a894215b0, type: 3}
   openCloseVolume: 0.85
   gearClankVolume: 0.4
-  gearClankEvery: 30
-  gearClankMinInterval: 0.07
+  clankFullSpeed: 720
+  clankSlowVolume: 0.25
+  clankFastPitch: 0.2
+  clankMaxDuration: 1
+  clankStopFade: 0.08
   onNumberAligned:
     m_PersistentCalls:
       m_Calls: []

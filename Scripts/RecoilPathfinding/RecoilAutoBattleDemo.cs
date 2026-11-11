@@ -1553,7 +1553,7 @@ namespace RecoilPathfinding
 
         [SerializeField]
         private float heroGroundOffset = 1.35f;
-        private const float HeroOccupiedRadius = 3f;
+        private const float HeroOccupiedRadius = 2f;
         private const float HeroHitRadius = 2f;
 
         private sealed class Soldier

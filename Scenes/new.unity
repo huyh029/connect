@@ -6229,6 +6229,16 @@ MonoBehaviour:
       position: {x: 960, y: 763}
       scale: {x: 1, y: 1}
       rotation: 0
+  battleHudLayout:
+    timer:
+      position: {x: 960, y: 78.37}
+      scale: 1.679
+    poolTitle:
+      position: {x: 960, y: 145.44443}
+      scale: 1
+    poolScore:
+      position: {x: 960, y: 183.49203}
+      scale: 1
   lobbyBackButtonImage: {fileID: 2800000, guid: afad89dcd9c2b7e49bcef306207e8751, type: 3}
   lobbyUnitImages:
   - {fileID: 2800000, guid: 190f59c97db4b5743b6a6dd9c3cc4625, type: 3}
