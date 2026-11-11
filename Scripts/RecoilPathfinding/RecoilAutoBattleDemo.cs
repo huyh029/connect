@@ -1324,37 +1324,17 @@ namespace RecoilPathfinding
         [SerializeField] private bool useFightCorridors = true;
         [SerializeField, Min(0f)] private float fightLeash = 12f;
         [SerializeField, Min(1f)] private float preparedFormationHalfWidth = 120f;
-        // At most this many soldiers (heroes not counted) per side before the battle starts; the rest wait.
-        private const int MaximumStagedPerTeam = 1500;
-        [SerializeField, Min(0), Tooltip("Số lính mỗi phe lúc bắt đầu trận (không tính tướng). Tỉ lệ các loại lính lấy theo " +
-                                         "đội hình đã chỉnh; 0 = dùng đúng số lượng trong đội hình. Tối đa 1500.")]
-        private int initialSoldiersPerTeam = 1000;
+        // Gathering limit: at most this many soldiers (heroes not counted) per side in the gathering before the battle
+        // starts; more wait until the battle. The opening army itself is exactly what the formation config says.
+        private const int MaximumStagedPerTeam = 1000;
         private int PreparedTypeCount(bool blue, int type) => PreparedTypeCounts(blue)[type];
 
-        /// <summary>
-        /// Soldiers per type for the opening army: the formation's mix scaled to <see cref="initialSoldiersPerTeam"/>
-        /// (siege engines kept to <see cref="preparedSiegePerTeam"/>), within the per-side limit.
-        /// </summary>
+        /// <summary>Soldiers per type for the opening army (the formation config), within the gathering limit.</summary>
         private int[] PreparedTypeCounts(bool blue)
         {
             var counts = new int[CharacterTypeCount];
-            var total = 0;
-            for (var type = 0; type < CharacterTypeCount; type++)
-                total += counts[type] = RequestedPreparedTypeCount(blue, type);
-            if (initialSoldiersPerTeam <= 0 || total <= 0) return LimitToTeamCapacity(counts);
-            var target = Mathf.Min(initialSoldiersPerTeam, MaximumStagedPerTeam);
-            var scaled = ScaleToTotal(counts, target);
-            const int siege = 4;
-            if (siege < scaled.Length && scaled[siege] > preparedSiegePerTeam)
-            {
-                // Siege engines stay few; the other types fill the places they leave.
-                var others = (int[])counts.Clone();
-                others[siege] = 0;
-                var siegeCount = Mathf.Min(counts[siege], preparedSiegePerTeam);
-                scaled = ScaleToTotal(others, target - siegeCount);
-                scaled[siege] = siegeCount;
-            }
-            return scaled;
+            for (var type = 0; type < CharacterTypeCount; type++) counts[type] = RequestedPreparedTypeCount(blue, type);
+            return LimitToTeamCapacity(counts);
         }
 
         /// <summary>

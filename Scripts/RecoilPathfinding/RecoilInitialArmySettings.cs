@@ -326,6 +326,9 @@ namespace RecoilPathfinding
         [SerializeField, Min(1), Tooltip("Mỗi hàng của đội hình tập kết có khoảng chừng này lính (mỗi loại lính chia " +
                                          "thành các hàng đều nhau, hàng nào cũng trải hết chiều ngang).")]
         private int formationUnitsPerLine = 50;
+        [SerializeField, Min(4f), Tooltip("Chiều rộng (m) của đội hình tập kết mỗi phe, ngang so với hướng hai phe tiến vào " +
+                                         "nhau (bề rộng map khoảng 508 m). Chiều sâu tự ra theo số lính.")]
+        private float formationWidth = 390f;
 
         private bool TryBuildCustomInitialArmy(out string error, int[] runtimeCounts = null)
         {
@@ -341,11 +344,11 @@ namespace RecoilPathfinding
             var rows = BuildFormationRows(runtimeCounts, out var widest);
             if (rows.Count == 0) { error = "Hãy thêm loại quân vào đội hình."; return false; }
 
-            // One wide rectangle, 80% as wide as the map (across the battle axis), laid out like the formation config.
+            // One wide rectangle, formationWidth across the battle axis, laid out like the formation config.
             // Spots that cannot hold a unit (the castle, water, off the map) are skipped and the lines go on further
             // back, so the army spills around the castle instead of stopping at its wall. A spot is used only when it
             // is free on both sides, so the two armies stay mirror images.
-            var width = Mathf.Max(widest, MapWidthAcross(lateral) * FormationMapWidthShare);
+            var width = Mathf.Max(widest, Mathf.Min(formationWidth, MapWidthAcross(lateral)));
             var placements = new List<RecoilInitialArmyPlanner.Placement>();
             var projectedBlue = new Dictionary<(float, float), (Vector3 Blue, Vector3 Red)>();
             bool CanPlace(float cross, float depth, float radius)
@@ -406,8 +409,8 @@ namespace RecoilPathfinding
             _preparedRedPositions.Clear(); _preparedRedPositions.AddRange(red);
         }
 
-        // Share of the map's width the opening formation spans, its distance behind the middle, and how far back it may go.
-        private const float FormationMapWidthShare = .8f, FormationFrontGap = 8f, FormationMaxDepth = 400f;
+        // Distance of the opening formation behind the middle, and how far back it may go.
+        private const float FormationFrontGap = 8f, FormationMaxDepth = 400f;
 
         /// <summary>
         /// The formation config's rows (front to back) with its blocks in place, sized for <paramref name="counts"/>
