@@ -168,6 +168,38 @@ namespace RecoilPathfindingEditor
             throw new InvalidOperationException("Cannot locate imported scene take for " + source.name);
         }
 
+        /// <summary>
+        /// Bakes the VAT of one character prefab (for tools that bake one prefab at a time to keep memory low). Call
+        /// <see cref="BuildGameLibrary"/> once after the last one. Returns false (with the error) when it failed.
+        /// </summary>
+        internal static bool BakeOnePrefab(string path, out string error)
+        {
+            error = null;
+            if (running) { error = "Đang có một lần bake VAT khác."; return false; }
+            running = true;
+            var report = new List<string> { "Single prefab VAT bake: " + path };
+            try
+            {
+                Directory.CreateDirectory(Output);
+                Bake(path, report);
+                report.Add("SUCCESS");
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                report.Add("FAILED: " + exception);
+                Debug.LogException(exception);
+                return false;
+            }
+            finally
+            {
+                File.WriteAllLines(Output + "/" + Path.GetFileNameWithoutExtension(path) + " BakeReport.txt", report);
+                AssetDatabase.SaveAssets();
+                running = false;
+            }
+        }
+
         [MenuItem("Tools/Recoil Pathfinding/VAT/Bake all character prefabs")]
         public static void BakeAll()
         {
@@ -375,11 +407,56 @@ namespace RecoilPathfindingEditor
                     // Only rigid duplicates at the same placement are safe to collapse.
                     // Distinct skinned parts may share a mesh but bind to different bones.
                     if (r is SkinnedMeshRenderer) return true;
-                    var mesh = r.GetComponent<MeshFilter>()?.sharedMesh;
+                    var mesh = (r.TryGetComponent<MeshFilter>(out var meshFilter3) ? meshFilter3.sharedMesh : null);
                     var unique = uniqueParts.Add((mesh, r.transform.localToWorldMatrix));
                     if (!unique) report.Add(source.name + ": skipped duplicate rigid part " + r.name);
                     return unique;
                 }).ToArray();
+                // Non-humanoid rigs (elephant, horse…): their Run / Attack clips can sit at a different place than
+                // Idle, so the model jumped when it started moving or attacking. Measure the body's centre (X/Z) at
+                // the first frame of each clip and move Run / Attack onto Idle's. Heights are kept (gallop bounce,
+                // falling in Death are real motion).
+                var stateShift = new Vector3[states.Length];
+                if (!siege && animators.Any(x => x.avatar == null || !x.avatar.isHuman))
+                {
+                    var body = renderers.OfType<SkinnedMeshRenderer>()
+                        .Where(r => r.sharedMesh != null).OrderByDescending(r => r.sharedMesh.vertexCount).FirstOrDefault();
+                    if (body != null)
+                    {
+                        var bodySource = new SkinSource(body);
+                        Vector2 Centre(int state)
+                        {
+                            for (var t = 0; t < transforms.Length; t++)
+                            { transforms[t].localPosition = positions[t]; transforms[t].localRotation = rotations[t]; transforms[t].localScale = scales[t]; }
+                            for (var a = 0; a < animators.Length; a++)
+                            {
+                                if (clips[state, a] != null) clips[state, a].SampleAnimation(animators[a].gameObject, 0f);
+                                var owner = Array.IndexOf(transforms, animators[a].transform);
+                                animators[a].transform.localPosition = positions[owner];
+                                animators[a].transform.localRotation = rotations[owner];
+                                animators[a].transform.localScale = scales[owner];
+                            }
+                            foreach (var correction in translationOffsets[state])
+                                correction.Node.localPosition += correction.Offset;
+                            var vertices = bodySource.Evaluate(clone.transform);
+                            var sum = Vector2.zero;
+                            foreach (var vertex in vertices) sum += new Vector2(vertex.x, vertex.z);
+                            return vertices.Length > 0 ? sum / vertices.Length : Vector2.zero;
+                        }
+                        var idleCentre = Centre((int)RecoilVatAnimation.AnimationState.Idle);
+                        foreach (var moving in new[] { RecoilVatAnimation.AnimationState.Run, RecoilVatAnimation.AnimationState.Attack })
+                        {
+                            var state = Array.IndexOf(states, moving);
+                            if (state < 0) continue;
+                            var delta = idleCentre - Centre(state);
+                            if (delta.magnitude < .05f) continue;
+                            stateShift[state] = new Vector3(delta.x, 0f, delta.y);
+                            report.Add($"{source.name}/{moving}: non-humanoid rig, centred on Idle (shift {stateShift[state]}).");
+                        }
+                        for (var t = 0; t < transforms.Length; t++)
+                        { transforms[t].localPosition = positions[t]; transforms[t].localRotation = rotations[t]; transforms[t].localScale = scales[t]; }
+                    }
+                }
                 result = new GameObject(source.name + " VAT");
                 SceneManager.MoveGameObjectToScene(result, scene);
                 result.transform.localScale = rootScale;
@@ -394,7 +471,7 @@ namespace RecoilPathfindingEditor
                 {
                     var renderer = renderers[part];
                     var skin = renderer as SkinnedMeshRenderer;
-                    var mesh = skin != null ? skin.sharedMesh : renderer.GetComponent<MeshFilter>()?.sharedMesh;
+                    var mesh = skin != null ? skin.sharedMesh : (renderer.TryGetComponent<MeshFilter>(out var meshFilter4) ? meshFilter4.sharedMesh : null);
                     if (mesh == null) continue;
                     var width = Mathf.Min(4096, Mathf.NextPowerOfTwo(mesh.vertexCount));
                     var rows = Mathf.CeilToInt((float)mesh.vertexCount / width);
@@ -437,7 +514,8 @@ namespace RecoilPathfindingEditor
                                 var toRoot = clone.transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
                                 for (var vertex = 0; vertex < vertices.Length; vertex++)
                                 {
-                                    var local = skinSource != null ? vertices[vertex] : toRoot.MultiplyPoint3x4(vertices[vertex]);
+                                    var local = (skinSource != null ? vertices[vertex] : toRoot.MultiplyPoint3x4(vertices[vertex])) +
+                                                stateShift[state];
                                     vertices[vertex] = local;
                                     if (state == 0 && frame == 0)
                                     {

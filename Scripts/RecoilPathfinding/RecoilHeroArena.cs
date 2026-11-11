@@ -269,7 +269,8 @@ namespace RecoilPathfinding
             var skill = fighter.profile?.Find(clip);
             if (skill == null || clip >= fighter.vat.clips.Length) return -1;
             float reach = 0;
-            foreach (var zone in skill.Zones) if (zone.Enabled) reach = Mathf.Max(reach, zone.EngagementReach(configured));
+            var zoneScale = RecoilAutoBattleDemo.HeroZoneScale(fighter.vat);
+            foreach (var zone in skill.Zones) if (zone.Enabled) reach = Mathf.Max(reach, zone.EngagementReach(configured, zoneScale));
             return reach <= 0 ? -1 : Mathf.Max(.1f, reach - Mathf.Min(.15f, reach * .05f));
         }
 
@@ -365,7 +366,8 @@ namespace RecoilPathfinding
                 ? cast.targetFighter.instance.transform.position : cast.target;
             RecoilAutoBattleDemo.HeroZonePose(zone, cast.clip, frame, fighter.instance.transform.position,
                 zone.Anchor == HeroHitAnchor.FollowTarget ? follow : cast.target, cast.facing,
-                fighter.vat.transform.lossyScale, out var center, out var rotation);
+                RecoilAutoBattleDemo.HeroZoneScale(fighter.vat), out var center, out var rotation);
+            var toAuthored = 1f / RecoilAutoBattleDemo.HeroZoneScale(fighter.vat);
             var inverse = Quaternion.Inverse(rotation);
             float angle = -1;
             if (zone.IsSweep) zone.SweepSample(frame, out _, out angle);
@@ -373,15 +375,16 @@ namespace RecoilPathfinding
             foreach (var enemy in _fighters)
             {
                 if (!enemy.alive || enemy.entry.blue == fighter.entry.blue) continue;
-                var local = inverse * (enemy.instance.transform.position - center);
-                if (!zone.Contains(local, bodyRadius, angle) || once != null && !once.Add(enemy)) continue;
+                var local = inverse * (enemy.instance.transform.position - center) * toAuthored;
+                if (!zone.Contains(local, bodyRadius * toAuthored, angle) || once != null && !once.Add(enemy)) continue;
                 Damage(fighter, enemy, fighter.config.Stats.Damage * zone.DamageScale(local));
             }
         }
 
         private void Launch(Fighter fighter, Cast cast, HeroHitZone zone)
         {
-            var origin = fighter.instance.transform.position + cast.facing * zone.Offset;
+            var origin = fighter.instance.transform.position +
+                         cast.facing * (zone.Offset * RecoilAutoBattleDemo.HeroZoneScale(fighter.vat));
             var direction = cast.facing * Quaternion.Euler(0f, zone.Yaw, 0f) * Vector3.forward;
             direction.y = 0f;
             float range = Mathf.Max(fighter.config.Stats.Range + 2f, Vector3.Distance(origin, cast.target) + 2f);
@@ -405,7 +408,7 @@ namespace RecoilPathfinding
                 var t = Mathf.Clamp01(Vector3.Dot(p - start, shot.direction) / Mathf.Max(step, .0001f));
                 var closest = start + shot.direction * (step * t);
                 closest.y = p.y = 0f;
-                if (Vector3.Distance(closest, p) > shot.zone.Radius + bodyRadius) continue;
+                if (Vector3.Distance(closest, p) > shot.zone.Radius * RecoilAutoBattleDemo.HeroZoneScale(shot.owner.vat) + bodyRadius) continue;
                 shot.hit.Add(enemy);
                 Damage(shot.owner, enemy, shot.owner.config.Stats.Damage * shot.zone.DamageMultiplier);
             }

@@ -77,12 +77,13 @@ namespace RecoilPathfinding
             });
         }
 
-        private static void DrawDonationAvatar(Rect border, DonationTopUser donor)
+        /// <summary>The donor's picture in the opening of the top <paramref name="rank"/> frame drawn in <paramref name="frame"/>.</summary>
+        private static void DrawDonationAvatar(Rect frame, DonationTopUser donor, int rank)
         {
-            DrawBattleTopAvatarBackground(border);
+            var avatar = BattleTopAvatarRect(frame, rank);
+            DrawBattleTopAvatarBackground(avatar);
             if (donor?.Avatar != null)
-                GUI.DrawTexture(new Rect(border.x + border.width * .12f, border.y + border.height * .22f,
-                    border.width * .76f, border.height * .71f), donor.Avatar, ScaleMode.StretchToFill, true);
+                GUI.DrawTexture(avatar, donor.Avatar, ScaleMode.StretchToFill, true);
         }
 
         private void ReleaseDonationAvatars()
@@ -181,7 +182,7 @@ namespace RecoilPathfinding
                 DrawBattleTopScore(scoreBorder,blue,source,scale);
                 GUI.EndGroup();
             }
-            DrawDonationAvatar(border, _topDonors[side,source]);
+            DrawDonationAvatar(border, _topDonors[side,source], rank);
             GUI.DrawTexture(border,image,ScaleMode.StretchToFill,true);
             GUI.matrix=oldMatrix; GUI.color=oldColor;
         }

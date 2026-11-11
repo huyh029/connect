@@ -147,7 +147,7 @@ namespace GameToolsEditor
                     }
                 }
                 else if (renderer is MeshRenderer)
-                    mesh = renderer.GetComponent<MeshFilter>()?.sharedMesh;
+                    mesh = (renderer.TryGetComponent<MeshFilter>(out var meshFilter1) ? meshFilter1.sharedMesh : null);
                 if (mesh == null) continue;
                 try
                 {

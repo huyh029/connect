@@ -47,11 +47,14 @@ namespace RecoilPathfinding
         private void ReloadFromEndgame(bool retry)
         {
             if (_endgameLeaving) return;
-            if (retry)
-            {
-                BeginRetryInPlace();
-                return;
-            }
+            // Both keep the loaded resources: Retry plays again at once, Home returns to the lobby.
+            BeginRetryInPlace(retry);
+        }
+
+        /// <summary>Full scene reload (drops every pooled resource). Not used by the endgame buttons any more.</summary>
+        private void ReloadSceneFromEndgame()
+        {
+            if (_endgameLeaving) return;
             var scene = gameObject.scene;
             if (string.IsNullOrEmpty(scene.path))
             { Debug.LogWarning("Hãy lưu scene trước khi dùng Retry / Home.", this); return; }

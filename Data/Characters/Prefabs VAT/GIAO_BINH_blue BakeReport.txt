@@ -1,0 +1,6 @@
+Single prefab VAT bake: Assets/Data/Characters/Prefabs/GIAO_BINH_blue.prefab
+GIAO_BINH_blue/BODY_linh.001_LOD2: vertices=4859, texture=4096x742, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (-1.23, 1.40, 0.45), Extents: (0.77, 0.92, 1.20)
+GIAO_BINH_blue/khien dai.001_LOD2: vertices=165, texture=256x371, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (-1.58, 1.08, 0.28), Extents: (0.63, 1.15, 1.18)
+GIAO_BINH_blue/giao.001_LOD2: vertices=130, texture=256x371, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (-0.93, 1.40, 0.97), Extents: (1.01, 1.30, 1.68)
+GIAO_BINH_blue: shared Idle foot pivot=(-1.13, 0.70, 0.20), rootScale=(1.00, 1.00, 1.00), Idle local size=(1.24, 1.56, 1.70), Idle world height=1.5554
+SUCCESS

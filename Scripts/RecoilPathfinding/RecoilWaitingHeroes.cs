@@ -9,6 +9,13 @@ namespace RecoilPathfinding
 
         private bool AssignWaitingHeroRows()
         {
+            // The first heroes: re-plan the army once so it leaves the heroes' strip behind its first row.
+            if (_heroGapStart < 0f && WaitingHeroCount() > 0 && _initialArmy != null && _initialArmy.Enabled &&
+                !ReplanWaitingArmy())
+            {
+                _nextHeroFormationAttempt = Time.unscaledTime + 1f;
+                return false;
+            }
             var middle = (GetSpawnTargetPosition(true) + GetSpawnTargetPosition(false)) * .5f;
             var axis = BattleAxis();
             var lateral = Vector3.Cross(Vector3.up, axis);
@@ -32,13 +39,19 @@ namespace RecoilPathfinding
                 foreach (var slots in _waitingSlots[side])
                     if (slots != null)
                         foreach (var slot in slots)
-                            rear = Mathf.Max(rear, -Vector3.Dot(slot - middle, forward) + armyRadius);
+                        {
+                            var slotDepth = -Vector3.Dot(slot - middle, forward);
+                            rear = Mathf.Max(rear, slotDepth + armyRadius);
+                        }
                 var pitch = heroRadius * 2f + 1f;
                 var columns = Mathf.Max(1, Mathf.Min(heroes.Count,
                     Mathf.FloorToInt(preparedFormationHalfWidth * 2f / pitch)));
                 var found = false;
                 var positions = new List<Vector3>();
-                for (var shift = 0f; shift <= 128f; shift += Mathf.Max(2f, pitch))
+                // Heroes line up near the head of the army: in the strip left free behind its first row. When there
+                // is no strip (or it cannot hold them) they fall back to a row behind the army.
+                var rowsNeeded = (heroes.Count + columns - 1) / columns;
+                bool TryRows(float firstRowDepth)
                 {
                     positions.Clear();
                     for (var i = 0; i < heroes.Count; i++)
@@ -46,15 +59,17 @@ namespace RecoilPathfinding
                         var row = i / columns;
                         var rowCount = Mathf.Min(columns, heroes.Count - row * columns);
                         var cross = (i % columns - (rowCount - 1) * .5f) * pitch;
-                        var depth = rear + heroRadius + 2f + shift + row * pitch;
+                        var depth = firstRowDepth + row * pitch;
                         var point = middle + lateral * cross - forward * depth;
-                        if (!TryProjectInitialArmyPoint(point, side == 0, heroes[i].BodyRadius, out var projected)) break;
+                        if (!TryProjectInitialArmyPoint(point, side == 0, heroes[i].BodyRadius, out var projected)) return false;
                         positions.Add(projected);
                     }
-                    if (positions.Count != heroes.Count) continue;
-                    found = true;
-                    break;
+                    return true;
                 }
+                if (_heroGapStart >= 0f && (rowsNeeded - 1) * pitch + heroRadius * 2f <= HeroGapDepth + .01f &&
+                    TryRows(_heroGapStart + HeroGapDepth * .5f)) found = true;
+                for (var shift = 0f; !found && shift <= 128f; shift += Mathf.Max(2f, pitch))
+                    found = TryRows(rear + heroRadius + 2f + shift);
                 if (!found)
                 {
                     _nextHeroFormationAttempt = Time.unscaledTime + 1f;

@@ -34,6 +34,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Cutoff: 0
+    - _VatVertexMap: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _VatClip: {r: 0, g: 62, b: 2.0416667, a: 1}

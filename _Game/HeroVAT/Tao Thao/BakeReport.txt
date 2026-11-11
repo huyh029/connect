@@ -1,7 +1,7 @@
-Tao Thao: single hero VAT; height 0.75; 30 FPS.
+Tao Thao: single hero VAT; target body height 4; 30 FPS.
 Tao Thao: LOD family 27_hair_0.2_0_0.001, using 27_hair_0.2_0_0.001; skipped 5 lower/duplicate levels.
-Tao Thao/27_hair_0.2_0_0.001: 78300 vertices; 4096x9640 RGBAHalf; 301,3 MiB
-Tao Thao/27_hair_0.2_0_0.002: 3209 vertices; 4096x482 RGBAHalf; 15,1 MiB
-Tao Thao/27_hair_0.2_0_0.002 (1): 3209 vertices; 4096x482 RGBAHalf; 15,1 MiB
-Tao Thao: height=0,75; scale=0,3858693; 6 clips; 482 frames; FX=3
-SUCCESS: Tao Thao, Idle height 0.75.
+Tao Thao/27_hair_0.2_0_0.001: 78300 vertices; 4096x9640 RGBAHalf; 301.3 MiB
+Tao Thao/27_hair_0.2_0_0.002: 3209 vertices; 4096x482 RGBAHalf; 15.1 MiB
+Tao Thao/27_hair_0.2_0_0.002 (1): 3209 vertices; 4096x482 RGBAHalf; 15.1 MiB
+Tao Thao: height=4; scale=2.122267; 6 clips; 482 frames; FX=3
+SUCCESS: Tao Thao, Idle body height 4.

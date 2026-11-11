@@ -1,6 +1,6 @@
-Gia Cat Luong: single hero VAT; height 0.75; 30 FPS.
+Gia Cat Luong: single hero VAT; target body height 4; 30 FPS.
 Gia Cat Luong: LOD family 25_body_0.3_0_0, using 25_body_0.3_0_0; skipped 5 lower/duplicate levels.
-Gia Cat Luong/25_body_0.3_0_0: 74831 vertices; 4096x4978 RGBAHalf; 155,6 MiB
-Gia Cat Luong/25_feathfan5_0.3_0_0: 5733 vertices; 4096x524 RGBAHalf; 16,4 MiB
-Gia Cat Luong: height=0,75; scale=0,4035582; 6 clips; 262 frames; FX=5
-SUCCESS: Gia Cat Luong, Idle height 0.75.
+Gia Cat Luong/25_body_0.3_0_0: 74831 vertices; 4096x4978 RGBAHalf; 155.6 MiB
+Gia Cat Luong/25_feathfan5_0.3_0_0: 5733 vertices; 4096x524 RGBAHalf; 16.4 MiB
+Gia Cat Luong: height=4; scale=2.15231; 6 clips; 262 frames; FX=5
+SUCCESS: Gia Cat Luong, Idle body height 4.

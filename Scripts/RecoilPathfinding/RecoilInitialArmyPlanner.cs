@@ -114,10 +114,16 @@ namespace RecoilPathfinding
         /// Places the rows: <paramref name="width"/> wide, front line <paramref name="frontGap"/> behind the middle,
         /// about <paramref name="unitsPerLine"/> units per line. <paramref name="canPlace"/>(cross, depth, radius)
         /// says whether a spot can hold a unit. False when the army does not fit within <paramref name="maxDepth"/>.
+        /// <paramref name="reservedGap"/> &gt; 0 leaves a strip that deep empty after the first
+        /// <paramref name="gapAfterLines"/> lines of units (for the heroes); <paramref name="gapStart"/> is where it
+        /// begins (-1 when none).
         /// </summary>
         internal static bool Place(List<Row> rows, float width, float clearance, int unitsPerLine, float frontGap,
-            float maxDepth, Func<float, float, float, bool> canPlace, List<Placement> output)
+            float maxDepth, Func<float, float, float, bool> canPlace, List<Placement> output,
+            float reservedGap, int gapAfterLines, out float gapStart)
         {
+            gapStart = -1f;
+            var linesPlaced = 0;
             var depth = frontGap;
             var first = true;
             var free = new List<float>();
@@ -169,6 +175,12 @@ namespace RecoilPathfinding
                 for (var i = 0; i < segments.Count; i++) left_ += remaining[i] = segments[i].Count;
                 while (left_ > 0)
                 {
+                    if (gapStart < 0f && reservedGap > 0f && linesPlaced == Math.Max(1, gapAfterLines))
+                    {
+                        // The heroes' strip goes here, before this line.
+                        gapStart = line - rowRadius;
+                        line = gapStart + reservedGap + clearance + rowRadius;
+                    }
                     if (line > maxDepth) return false;
                     for (var i = 0; i < segments.Count; i++)
                     {
@@ -195,6 +207,7 @@ namespace RecoilPathfinding
                         remaining[i] -= take;
                         left_ -= take;
                     }
+                    linesPlaced++;
                     line += rowPitch;
                 }
                 depth = line - rowPitch + rowRadius; // rear edge of the row's last line

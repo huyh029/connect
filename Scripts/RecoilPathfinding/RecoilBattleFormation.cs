@@ -271,10 +271,22 @@ namespace RecoilPathfinding
         private double _startCountdownEndsAt;
         private readonly RecoilCountdownVisual _startCountdownVisual = new();
 
+        private int _countdownDrumNumber;
+
         private void UpdateStartCountdown()
         {
-            if (_startCountdownEndsAt <= 0 || Time.realtimeSinceStartupAsDouble < _startCountdownEndsAt) return;
+            if (_startCountdownEndsAt <= 0) return;
+            var remaining = _startCountdownEndsAt - Time.realtimeSinceStartupAsDouble;
+            // One drum beat on each number: 3, 2, 1.
+            var number = (int)System.Math.Ceiling(remaining);
+            if (number >= 1 && number <= 3 && number != _countdownDrumNumber)
+            {
+                _countdownDrumNumber = number;
+                PlayCountdownWarDrum();
+            }
+            if (remaining > 0) return;
             _startCountdownEndsAt = 0;
+            _countdownDrumNumber = 0;
             if (!_combatStarted && !_matchFinished) TryStartBattle(true);
         }
 
@@ -292,7 +304,8 @@ namespace RecoilPathfinding
                 if (_startCountdownEndsAt <= 0)
                 {
                     _startCountdownEndsAt = Time.realtimeSinceStartupAsDouble + 3.0;
-                    PlayCountdownWarDrum();
+                    _countdownDrumNumber = 3;
+                    PlayCountdownWarDrum(); // the "3"; "2" and "1" follow in UpdateStartCountdown
                 }
                 return false;
             }

@@ -1,0 +1,6 @@
+Single prefab VAT bake: Assets/Data/Characters/Prefabs/BO_BINH_red.prefab
+BO_BINH_red/BODY_linh_LOD2: vertices=4859, texture=4096x718, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (0.11, 1.04, -0.34), Extents: (0.67, 0.87, 1.37)
+BO_BINH_red/khien tron_LOD2: vertices=197, texture=256x359, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (-0.18, 0.94, -0.23), Extents: (0.66, 0.81, 1.30)
+BO_BINH_red/kiem_LOD2: vertices=78, texture=128x359, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (-0.17, 1.19, -0.25), Extents: (1.07, 1.03, 1.95)
+BO_BINH_red: shared Idle foot pivot=(0.03, 0.41, 0.05), rootScale=(1.00, 1.00, 1.00), Idle local size=(0.69, 1.61, 1.05), Idle world height=1.6135
+SUCCESS

@@ -6279,7 +6279,7 @@ MonoBehaviour:
   useVatLod: 0
   useRecoilJobChaining: 1
   suspendAnimatorsForProfiling: 0
-  heroGroundOffset: 1.35
+  heroGroundOffset: 0.6
   battleAmbienceClip: {fileID: 8300000, guid: e4a5644c3b114a84c9302588d9493115, type: 3}
   armyMovementClip: {fileID: 8300000, guid: 52a4a607150d9274faaf29f6081fe308, type: 3}
   warDrumClip: {fileID: 8300000, guid: ee739f6c5db36674c9fdc430ef29f5d5, type: 3}

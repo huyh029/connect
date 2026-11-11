@@ -9,16 +9,31 @@ namespace RecoilPathfinding
     {
         private readonly Dictionary<GameObject, Soldier> _prefabSoldierOwners = new();
 
-        private void BeginRetryInPlace()
+        /// <summary>The finished battle is being cleared (Retry / Home): a loading screen covers it.</summary>
+        private bool _battlefieldClearing;
+        private float _battlefieldClearProgress;
+        private float _battlefieldClearStarted;
+        private const float MinimumClearingSeconds = .8f; // long enough to read, so it never just flickers
+
+        /// <summary>
+        /// Clears the finished match in place, keeping every pooled unit, VAT, effect and warmed render asset:
+        /// Retry then starts the next match at once, Home goes back to the lobby (its next Start skips the loading
+        /// that was already done).
+        /// </summary>
+        private void BeginRetryInPlace(bool startNextMatch = true)
         {
             _endgameLeaving = true;
             StopAllCoroutines();
-            StartCoroutine(RetryInPlace());
+            StartCoroutine(RetryInPlace(startNextMatch));
         }
 
-        private IEnumerator RetryInPlace()
+        private IEnumerator RetryInPlace(bool startNextMatch)
         {
-            // Keep the finished screen visible while returning objects in small batches.
+            // A loading screen covers the battlefield while everything goes back to its pool (nothing is destroyed:
+            // pools, VAT, effects and warmed render assets stay for the next match).
+            _battlefieldClearing = true;
+            _battlefieldClearProgress = 0f;
+            _battlefieldClearStarted = Time.unscaledTime;
             yield return null;
             StopHeroIntros(true);
             CompletePendingCombatJob();
@@ -47,8 +62,13 @@ namespace RecoilPathfinding
                 if (soldier.Simulation != null && soldier.Simulation.Exists) soldier.Simulation.SetActive(false);
                 if (soldier.HeroVat != null) soldier.HeroVat.PrepareForPool();
                 CompletePrefabSoldierRetirement(soldier, pair.Key);
-                if (i % 64 == 63) yield return null;
+                if (i % 64 == 63)
+                {
+                    _battlefieldClearProgress = .9f * (i + 1) / Mathf.Max(1, owners.Count);
+                    yield return null;
+                }
             }
+            _battlefieldClearProgress = .9f;
             _prefabSoldierOwners.Clear();
             foreach (var entity in _ownedSoldierEntities)
                 if (_entityManager.Exists(entity)) _entityManager.DestroyEntity(entity);
@@ -114,7 +134,19 @@ namespace RecoilPathfinding
             InvalidateAssembly();
             if (pathService != null) pathService.ResumeAfterEndgame();
             RecoilSimulationClock.Register(this);
-            StartMatchFromLobby();
+            _lobbyError = null;
+            // Let the bar finish before the next screen.
+            while (Time.unscaledTime - _battlefieldClearStarted < MinimumClearingSeconds)
+            {
+                _battlefieldClearProgress = Mathf.Max(_battlefieldClearProgress,
+                    Mathf.Lerp(.9f, 1f, (Time.unscaledTime - _battlefieldClearStarted) / MinimumClearingSeconds));
+                yield return null;
+            }
+            _battlefieldClearProgress = 1f;
+            yield return null;
+            _battlefieldClearing = false;
+            if (startNextMatch) StartMatchFromLobby();
+            // Home: nothing else to do; with the match cleared the lobby shows again, ready to Start.
         }
 
 

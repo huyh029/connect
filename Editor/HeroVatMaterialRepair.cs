@@ -31,7 +31,10 @@ public static class HeroVatMaterialRepair
     private static readonly string[] Maps = { "_BaseMap", "_MainTex", "_BaseColorMap", "_Albedo", "_Diffuse" };
     private static string Family(Renderer r)
     {
-        var mesh = r is SkinnedMeshRenderer s ? s.sharedMesh : r.GetComponent<MeshFilter>()?.sharedMesh;
+        // TryGetComponent: an FX renderer (particles, trails) has no MeshFilter, and in the editor GetComponent
+        // returns a fake-null object that "?." does not catch, which made reading sharedMesh throw.
+        var mesh = r is SkinnedMeshRenderer s ? s.sharedMesh
+            : r.TryGetComponent<MeshFilter>(out var filter) ? filter.sharedMesh : null;
         return Regex.Replace(mesh ? mesh.name : r.name, "_LOD[0-9]+$", "", RegexOptions.IgnoreCase);
     }
     private static string ColorMap(Material material)

@@ -159,7 +159,7 @@ namespace RecoilPathfinding
         private float clankFastPitch = .2f;
         [SerializeField, Min(.05f), Tooltip("Chỉ dùng chừng này giây đầu của âm, lặp liền mạch (không nghỉ, không chồng) " +
                                            "suốt lúc đồng hồ còn xoay.")]
-        private float clankMaxDuration = 1f;
+        private float clankMaxDuration = .12f;
         [SerializeField, Min(.01f), Tooltip("Thời gian tắt dần khi đồng hồ ngừng xoay (giây).")]
         private float clankStopFade = .08f;
 
@@ -774,8 +774,16 @@ namespace RecoilPathfinding
                 _clankSource.Stop();
                 return;
             }
-            if (_clankWrapsByHand && _clankSource.time >= _clankLoopLength)
-                _clankSource.time = 0f;
+            if (_clankWrapsByHand)
+            {
+                // Still on the uncut sound: switch to the gap-free loop as soon as its samples are loaded.
+                if (clankSound.loadState == AudioDataLoadState.Loaded && ClankLoopClip() is var loop && loop != clankSound)
+                {
+                    _clankSource.clip = loop;
+                    _clankSource.Play();
+                }
+                else if (_clankSource.time >= _clankLoopLength) _clankSource.time = 0f;
+            }
         }
 
         private void StartClankLoop()
@@ -797,16 +805,17 @@ namespace RecoilPathfinding
         }
 
         /// <summary>
-        /// The first <see cref="clankMaxDuration"/> seconds of <see cref="clankSound"/> as their own clip, with a few
-        /// milliseconds faded at both ends so the loop seam does not click. Falls back to the whole clip (looped back
+        /// The first <see cref="clankMaxDuration"/> seconds of <see cref="clankSound"/> as their own clip, without the
+        /// silence before and after the sound (so the loop has no pause), with a few milliseconds faded at both ends so
+        /// the loop seam does not click. Falls back to the whole clip (looped back
         /// by seeking) if its samples cannot be read.
         /// </summary>
         private AudioClip ClankLoopClip()
         {
             var length = Mathf.Min(clankMaxDuration, clankSound.length);
-            if (_clankLoopFrom == clankSound && Mathf.Approximately(_clankLoopLength, length) &&
-                (_clankLoop != null || _clankWrapsByHand))
-                return _clankLoop != null ? _clankLoop : clankSound;
+            // A fallback (samples not loaded yet) is tried again later; a cut loop is kept.
+            if (_clankLoopFrom == clankSound && Mathf.Approximately(_clankLoopLength, length) && _clankLoop != null)
+                return _clankLoop;
 
             _clankLoopFrom = clankSound;
             _clankLoopLength = length;
@@ -828,7 +837,11 @@ namespace RecoilPathfinding
             var first = 0;
             while (first < clankSound.samples && Mathf.Abs(all[first * channels]) < peak * .05f) first++;
             first = Mathf.Max(0, first - Mathf.RoundToInt(.005f * frequency));
-            var frames = Mathf.Clamp(Mathf.FloorToInt(length * frequency), 1, clankSound.samples - first);
+            // ...and the silence after the last one: looped, it would be a pause on every turn.
+            var last = clankSound.samples - 1;
+            while (last > first && Mathf.Abs(all[last * channels]) < peak * .05f) last--;
+            last = Mathf.Min(clankSound.samples - 1, last + Mathf.RoundToInt(.01f * frequency));
+            var frames = Mathf.Clamp(Mathf.FloorToInt(length * frequency), 1, last - first + 1);
             var data = new float[frames * channels];
             System.Array.Copy(all, first * channels, data, 0, data.Length);
             var edge = Mathf.Min(frames / 4, Mathf.RoundToInt(.006f * frequency));
@@ -853,12 +866,12 @@ namespace RecoilPathfinding
         }
 
         /// <summary>
-        /// How fast the minute hand turns on screen: following the rings, opening, or spinning on hover. Measured from
-        /// the drawn angle, so it covers every way the hand moves.
+        /// How fast the minute hand turns: following the rings or opening. The extra spin while the TIME button is
+        /// hovered is left out, so hovering makes no sound.
         /// </summary>
         private void TrackHandSpeed(float deltaTime)
         {
-            var shown = _minuteAngle + _hoverMinuteSpin.angle;
+            var shown = _minuteAngle;
             if (_handSpeedPrimed && deltaTime > 0f)
             {
                 var speed = Mathf.Abs(Mathf.DeltaAngle(_lastShownMinuteAngle, shown)) / deltaTime;
@@ -1257,7 +1270,7 @@ namespace RecoilPathfinding
             _hoverGearDrive += step;
             foreach (var gear in _gears)
                 ApplyGearPose(gear);
-            if (_gears.Count > 0) AddGearTravel(step); // the gears clank as they turn
+            // Hover turns the gears silently (no AddGearTravel): hovering makes no sound.
         }
 
         /// <summary>True when <paramref name="point"/> (the clock root's space right now) is on the visible TIME button.</summary>

@@ -326,6 +326,9 @@ namespace RecoilPathfinding
         [SerializeField, Min(1), Tooltip("Mỗi hàng của đội hình tập kết có khoảng chừng này lính (mỗi loại lính chia " +
                                          "thành các hàng đều nhau, hàng nào cũng trải hết chiều ngang).")]
         private int formationUnitsPerLine = 50;
+        [SerializeField, Range(2, 10), Tooltip("Lúc tập kết, tướng đứng ở hàng thứ mấy của đội hình (2 = ngay sau hàng lính " +
+                                               "đầu tiên).")]
+        private int heroFormationLine = 2;
         [SerializeField, Min(4f), Tooltip("Chiều rộng (m) của đội hình tập kết mỗi phe, ngang so với hướng hai phe tiến vào " +
                                          "nhau. Tự thu lại cho vừa bề rộng map thật (map hiện tại khoảng 85 m). Chiều sâu tự ra theo số lính.")]
         private float formationWidth = 390f;
@@ -363,8 +366,11 @@ namespace RecoilPathfinding
                 return true;
             }
             _waitingPositionTypes.Clear();
+            // With heroes on the field, a strip behind the first row stays free for their line.
+            var heroGap = WaitingHeroCount() > 0 ? HeroOccupiedRadius * 2f + .5f : 0f;
             if (!RecoilInitialArmyPlanner.Place(rows, width, formationUnitSpacing, formationUnitsPerLine,
-                    FormationFrontGap, FormationMaxDepth, CanPlace, placements))
+                    FormationFrontGap, FormationMaxDepth, CanPlace, placements, heroGap, heroFormationLine - 1,
+                    out _heroGapStart))
             {
                 _preparedBluePositions.Clear();
                 _preparedRedPositions.Clear();
@@ -409,6 +415,23 @@ namespace RecoilPathfinding
             _waitingPositionTypes.Clear(); _waitingPositionTypes.AddRange(types);
             _preparedBluePositions.Clear(); _preparedBluePositions.AddRange(blue);
             _preparedRedPositions.Clear(); _preparedRedPositions.AddRange(red);
+        }
+
+        // Where the heroes' strip behind the first row starts (distance behind the middle), and how deep it is; -1 = none.
+        private float _heroGapStart = -1f;
+        private float HeroGapDepth => HeroOccupiedRadius * 2f + .5f;
+
+        /// <summary>Heroes alive on the bigger side (both sides share one formation layout).</summary>
+        private int WaitingHeroCount()
+        {
+            int Count(List<Soldier> team)
+            {
+                var count = 0;
+                foreach (var soldier in team)
+                    if (soldier != null && !soldier.Retired && soldier.HeroId != 0 && IsAlive(soldier)) count++;
+                return count;
+            }
+            return Mathf.Max(Count(_blueTeam), Count(_redTeam));
         }
 
         // Distance of the opening formation behind the middle, and how far back it may go.

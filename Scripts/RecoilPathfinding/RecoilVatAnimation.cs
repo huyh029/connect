@@ -29,9 +29,14 @@ namespace RecoilPathfinding
         private Vector3 _projectileOffset, _attackTarget, _deathPosition;
         private bool _releasePending;
         private Action _retire;
+        /// <summary>Moves the dying body (e.g. still flying from a blast) on top of where it died.</summary>
+        internal Vector3 DeathOffset;
+        internal bool Dying => _retire != null;
         public bool DrivenByEcs => _world != null;
         public float AttackDuration => Duration(AnimationState.Attack);
         public float ProjectileSpeed => _source != null ? _source.ProjectileSpeed : 24f;
+        /// <summary>Seconds from the start of the attack to the moment the projectile leaves.</summary>
+        public float ProjectileReleaseDelay => _source != null ? AttackDuration * Mathf.Clamp01(_source.ProjectileReleaseNormalizedTime) : 0f;
         public Vector3 ProjectileOrigin => transform.TransformPoint(_projectileOffset);
 
         private float Duration(AnimationState state)
@@ -57,7 +62,7 @@ namespace RecoilPathfinding
         }
         internal void BeginDeath(Action retire)
         {
-            _releasePending = false; _retire = retire; _deathPosition = transform.position;
+            _releasePending = false; _retire = retire; _deathPosition = transform.position; DeathOffset = Vector3.zero;
         }
         internal void ApplyEcsState(RecoilVatState state)
         {
@@ -76,14 +81,14 @@ namespace RecoilPathfinding
             if (state.State == 3 && _retire != null)
             {
                 var duration = Duration(AnimationState.Death);
-                transform.position = _deathPosition - Vector3.up * Mathf.Clamp01(state.Elapsed - duration) * 1.5f;
+                transform.position = _deathPosition + DeathOffset - Vector3.up * Mathf.Clamp01(state.Elapsed - duration) * 1.5f;
                 if (state.Elapsed >= duration + 1f) { var retire = _retire; _retire = null; retire(); }
             }
         }
         private void OnDisable()
         {
             RecoilVatEcsBridge.Unregister(_world, _entity);
-            _world = null; _entity = Entity.Null; _retire = null; _releasePending = false;
+            _world = null; _entity = Entity.Null; _retire = null; _releasePending = false; DeathOffset = Vector3.zero;
         }
 
         private void OnEnable()

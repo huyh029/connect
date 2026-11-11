@@ -58,7 +58,7 @@ public static class HeroVatSizeRepair
         {
             var player = root.GetComponent<HeroVatPlayer>();
             if (!player || player.parts == null) throw new InvalidOperationException("Missing VAT body: " + name);
-            var body = player.parts.Where(p => p && p.GetComponent<MeshFilter>()?.sharedMesh != null)
+            var body = player.parts.Where(p => p && (p.TryGetComponent<MeshFilter>(out var meshFilter2) ? meshFilter2.sharedMesh : null) != null)
                 .OrderByDescending(p => p.GetComponent<MeshFilter>().sharedMesh.vertexCount).FirstOrDefault();
             if (!body) throw new InvalidOperationException("Missing VAT mesh: " + name);
             var matrix = root.transform.worldToLocalMatrix * body.transform.localToWorldMatrix;

@@ -3091,7 +3091,7 @@ MonoBehaviour:
   clankFullSpeed: 720
   clankSlowVolume: 0.25
   clankFastPitch: 0.2
-  clankMaxDuration: 1
+  clankMaxDuration: 0.12
   clankStopFade: 0.08
   onNumberAligned:
     m_PersistentCalls:

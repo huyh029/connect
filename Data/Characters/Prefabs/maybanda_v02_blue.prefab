@@ -25,8 +25,8 @@ Transform:
   m_GameObject: {fileID: 260010562188000073}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.20330955, z: 0}
-  m_LocalScale: {x: 1.0635128, y: 1.0635128, z: 1.0635128}
+  m_LocalPosition: {x: 0, y: 0.16942461, z: 0}
+  m_LocalScale: {x: 0.8862607, y: 0.8862607, z: 0.8862607}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3449846789739881406}
@@ -57,7 +57,7 @@ Transform:
   m_GameObject: {fileID: 580365063101970581}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.9377005, z: -3.4795594}
+  m_LocalPosition: {x: 0, y: 1.6147504, z: -2.8996327}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -125,7 +125,7 @@ MonoBehaviour:
   projectileScale: 1
   attackTrigger: Attack
   attackStateName: Attack
-  normalizedVisualHeight: 3
+  normalizedVisualHeight: 2.5
   forwardYawOffset: 0
   attackForwardYawOffset: 0
   projectileReleaseNormalizedTime: 0.46067417
@@ -242,8 +242,8 @@ Transform:
   m_GameObject: {fileID: 9081188372598086157}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.5905733, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 2.158811, z: 0}
+  m_LocalScale: {x: 0.8333333, y: 0.8333333, z: 0.8333333}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7863716377344147456}

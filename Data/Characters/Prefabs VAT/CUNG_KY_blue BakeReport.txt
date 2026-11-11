@@ -1,0 +1,6 @@
+Single prefab VAT bake: Assets/Data/Characters/Prefabs/CUNG_KY_blue.prefab
+CUNG_KY_blue/body_cungky_blue_LOD2: vertices=4033, texture=4096x479, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (-0.45, 0.89, -0.01), Extents: (0.99, 0.85, 0.67)
+CUNG_KY_blue/cung_xanh: unweighted mesh, baked as rigid attachment with its animated transform.
+CUNG_KY_blue/cung_xanh: vertices=648, texture=1024x479, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (-0.35, 1.10, -0.05), Extents: (1.25, 0.93, 0.90)
+CUNG_KY_blue: shared Idle foot pivot=(-0.06, 0.31, 0.14), rootScale=(1.00, 1.00, 1.00), Idle local size=(0.73, 1.29, 1.13), Idle world height=1.2863
+SUCCESS

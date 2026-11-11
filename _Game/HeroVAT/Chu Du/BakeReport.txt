@@ -1,6 +1,6 @@
-Chu Du: single hero VAT; height 0.75; 30 FPS.
+Chu Du: single hero VAT; target body height 4; 30 FPS.
 Chu Du: LOD family 25_body_0.2_0_0, using 25_body_0.2_0_0; skipped 5 lower/duplicate levels.
-Chu Du/25_body_0.2_0_0: 109076 vertices; 4096x10071 RGBAFloat
-Chu Du/Meshes.001: 7001 vertices; 4096x746 RGBAFloat
-Chu Du: height=0,75; scale=0,290043; 5 clips; 373 frames; FX=2
-SUCCESS: Chu Du, Idle height 0.75.
+Chu Du/25_body_0.2_0_0: 109076 vertices; 4096x10071 RGBAHalf; 314.7 MiB
+Chu Du/Meshes.001: 7001 vertices; 4096x746 RGBAHalf; 23.3 MiB
+Chu Du: height=4; scale=2.089815; 5 clips; 373 frames; FX=2
+SUCCESS: Chu Du, Idle body height 4.

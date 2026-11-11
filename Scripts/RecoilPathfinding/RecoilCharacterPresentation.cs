@@ -142,6 +142,8 @@ namespace RecoilPathfinding
         }
         public float AttackForwardYawOffset => attackForwardYawOffset;
         public float ProjectileReleaseNormalizedTime => projectileReleaseNormalizedTime;
+        /// <summary>Seconds from the start of the attack to the moment the projectile leaves.</summary>
+        public float ProjectileReleaseDelay => attackClip != null ? attackClip.length * Mathf.Clamp01(projectileReleaseNormalizedTime) : 0f;
         public float ProjectileSpeed => projectileSpeed;
 
         [ContextMenu("Preview Attack")]

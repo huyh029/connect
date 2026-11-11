@@ -1605,7 +1605,7 @@ namespace RecoilPathfinding
         private Texture2D _transparentSystemCursor;
 
         [SerializeField]
-        private float heroGroundOffset = 1.35f;
+        private float heroGroundOffset = .6f;
         private const float HeroOccupiedRadius = 2f;
         private const float HeroHitRadius = 2f;
 
@@ -1653,6 +1653,8 @@ namespace RecoilPathfinding
             public GameObject HeroVisual;
             public float CollisionRadius;
             public float FlightStartTime;
+            /// <summary>True while the attack animation has not thrown the projectile yet (until FlightStartTime).</summary>
+            public bool AwaitingRelease;
             public float LastProcessedTime;
             public float TravelDuration;
             public Vector3 FlightStartPoint;
@@ -1977,6 +1979,7 @@ namespace RecoilPathfinding
             TikTokUdpReceiver.OnEvent -= HandleTikTokBattleEvent;
             RestoreProfilingAnimators();
             ReleaseSiegeImpactEffects();
+            ReleaseAdvisorEffects();
             DisposeSpawnJobs();
             CancelPoolPrewarm();
             RecoilSimulationClock.Unregister(this);
@@ -2006,6 +2009,7 @@ namespace RecoilPathfinding
             if (rankingRowFade != null) Destroy(rankingRowFade);
             if (_endgameCamera != null && _endgameOriginalFar > 0) _endgameCamera.farClipPlane = _endgameOriginalFar;
             ReleaseSiegeImpactEffects();
+            ReleaseAdvisorEffects();
             DisposeSpawnJobs();
             if (_attributeRadar != null) Destroy(_attributeRadar);
             DisposeAliveQuery();
@@ -2059,6 +2063,7 @@ namespace RecoilPathfinding
             UpdateSystemCursorVisibility();
             RefreshExternalSettings();
             UpdateSiegeImpactEffects();
+            UpdateAdvisorEffects();
             UpdateArmyMovementAudio();
             using (BattleUpdateMarker.Auto())
                 UpdateBattle();
@@ -2352,15 +2357,18 @@ namespace RecoilPathfinding
                     var horizontalDistance = Vector2.Distance(
                         new Vector2(projectileOrigin.x, projectileOrigin.z), new Vector2(targetPoint.x, targetPoint.z));
                     var travelTime = RecoilCombatProjectileTrajectory.TravelDuration(horizontalDistance, speed);
+                    // Leaves when the animation throws it, like the stone / arrow that is drawn.
+                    var launchTime = SimulationNow + ProjectileReleaseDelay(soldier);
                     _pendingCombatProjectiles.Add(new PendingCombatProjectile
                     {
-                        FlightStartTime = SimulationNow,
-                        LastProcessedTime = SimulationNow,
+                        FlightStartTime = launchTime,
+                        LastProcessedTime = launchTime,
+                        AwaitingRelease = launchTime > SimulationNow,
                         TravelDuration = travelTime,
                         FlightStartPoint = projectileOrigin,
                         ArcHeight = RecoilCombatProjectileTrajectory.ArcHeight(
                             new float2(projectileOrigin.x, projectileOrigin.z), new float2(targetPoint.x, targetPoint.z)),
-                        ImpactTime = SimulationNow + travelTime,
+                        ImpactTime = launchTime + travelTime,
                         ImpactPoint = targetPoint,
                         Attacker = soldier.Entity,
                         Team = blue ? 0 : 1,
@@ -2871,6 +2879,7 @@ namespace RecoilPathfinding
                 attacker.AttackStartedAt = SimulationNow;
                 attacker.AttackTarget = target;
                 attacker.AttackTargetPosition = _combatSnapshots[attack.TargetIndex].Position;
+                if (attack.Damage > 0) OnAdvisorAttack(attacker, target, attacker.AttackTargetPosition, attack.Damage);
                 var presentationTargetPosition = attacker.AttackTargetPosition;
                 if (attack.Projectile != 0 && attack.Damage > 0)
                 {
@@ -2879,11 +2888,14 @@ namespace RecoilPathfinding
                         attacker.Vat != null ? attacker.Vat.ProjectileSpeed :
                         attacker.RangedUnitType == 2 ? 18f : 24f;
                     var targetSnapshot = _combatSnapshots[attack.TargetIndex];
+                    // The projectile leaves when the animation throws it, like the stone / arrow that is drawn.
+                    var releaseDelay = ProjectileReleaseDelay(attacker);
+                    var targetAtRelease = targetSnapshot.Position + targetSnapshot.Velocity * releaseDelay;
                     Vector3 targetPosition;
                     if (RecoilCombatProjectileTrajectory.TryGetInterceptTime((float3)origin,
-                            targetSnapshot.Position, targetSnapshot.Velocity, speed, out var leadTime))
+                            targetAtRelease, targetSnapshot.Velocity, speed, out var leadTime))
                     {
-                        targetPosition = (Vector3)(targetSnapshot.Position + targetSnapshot.Velocity * leadTime);
+                        targetPosition = (Vector3)(targetAtRelease + targetSnapshot.Velocity * leadTime);
                         RecordProjectileLead(true);
                     }
                     else
@@ -2897,15 +2909,17 @@ namespace RecoilPathfinding
                     var horizontalDistance = Vector2.Distance(
                         new Vector2(origin.x, origin.z), new Vector2(targetPosition.x, targetPosition.z));
                     var travelTime = RecoilCombatProjectileTrajectory.TravelDuration(horizontalDistance, speed);
+                    var launchTime = SimulationNow + releaseDelay;
                     _pendingCombatProjectiles.Add(new PendingCombatProjectile
                     {
-                        FlightStartTime = SimulationNow,
-                        LastProcessedTime = SimulationNow,
+                        FlightStartTime = launchTime,
+                        LastProcessedTime = launchTime,
+                        AwaitingRelease = launchTime > SimulationNow,
                         TravelDuration = travelTime,
                         FlightStartPoint = origin,
                         ArcHeight = RecoilCombatProjectileTrajectory.ArcHeight(
                             new float2(origin.x, origin.z), new float2(targetPosition.x, targetPosition.z)),
-                        ImpactTime = SimulationNow + travelTime,
+                        ImpactTime = launchTime + travelTime,
                         ImpactPoint = targetPosition,
                         IntendedTarget = target.Entity,
                         SiegeStone = attacker.RangedUnitType == 2,
@@ -2976,6 +2990,20 @@ namespace RecoilPathfinding
             for (var projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
             {
                 var projectile = _pendingCombatProjectiles[projectileIndex];
+                if (projectile.AwaitingRelease)
+                {
+                    if (SimulationNow < projectile.FlightStartTime)
+                    {
+                        // Still in the attacker's hands.
+                        if (retainedProjectiles != projectileIndex)
+                            _pendingCombatProjectiles[retainedProjectiles] = projectile;
+                        retainedProjectiles++;
+                        continue;
+                    }
+                    // An attacker killed before throwing never throws (no stone is drawn either).
+                    if (!ProjectileAttackerAlive(projectile.Attacker)) continue;
+                    projectile.AwaitingRelease = false;
+                }
                 if (projectileGridStale)
                     ProjectileLinearSearchesLastFrame++;
                 var previousT = Mathf.Clamp01((projectile.LastProcessedTime - projectile.FlightStartTime) /
@@ -3134,6 +3162,23 @@ namespace RecoilPathfinding
             return RecoilCombatProjectileTrajectory.Position(
                 (float3)projectile.FlightStartPoint, (float3)projectile.ImpactPoint,
                 t, projectile.ArcHeight);
+        }
+
+        /// <summary>Seconds from the start of <paramref name="soldier"/>'s attack until its projectile leaves.</summary>
+        private static float ProjectileReleaseDelay(Soldier soldier)
+        {
+            if (soldier == null) return 0f;
+            if (soldier.Vat != null) return Mathf.Max(0f, soldier.Vat.ProjectileReleaseDelay);
+            if (soldier.Presentation != null) return Mathf.Max(0f, soldier.Presentation.ProjectileReleaseDelay);
+            return 0f;
+        }
+
+        private bool ProjectileAttackerAlive(Entity attacker)
+        {
+            if (attacker == Entity.Null || !_entityManager.Exists(attacker) ||
+                !_entityManager.HasComponent<RecoilBattleEcsState>(attacker)) return false;
+            var state = _entityManager.GetComponentData<RecoilBattleEcsState>(attacker);
+            return state.Active != 0 && state.Health > 0;
         }
 
         private Vector3 GetProjectileOrigin(Soldier soldier, float3 fallbackPosition)
@@ -3338,6 +3383,7 @@ namespace RecoilPathfinding
                 var surfaceDistance = Mathf.Max(0f,
                     Vector3.Distance(directPosition, projectile.ImpactPoint) - bodyRadius);
                 QueueOrApplySplashDamage(directHit, directState, projectile, surfaceDistance);
+                TossFromSiegeBlast(directHit, directPosition, projectile, surfaceDistance);
             }
         }
 
@@ -3372,6 +3418,7 @@ namespace RecoilPathfinding
                 : GetCombatBodyRadius(target);
             var surfaceDistance = Mathf.Max(0f, Vector3.Distance(position, projectile.ImpactPoint) - bodyRadius);
             QueueOrApplySplashDamage(target, state, projectile, surfaceDistance);
+            TossFromSiegeBlast(target, position, projectile, surfaceDistance);
         }
 
         private void QueueOrApplySplashDamage(Soldier target, RecoilBattleEcsState state,
@@ -4171,7 +4218,7 @@ namespace RecoilPathfinding
                 Template = template,
                 VisualSource = configuredPresentation,
                 NavigationVerticalOffset = movementSettings.VerticalOffset,
-                VisualHeight = hero != null ? 6f : configuredPresentation != null
+                VisualHeight = hero != null ? HeroBodyHeight(template) : configuredPresentation != null
                     ? configuredPresentation.NormalizedVisualHeight : 3f,
                 BodyRadius = Mathf.Max(0.15f, movementSettings.BodyRadius),
                 CharacterType = characterType,
@@ -4193,6 +4240,7 @@ namespace RecoilPathfinding
 
             }
             if (!preparedSpawn) RecordStreamSpawn(soldier);
+            if (!preparedSpawn && hero == null) OnAdvisorSummoned(soldier);
             if (!preparedSpawn && !_combatStarted && _waitingFormationActive && !_waitingFormationDirty)
                 AssignWaitingArmySlot(soldier);
             if (!_combatStarted)
@@ -5258,6 +5306,11 @@ namespace RecoilPathfinding
         private void DrawBattleScreenGui()
         {
             if (CapacityBenchmarkHidesUi) return;
+            if (_battlefieldClearing)
+            {
+                DrawBattlefieldClearing();
+                return;
+            }
             if (_startCountdownEndsAt > 0 && !_combatStarted && !_matchFinished)
             {
                 DrawHeroHealthBars();
@@ -5902,6 +5955,13 @@ namespace RecoilPathfinding
                 poolStyle, scale * hud.poolScore.scale);
         }
 
+        /// <summary>A hero's body height (set when its VAT is baked / resized); 6 when unknown.</summary>
+        private static float HeroBodyHeight(GameObject template)
+        {
+            var player = template != null ? template.GetComponent<NhiQuoc.Tools.HeroVatPlayer>() : null;
+            return player != null && player.targetBodyHeight > .01f ? player.targetBodyHeight : 6f;
+        }
+
         private static Texture2D _healthFillRoundTexture;
 
         private void DrawBattleTopBorders(float top, float scale)
@@ -5914,8 +5974,9 @@ namespace RecoilPathfinding
             {
                 var image = battleTopBorderImages[i];
                 if (image == null) continue;
+                // The images are square but the top 2 / 3 rings are painted wider than tall: narrowed so they are round.
                 var height = width * image.height / Mathf.Max(1f, image.width);
-                var borderWidth = i == 1 || i == 2 ? height * (1120f / 1254f) : width;
+                var borderWidth = width * BattleTopFrameWidthScale(i);
                 var leftBorder = new Rect(margin, y, borderWidth, height);
                 var rightBorder = new Rect(Screen.width - margin - borderWidth, y, borderWidth, height);
                 DrawAnimatedBattleTop(leftBorder, image, false, i, scale);
@@ -5924,15 +5985,39 @@ namespace RecoilPathfinding
             }
         }
 
-        private static void DrawBattleTopAvatarBackground(Rect border)
+        /// <summary>
+        /// The ring of each top frame (top1/2/3Boder.png), measured from the images: an ellipse fitted to the sides and
+        /// bottom of the transparent opening (the crown covers its top). x, y (from the top), width, height as
+        /// fractions of the image, slightly enlarged so no gap shows; the crown hides what is above the opening.
+        /// </summary>
+        private static readonly Rect[] BattleTopAvatarOpenings =
+        {
+            new Rect(.142f, .167f, .716f, .718f),
+            new Rect(.124f, .232f, .752f, .650f),
+            new Rect(.127f, .224f, .746f, .658f),
+        };
+
+        /// <summary>
+        /// Drawn width / height of each top frame so its ring is a circle: the ring's height over its width
+        /// (top 1 is round already; the top 2 / 3 art is about 14% / 12% too wide).
+        /// </summary>
+        private static float BattleTopFrameWidthScale(int rank) => rank == 1 ? .860f : rank == 2 ? .878f : 1f;
+
+        /// <summary>Where the avatar goes inside the top <paramref name="rank"/> frame drawn in <paramref name="frame"/>.</summary>
+        private static Rect BattleTopAvatarRect(Rect frame, int rank)
+        {
+            var opening = BattleTopAvatarOpenings[Mathf.Clamp(rank, 0, BattleTopAvatarOpenings.Length - 1)];
+            return new Rect(frame.x + frame.width * opening.x, frame.y + frame.height * opening.y,
+                frame.width * opening.width, frame.height * opening.height);
+        }
+
+        private static void DrawBattleTopAvatarBackground(Rect avatar)
         {
             EnsureHealthFillRoundTexture();
             var oldColor = GUI.color;
             GUI.color = new Color(0, 0, 0, oldColor.a);
             // Elliptical placeholder beneath the frame's transparent avatar opening.
-            GUI.DrawTexture(new Rect(border.x + border.width * 0.12f,
-                border.y + border.height * 0.22f, border.width * 0.76f,
-                border.height * 0.71f), _healthFillRoundTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(avatar, _healthFillRoundTexture, ScaleMode.StretchToFill, true);
             GUI.color = oldColor;
         }
         private static Texture2D _battleTopScoreGradient;

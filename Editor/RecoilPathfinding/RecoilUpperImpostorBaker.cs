@@ -64,6 +64,16 @@ namespace RecoilPathfindingEditor
             finally { EditorUtility.ClearProgressBar(); }
         }
 
+        /// <summary>Re-bakes the LOD4 upper impostor of one character prefab.</summary>
+        internal static void BakeOnePrefab(string path)
+        {
+            var shader = Shader.Find(ShaderName);
+            if (shader == null || !shader.isSupported) throw new InvalidOperationException("Upper impostor shader is unavailable.");
+            if (!AssetDatabase.IsValidFolder(Folder)) AssetDatabase.CreateFolder("Assets/Data/Characters", "UpperImpostors");
+            Bake(path, shader);
+            AssetDatabase.SaveAssets();
+        }
+
         private static void Bake(string path, Shader shader)
         {
             var root = PrefabUtility.LoadPrefabContents(path);

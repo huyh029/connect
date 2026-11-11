@@ -324,8 +324,14 @@ namespace RecoilPathfinding
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01(local * 4));
                 if (battleTopBorderImages != null && rank < battleTopBorderImages.Length && battleTopBorderImages[rank] != null)
                 {
-                    DrawDonationAvatar(card, _endgameDonors[rank]);
-                    GUI.DrawTexture(card, battleTopBorderImages[rank], ScaleMode.ScaleToFit, true);
+                    // The frame keeps its proportions inside the card; the avatar follows the frame, not the card.
+                    var image = battleTopBorderImages[rank];
+                    var aspect = image.width / (float)Mathf.Max(1, image.height) * BattleTopFrameWidthScale(rank);
+                    var frameWidth = Mathf.Min(card.width, card.height * aspect);
+                    var frameHeight = frameWidth / aspect;
+                    var frame = new Rect(card.center.x - frameWidth * .5f, card.center.y - frameHeight * .5f, frameWidth, frameHeight);
+                    DrawDonationAvatar(frame, _endgameDonors[rank], rank);
+                    GUI.DrawTexture(frame, image, ScaleMode.StretchToFill, true);
                 }
                 GUI.matrix = oldMatrix;
                 var nameRect = new Rect(x - 145 * scale, y + card.height + 4 * scale, 290 * scale, 30 * scale);

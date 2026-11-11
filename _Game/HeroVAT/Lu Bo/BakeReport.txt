@@ -1,9 +1,9 @@
-Lu Bo: single hero VAT; height 0.75; 30 FPS.
+Lu Bo: single hero VAT; target body height 4; 30 FPS.
 Lu Bo: LOD family 25_body_0.3_0_0.001, using 25_body_0.3_0_0.001; skipped 5 lower/duplicate levels.
 Lu Bo: LOD family 25_halberd2_0.3_0_0, using 25_halberd2_0.3_0_0; skipped 5 lower/duplicate levels.
-Lu Bo/25_body_0.3_0_0.001: 126402 vertices; 4096x11904 RGBAHalf; 372,0 MiB
-Lu Bo/25_body_0.3_0_0.002: 1974 vertices; 2048x384 RGBAHalf; 6,0 MiB
-Lu Bo/25_body_0.3_0_0.003: 1922 vertices; 2048x384 RGBAHalf; 6,0 MiB
-Lu Bo/25_halberd2_0.3_0_0: 6829 vertices; 4096x768 RGBAHalf; 24,0 MiB
-Lu Bo: height=0,75; scale=0,1907079; 6 clips; 384 frames; FX=3
-SUCCESS: Lu Bo, Idle height 0.75.
+Lu Bo/25_body_0.3_0_0.001: 126402 vertices; 4096x11904 RGBAHalf; 372.0 MiB
+Lu Bo/25_body_0.3_0_0.002: 1974 vertices; 2048x384 RGBAHalf; 6.0 MiB
+Lu Bo/25_body_0.3_0_0.003: 1922 vertices; 2048x384 RGBAHalf; 6.0 MiB
+Lu Bo/25_halberd2_0.3_0_0: 6829 vertices; 4096x768 RGBAHalf; 24.0 MiB
+Lu Bo: height=4; scale=1.713525; 6 clips; 384 frames; FX=3
+SUCCESS: Lu Bo, Idle body height 4.

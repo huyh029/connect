@@ -178,11 +178,34 @@ namespace RecoilPathfinding
             _poolPrewarmRunning = false;
         }
 
+        /// <summary>Retry / Home: the lobby background and the loading bar while the battlefield is cleared.</summary>
+        private void DrawBattlefieldClearing()
+        {
+            if (Event.current.type == EventType.Repaint)
+            {
+                var oldColor = GUI.color;
+                GUI.color = Color.white;
+                if (lobbyBackgroundImage != null)
+                    GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), lobbyBackgroundImage, ScaleMode.ScaleAndCrop, true);
+                else
+                {
+                    GUI.color = new Color(.025f, .04f, .07f, 1f);
+                    GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+                }
+                GUI.color = oldColor;
+            }
+            var rect = RecoilLobbyLayout.GuiRect(lobbyLayout.loadingBar, RecoilLobbyLayout.LoadingBarBounds, Screen.width, Screen.height);
+            DrawPoolLoadingBar(rect, _battlefieldClearProgress, "Đang dọn chiến trường…");
+        }
+
         private Texture2D _fantasyLoadingAtlas;
         private bool _fantasyLoadingAtlasLoaded;
         private Material _fantasyLoadingFillMaterial;
 
-        private void DrawPoolLoadingBar(Rect rect)
+        private void DrawPoolLoadingBar(Rect rect) => DrawPoolLoadingBar(rect, _poolPrewarmProgress, "Đang tải trận đấu…");
+
+        /// <summary>The fantasy loading bar at <paramref name="progress"/> (0..1) with <paramref name="text"/> above it.</summary>
+        private void DrawPoolLoadingBar(Rect rect, float progressValue, string text)
         {
             var previousEnabled = GUI.enabled;
             GUI.enabled = true;
@@ -201,7 +224,7 @@ namespace RecoilPathfinding
             SetLabelTextColor(_poolPrewarmLabelStyle, Color.white);
             var old = GUI.color;
             GUI.color = Color.white;
-            var progress = Mathf.Clamp01(_poolPrewarmProgress);
+            var progress = Mathf.Clamp01(progressValue);
             var visualHeight = _fantasyLoadingAtlas != null
                 ? rect.width * _fantasyLoadingAtlas.height / (_fantasyLoadingAtlas.width * 2f)
                 : rect.height * 3f;
@@ -231,7 +254,7 @@ namespace RecoilPathfinding
             GUI.color = Color.white;
             var label = new Rect(rect.x, art.center.y - visualHeight * .26f - 42f, rect.width, 38f);
             // Viewers only see a generic line; the detailed step (_poolPrewarmLabel) stays internal.
-            DrawHighlightedLabel(label, "Đang tải trận đấu…", _poolPrewarmLabelStyle, 1f);
+            DrawHighlightedLabel(label, text, _poolPrewarmLabelStyle, 1f);
             GUI.enabled = previousEnabled;
             GUI.color = old;
         }

@@ -23,6 +23,7 @@ namespace RecoilPathfinding
             _poolPrewarmLabel = "Đang chuẩn bị hiệu ứng…";
             PrewarmSiegeImpacts();
             yield return null;
+            yield return PrewarmAdvisorEffects();
             PrewarmProjectiles(pools);
             yield return null;
 

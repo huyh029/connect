@@ -1,0 +1,4 @@
+Single prefab VAT bake: Assets/Data/Characters/Prefabs/VOI_blue.prefab
+VOI_blue/ElephantLP_LOD2: vertices=1169, texture=2048x415, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (0.52, 1.60, -0.02), Extents: (1.73, 1.41, 2.35)
+VOI_blue: shared Idle foot pivot=(0.00, 0.71, 0.07), rootScale=(1.00, 1.00, 1.00), Idle local size=(1.46, 2.12, 3.33), Idle world height=2.1168
+SUCCESS

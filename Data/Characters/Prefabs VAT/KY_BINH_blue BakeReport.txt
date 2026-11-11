@@ -1,0 +1,6 @@
+Single prefab VAT bake: Assets/Data/Characters/Prefabs/KY_BINH_blue.prefab
+KY_BINH_blue/character.002_LOD2: vertices=566, texture=1024x475, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (0.07, 2.01, 0.13), Extents: (2.27, 2.15, 2.22)
+KY_BINH_blue/character.003_LOD2: vertices=7902, texture=4096x950, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (0.81, 1.52, -0.06), Extents: (1.79, 1.67, 1.01)
+KY_BINH_blue/Horse.001_LOD2: vertices=2576, texture=4096x475, rootScale=(1.00, 1.00, 1.00), skin=bindpose-to-prefab-root, bounds=Center: (0.31, 1.38, -0.21), Extents: (1.31, 1.43, 1.90)
+KY_BINH_blue: shared Idle foot pivot=(0.01, 0.09, 0.07), rootScale=(1.00, 1.00, 1.00), Idle local size=(1.34, 2.92, 2.88), Idle world height=2.92
+SUCCESS

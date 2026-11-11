@@ -82,7 +82,7 @@ namespace RecoilPathfinding
             if (skill == null) return -1;
             float reach = 0;
             foreach (var zone in skill.Zones)
-                if (zone.Enabled) reach = Mathf.Max(reach, zone.EngagementReach(configured));
+                if (zone.Enabled) reach = Mathf.Max(reach, zone.EngagementReach(configured, HeroZoneScale(hero.HeroVat)));
             if (reach <= 0) return -1;
             return Mathf.Max(.1f, reach - Mathf.Min(.15f, reach * .05f));
         }
@@ -133,7 +133,7 @@ namespace RecoilPathfinding
             ReleaseRootedHeroes();
             foreach (var flight in _heroKnockUps) SetHeroAirborne(flight.Target, false, 0);
             foreach (var movement in _heroDisplacements) SetForcedDisplacement(movement.Target, false);
-            _heroKnockUps.Clear(); _heroCasts.Clear(); _heroDisplacements.Clear();
+            _heroKnockUps.Clear(); _heroCasts.Clear(); _heroDisplacements.Clear(); _corpseFlights.Clear();
         }
 
         private readonly List<Soldier> _rootedHeroes = new();
@@ -367,7 +367,13 @@ namespace RecoilPathfinding
             for (int i = _heroDisplacements.Count - 1; i >= 0; i--)
             {
                 var movement = _heroDisplacements[i];
-                if (!HeroSkillAlive(movement.Target)) { RemoveHeroDisplacement(i); continue; }
+                if (!HeroSkillAlive(movement.Target))
+                {
+                    // Killed while flying: the body keeps going.
+                    CorpseKeepsMoving(movement.Target, movement.Impulse
+                        ? movement.Velocity * Mathf.Max(0, movement.Seconds) : movement.Remaining, movement.Seconds);
+                    RemoveHeroDisplacement(i); continue;
+                }
                 var step = movement.Impulse
                     ? movement.Velocity * Mathf.Min(dt, Mathf.Max(0, movement.Seconds))
                     : movement.Remaining * Mathf.Clamp01(dt / Mathf.Max(.001f, movement.Seconds));
@@ -380,11 +386,17 @@ namespace RecoilPathfinding
             {
                 var flight = _heroKnockUps[i];
                 float t = (SimulationNow - flight.Started) / flight.Duration;
+                if (t < 1 && !HeroSkillAlive(flight.Target))
+                {
+                    CorpseKeepsFlying(flight.Target, flight);
+                    _heroKnockUps.RemoveAt(i); continue;
+                }
                 bool active = HeroSkillAlive(flight.Target) && t < 1;
                 SetHeroAirborne(flight.Target, active, active ?
                     HeroSkillTimeline.AirborneHeight(t, flight.Height, flight.InitialHeight) : 0);
                 if (!active) _heroKnockUps.RemoveAt(i);
             }
+            UpdateCorpseFlights();
         }
 
         private bool HeroSkillAlive(Soldier soldier)
@@ -398,7 +410,8 @@ namespace RecoilPathfinding
         {
             var hero = cast.Caster;
             float speed = Mathf.Max(.01f, zone.ProjectileSpeed);
-            Vector3 origin = hero.Simulation.Position + cast.Facing * zone.Offset + Vector3.up;
+            var zoneScale = HeroZoneScale(hero.HeroVat);
+            Vector3 origin = hero.Simulation.Position + cast.Facing * (zone.Offset * zoneScale) + Vector3.up;
             var facing = cast.Facing * Quaternion.Euler(0, zone.Yaw, 0);
             float range = Mathf.Max(cast.Stats.Range + 2, Vector3.Distance(origin, cast.Target) + 2);
             var destination = origin + facing * Vector3.forward * range;
@@ -421,13 +434,25 @@ namespace RecoilPathfinding
                 Team = hero.IsBlue ? 0 : 1, IntendedTarget = cast.TargetUnit != null ? cast.TargetUnit.Entity : Entity.Null,
                 Damage = Mathf.Max(0, Mathf.RoundToInt(cast.Stats.Damage * zone.DamageMultiplier)),
                 AttackerStats = cast.Stats, SecondaryDamage = RecoilUnitDamage.UsesRangedArmor(cast.Stats),
-                AreaRadius = 0, CollisionRadius = Mathf.Max(.01f, zone.Radius), CastleTarget = cast.Castle,
+                AreaRadius = 0, CollisionRadius = Mathf.Max(.01f, zone.Radius * zoneScale), CastleTarget = cast.Castle,
                 CastleTeam = hero.IsBlue ? RecoilCastleTeam.Red : RecoilCastleTeam.Blue, HeroVisual = visual
             });
         }
 
+        /// <summary>Skill damage zones were authored for heroes of this body height.</summary>
+        internal const float HeroZoneAuthoringHeight = 6f;
+
+        /// <summary>
+        /// How much a hero's damage zones grow or shrink with its size: its body height (set by the VAT bake / size
+        /// tool) over <see cref="HeroZoneAuthoringHeight"/>. 1 when unknown.
+        /// </summary>
+        internal static float HeroZoneScale(NhiQuoc.Tools.HeroVatPlayer vat) =>
+            vat != null && vat.targetBodyHeight > .01f ? vat.targetBodyHeight / HeroZoneAuthoringHeight : 1f;
+
+        /// <param name="zoneScale">The hero's size relative to the authoring size (<see cref="HeroZoneScale"/>):
+        /// offsets and flight distances are multiplied by it; shape tests then use local / zoneScale.</param>
         public static void HeroZonePose(HeroHitZone zone, NhiQuoc.Tools.HeroVatPlayer.Clip clip, int frame,
-            Vector3 caster, Vector3 target, Quaternion facing, Vector3 scale, out Vector3 center, out Quaternion rotation)
+            Vector3 caster, Vector3 target, Quaternion facing, float zoneScale, out Vector3 center, out Quaternion rotation)
         {
             center = zone.OriginPosition(caster, target);
             rotation = facing;
@@ -437,10 +462,10 @@ namespace RecoilPathfinding
             if (planarForward.sqrMagnitude < .0001f)
             { planarForward = facing * Vector3.forward; planarForward.y = 0; }
             rotation = planarForward.sqrMagnitude > .0001f ? Quaternion.LookRotation(planarForward) : Quaternion.identity;
-            center += rotation * zone.Offset;
+            center += rotation * (zone.Offset * zoneScale);
             rotation *= Quaternion.Euler(0, zone.Yaw, 0);
             if (zone.IsProjectile)
-                center += rotation * Vector3.forward * zone.ProjectileTravel(frame, clip.duration, clip.frameCount);
+                center += rotation * Vector3.forward * (zone.ProjectileTravel(frame, clip.duration, clip.frameCount) * zoneScale);
             if (zone.IsSweep)
             {
                 zone.SweepSample(frame, out var sweepYaw, out _);
@@ -450,9 +475,12 @@ namespace RecoilPathfinding
 
         private void ResolveHeroSkillZone(HeroCast cast, HeroHitZone zone, int frame, int zoneIndex)
         {
+            // Zone shapes are tested at their authored size: offsets from the zone are divided by the hero's scale.
+            var zoneScale = HeroZoneScale(cast.Caster.HeroVat);
+            var toAuthored = 1f / zoneScale;
             HeroZonePose(zone, cast.Clip, frame, zone.IsProjectile ? cast.LaunchOrigins[zoneIndex] : cast.Caster.Simulation.Position,
                 zone.Anchor == HeroHitAnchor.FollowTarget ? cast.FollowPosition : cast.Target,
-                cast.Facing, cast.Caster.HeroVat.transform.lossyScale, out var center, out var rotation);
+                cast.Facing, zoneScale, out var center, out var rotation);
             var inverse = Quaternion.Inverse(rotation);
             float angle = -1;
             if (zone.IsSweep) zone.SweepSample(frame, out _, out angle);
@@ -465,7 +493,7 @@ namespace RecoilPathfinding
             if (cast.Castle)
             {
                 var point = cast.CastleBounds.ClosestPoint(center);
-                var local = inverse * (point - center);
+                var local = inverse * (point - center) * toAuthored;
                 bool castleHit = zone.IsProjectile ? zone.ContainsProjectileSegment(local, segment, 0) : zone.Contains(local, 0, angle);
                 if (castleHit && (!once || !cast.SweptCastle[zoneIndex]))
                 {
@@ -481,9 +509,10 @@ namespace RecoilPathfinding
                 var target = enemies[i];
                 if (!HeroSkillAlive(target)) continue;
                 var position = target.Simulation.Position;
-                var local = inverse * (position - center);
-                bool hit = zone.IsProjectile ? zone.ContainsProjectileSegment(local, segment, GetCombatBodyRadius(target)) :
-                    zone.Contains(local, GetCombatBodyRadius(target), angle);
+                var local = inverse * (position - center) * toAuthored;
+                var bodyRadius = GetCombatBodyRadius(target) * toAuthored;
+                bool hit = zone.IsProjectile ? zone.ContainsProjectileSegment(local, segment, bodyRadius) :
+                    zone.Contains(local, bodyRadius, angle);
                 if (!hit ||
                     hitTargets != null && !hitTargets.Add(target.Entity)) continue;
                 var state = _entityManager.GetComponentData<RecoilBattleEcsState>(target.Entity);
@@ -499,19 +528,30 @@ namespace RecoilPathfinding
                 }
                 // Heroes receive skill damage, but are immune to displacement and knock-up.
                 if (target.HeroId > 0) continue;
-                if (zone.Force == HeroHitForce.KnockUp ||
-                    zone.Force == HeroHitForce.RadialPush || zone.Force == HeroHitForce.ForwardPush)
+                if (zone.Force == HeroHitForce.KnockUp || zone.IsPushOut || zone.Force == HeroHitForce.ForwardPush)
                     LaunchHeroKnockUp(target, zone);
                 if (zone.Force == HeroHitForce.None) continue;
-                var direction = zone.Force == HeroHitForce.ForwardPush ? cast.Facing * Vector3.forward : position - center;
-                direction.y = 0;
-                float distance = zone.Force == HeroHitForce.RadialPush ?
-                    zone.RadialPushDistance(direction.magnitude) : zone.ForceDistance;
+                Vector3 direction;
+                float distance;
+                if (zone.IsAxisPush)
+                {
+                    // Out to the end line on the target's own side of the axis.
+                    direction = rotation * zone.AxisPushDirection(local, out var fromAxis);
+                    direction.y = 0;
+                    distance = zone.RadialPushDistance(fromAxis) * zoneScale;
+                }
+                else
+                {
+                    direction = zone.Force == HeroHitForce.ForwardPush ? cast.Facing * Vector3.forward : position - center;
+                    direction.y = 0;
+                    distance = (zone.Force == HeroHitForce.RadialPush ?
+                        zone.RadialPushDistance(direction.magnitude * toAuthored) : zone.ForceDistance) * zoneScale;
+                }
                 if (distance <= 0) continue;
                 if (zone.Force == HeroHitForce.Pull)
                 { distance = Mathf.Min(distance, direction.magnitude); direction = -direction; }
                 if (direction.sqrMagnitude <= .0001f) direction = cast.Facing * Vector3.forward;
-                bool impulse = zone.Force == HeroHitForce.RadialPush || zone.Force == HeroHitForce.ForwardPush;
+                bool impulse = zone.IsPushOut || zone.Force == HeroHitForce.ForwardPush;
                 float duration = Mathf.Max(.03f,
                     impulse || zone.Force == HeroHitForce.KnockUp ? zone.KnockUpDuration : zone.ForceDuration);
                 SetForcedDisplacement(target, true);

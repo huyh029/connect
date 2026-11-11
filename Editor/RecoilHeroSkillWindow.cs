@@ -62,7 +62,22 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
         EditorApplication.update += Tick;
         EditorApplication.playModeStateChanged += PlayModeChanged;
         Undo.undoRedoPerformed += RefreshAfterUndo;
+        EditorSceneManager.sceneClosing += SceneClosing;
+        AssemblyReloadEvents.beforeAssemblyReload += ClosePreview;
         updated = EditorApplication.timeSinceStartup;
+    }
+
+    /// <summary>Another scene replaces the current one: take the preview down first, or its objects stay behind.</summary>
+    private void SceneClosing(Scene scene, bool removingScene)
+    {
+        if (!previewScene.IsValid() || scene == previewScene) return;
+        // Unity is closing scenes right now: only remove the objects; it closes the preview scene itself.
+        playing = false;
+        foreach (var fx in effects) Discard(fx);
+        Discard(previewRoot); Discard(targetMarker);
+        effects.Clear(); effectIndices.Clear();
+        preview = null; previewRoot = null; targetMarker = null;
+        previewScene = default;
     }
 
     private void OnDisable()
@@ -71,6 +86,8 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
         EditorApplication.update -= Tick;
         EditorApplication.playModeStateChanged -= PlayModeChanged;
         Undo.undoRedoPerformed -= RefreshAfterUndo;
+        EditorSceneManager.sceneClosing -= SceneClosing;
+        AssemblyReloadEvents.beforeAssemblyReload -= ClosePreview;
         ClosePreview();
     }
 
@@ -274,6 +291,21 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
             Field("ForceDuration", "Thời gian đẩy (giây)");
             EditorGUILayout.HelpBox("Quân trúng đòn nằm giữa hai bán kính sẽ được đẩy ra vòng kết thúc. Quân nằm trong vòng bắt đầu hoặc ngoài vòng kết thúc không bị đẩy. Sát thương vẫn xét theo vùng đánh.", MessageType.None);
         }
+        else if (zone.FindPropertyRelative("Force").intValue == (int)HeroHitForce.AxisPushX ||
+                 zone.FindPropertyRelative("Force").intValue == (int)HeroHitForce.AxisPushY)
+        {
+            bool alongX = zone.FindPropertyRelative("Force").intValue == (int)HeroHitForce.AxisPushX;
+            if (shape != HeroHitShape.Box)
+                EditorGUILayout.HelpBox("Đẩy theo trục chỉ dùng cho vùng hình hộp. Hãy đổi hình dạng sang Hộp, nếu không vùng này sẽ không đẩy.", MessageType.Warning);
+            Field("PushStartRadius", "Khoảng cách tới trục bắt đầu đẩy");
+            Field("PushEndRadius", "Khoảng cách tới trục kết thúc đẩy");
+            Field("KnockUpHeight", "Độ cao bay khi bị đẩy");
+            Field("KnockUpDuration", "Thời gian đẩy (giây)");
+            EditorGUILayout.HelpBox(alongX
+                ? "Trục X là đường ngang qua tâm vùng. Quân phía trước trục bị đẩy tiến lên, quân phía sau bị đẩy lùi lại, tới đường kết thúc. Quân gần trục hơn khoảng bắt đầu hoặc xa hơn khoảng kết thúc không bị đẩy."
+                : "Trục Y là đường dọc qua tâm vùng (hướng tướng nhìn). Quân bên trái bị đẩy sang trái, bên phải sang phải, tới đường kết thúc. Quân gần trục hơn khoảng bắt đầu hoặc xa hơn khoảng kết thúc không bị đẩy.",
+                MessageType.None);
+        }
         else if (zone.FindPropertyRelative("Force").intValue != 0)
         { Field("ForceDistance", "Quãng đường hút / đẩy"); Field("ForceDuration", "Thời gian hút / đẩy (giây)"); }
     }
@@ -346,11 +378,13 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
             previewScene.name = "Xem thử kỹ năng tướng (tạm thời)";
             previewRoot = Instantiate(catalog.Find(Profile.HeroId));
             previewRoot.hideFlags = HideFlags.DontSave;
+            RecoilPreviewCleanup.Own(previewRoot);
             SceneManager.MoveGameObjectToScene(previewRoot, previewScene);
             previewRoot.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             preview = previewRoot.GetComponent<HeroVatPlayer>(); preview.enabled = false;
             foreach (var collider in previewRoot.GetComponentsInChildren<Collider>()) collider.enabled = false;
             targetMarker = new GameObject("Mục tiêu kỹ năng"); targetMarker.hideFlags = HideFlags.DontSave;
+            RecoilPreviewCleanup.Own(targetMarker);
             SceneManager.MoveGameObjectToScene(targetMarker, previewScene);
             var clip = Clip;
             for (int i = 0; i < clip.effects.Length; i++)
@@ -358,6 +392,7 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
                 if (clip.effects[i].prefab == null) continue;
                 var fx = Instantiate(clip.effects[i].prefab);
                 fx.hideFlags = HideFlags.DontSave; SceneManager.MoveGameObjectToScene(fx, previewScene);
+                RecoilPreviewCleanup.Own(fx);
                 foreach (var audio in fx.GetComponentsInChildren<AudioSource>()) audio.enabled = false;
                 effects.Add(fx); effectIndices.Add(i);
             }
@@ -372,11 +407,21 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
     private void ClosePreview()
     {
         playing = false;
+        // DontSave objects are not destroyed with their scene: remove them explicitly.
+        foreach (var fx in effects) Discard(fx);
+        Discard(previewRoot); Discard(targetMarker);
         effects.Clear(); effectIndices.Clear();
         preview = null; previewRoot = null; targetMarker = null;
         if (previewScene.IsValid()) EditorSceneManager.CloseScene(previewScene, true);
         previewScene = default;
         if (previousScene.IsValid() && previousScene.isLoaded) SceneManager.SetActiveScene(previousScene);
+    }
+
+    private static void Discard(GameObject go)
+    {
+        if (go == null) return;
+        RecoilPreviewCleanup.Release(go);
+        DestroyImmediate(go);
     }
 
     private void Tick()
@@ -438,12 +483,12 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
         {
             var z = Skill.Zones[i];
             RecoilAutoBattleDemo.HeroZonePose(z, Clip, frame, Vector3.zero, target, Quaternion.identity,
-                preview.transform.lossyScale, out var center, out var rotation);
+                1f, out var center, out var rotation); // authoring size
             bool active = z.Enabled && frame >= z.StartFrame && frame <= Mathf.Max(z.StartFrame, z.EndFrame);
             if (z.IsProjectile)
             {
                 RecoilAutoBattleDemo.HeroZonePose(z, Clip, z.StartFrame, Vector3.zero, target, Quaternion.identity,
-                    preview.transform.lossyScale, out var launch, out var flightRotation);
+                    1f, out var launch, out var flightRotation);
                 var end = launch + flightRotation * Vector3.forward * z.ProjectileTravel(z.EndFrame, Clip.duration, Clip.frameCount);
                 Handles.color = Color.yellow;
                 Handles.DrawDottedLine(launch, end, 4);
@@ -501,12 +546,50 @@ public sealed class RecoilHeroSkillWindow : EditorWindow
                     Handles.Label(center + Vector3.right * z.PushEndRadius, "Kết thúc đẩy");
                     DrawRadialPushPreview(z, center);
                 }
+                if (z.IsAxisPush)
+                {
+                    DrawAxisPushPreview(z, center, rotation);
+                    continue;
+                }
                 var arrow = z.Force == HeroHitForce.KnockUp ? Vector3.up : z.Force == HeroHitForce.Pull ? -(rotation * Vector3.forward) : rotation * Vector3.forward;
                 Handles.ArrowHandleCap(0, center + Vector3.up, Quaternion.LookRotation(arrow),
                     z.Force == HeroHitForce.KnockUp ? z.KnockUpHeight : z.Force == HeroHitForce.RadialPush ?
                     Mathf.Max(.01f, z.PushEndRadius - z.PushStartRadius) : z.ForceDistance, EventType.Repaint);
             }
         }
+    }
+
+    private void DrawAxisPushPreview(HeroHitZone zone, Vector3 center, Quaternion rotation)
+    {
+        float start = Mathf.Max(0, zone.PushStartRadius), end = Mathf.Max(start, zone.PushEndRadius);
+        float sinceHit = FrameSeconds(Clip, frame) - FrameSeconds(Clip, zone.StartFrame);
+        float current = Mathf.Lerp(start, end, Mathf.Clamp01(sinceHit / Mathf.Max(.03f, zone.KnockUpDuration)));
+        bool alongX = zone.Force == HeroHitForce.AxisPushX;
+        // Local frame: "out" is the push direction, "line" runs along the axis.
+        var outward = rotation * (alongX ? Vector3.forward : Vector3.right);
+        var line = rotation * (alongX ? Vector3.right : Vector3.forward);
+        float half = (alongX ? zone.BoxSize.x : zone.BoxSize.y) * .5f; // the axis spans the box
+        var oldDepth = Handles.zTest;
+        Handles.zTest = UnityEngine.Rendering.CompareFunction.Always;
+        center += Vector3.up * .08f;
+        Handles.color = new Color(1, 1, 1, .9f);
+        Handles.DrawLine(center - line * half, center + line * half, 3);
+        Handles.Label(center + line * half, alongX ? "Trục X" : "Trục Y");
+        for (int side = -1; side <= 1; side += 2)
+        {
+            var o = outward * side;
+            Handles.color = new Color(.3f, 1, .4f, .8f);
+            Handles.DrawLine(center + o * start - line * half, center + o * start + line * half);
+            Handles.color = new Color(1, .3f, .2f, .8f);
+            Handles.DrawLine(center + o * end - line * half, center + o * end + line * half);
+            Handles.color = new Color(1, .85f, .05f, 1);
+            Handles.DrawLine(center + o * current - line * half, center + o * current + line * half, 2);
+            for (int i = -2; i <= 2; i++)
+                Handles.ArrowHandleCap(0, center + o * current + line * (half * i * .4f), Quaternion.LookRotation(o),
+                    Mathf.Clamp((end - start) * .18f, .3f, 1.2f), EventType.Repaint);
+        }
+        Handles.Label(center + outward * end + Vector3.up * 1.5f, $"Đẩy từ trục: {start:0.##} → {end:0.##} | hiện tại: {current:0.##}");
+        Handles.zTest = oldDepth;
     }
 
     private void DrawRadialPushPreview(HeroHitZone zone, Vector3 center)

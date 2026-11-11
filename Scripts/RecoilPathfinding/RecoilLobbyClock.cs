@@ -35,6 +35,8 @@ namespace RecoilPathfinding
         private RecoilClockDial _lobbyClockDial;
         private CanvasGroup _lobbyClockHider;
         private readonly Vector3[] _lobbyClockCorners = new Vector3[4];
+        private RawImage _lobbyBackdropImage;
+        private bool _lobbyBackdropSearched;
 
         /// <summary>The canvas paints the lobby background itself, so OnGUI must not paint it over the clock.</summary>
         private bool LobbyClockDrawsBackdrop => lobbyClockCanvas != null && lobbyClockCanvas.gameObject.activeInHierarchy;
@@ -106,6 +108,7 @@ namespace RecoilPathfinding
             if (!show) return;
             // Same fit the IMGUI lobby uses for its title and buttons, so the clock keeps its place among them.
             lobbyClockCanvas.scaleFactor = RecoilLobbyLayout.FitScale(Screen.width, Screen.height);
+            PlaceLobbyBackdrop();
 
             if (_lobbyClockRoot == null)
             {
@@ -121,6 +124,38 @@ namespace RecoilPathfinding
             PlaceLobbyClock();
             // On top: the UGUI copy stays laid out and animated (the dial drives it) but is not drawn; OnGUI draws it.
             _lobbyClockHider.alpha = lobbyClockOnTop ? 0f : 1f;
+        }
+
+        /// <summary>
+        /// Sizes the canvas's lobby background to cover the whole screen (crop, like ScaleAndCrop) every frame. Its
+        /// AspectRatioFitter measures the canvas only when enabled, and the canvas is switched off and on around the
+        /// startup checks, so it could keep a 0 × 0 size and the lobby showed no background.
+        /// </summary>
+        private void PlaceLobbyBackdrop()
+        {
+            if (!_lobbyBackdropSearched)
+            {
+                _lobbyBackdropSearched = true;
+                foreach (var raw in lobbyClockCanvas.GetComponentsInChildren<RawImage>(true))
+                    if (raw.transform.parent == lobbyClockCanvas.transform) { _lobbyBackdropImage = raw; break; }
+                if (_lobbyBackdropImage != null &&
+                    _lobbyBackdropImage.TryGetComponent<AspectRatioFitter>(out var fitter)) fitter.enabled = false;
+            }
+            if (_lobbyBackdropImage == null) return;
+            if (_lobbyBackdropImage.texture == null && lobbyBackgroundImage != null)
+                _lobbyBackdropImage.texture = lobbyBackgroundImage;
+            var texture = _lobbyBackdropImage.texture;
+            var scale = Mathf.Max(lobbyClockCanvas.scaleFactor, .0001f);
+            var screen = new Vector2(Screen.width, Screen.height) / scale; // canvas units
+            var aspect = texture != null && texture.height > 0 ? texture.width / (float)texture.height : 16f / 9f;
+            var size = screen.x / Mathf.Max(screen.y, 1f) > aspect
+                ? new Vector2(screen.x, screen.x / aspect)
+                : new Vector2(screen.y * aspect, screen.y);
+            var rect = _lobbyBackdropImage.rectTransform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = size;
+            if (rect.GetSiblingIndex() != 0) rect.SetAsFirstSibling(); // under the clock
         }
 
         /// <summary>Puts the clock where the layout says: its holder is centered on the canvas, so positions are design pixels.</summary>

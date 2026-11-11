@@ -274,7 +274,7 @@ MonoBehaviour:
         EndFrame: 34
         RepeatFrames: 0
         EffectIndex: 0
-        Offset: {x: 0, y: 0, z: 0}
+        Offset: {x: 0, y: 0, z: -0.15507746}
         Yaw: 0
         Radius: 6.83
         InnerRadius: 0
@@ -907,17 +907,17 @@ MonoBehaviour:
         Yaw: 0
         Radius: 6
         InnerRadius: 0
-        BoxSize: {x: 1.07, y: 198.12}
+        BoxSize: {x: 3, y: 198.12}
         Angle: 90
         DamageMultiplier: 1
         EdgeDamage: 1
-        Force: 0
+        Force: 6
         ForceDistance: 3
         ForceDuration: 0.25
         PushStartRadius: 0
-        PushEndRadius: 6
+        PushEndRadius: 4.4
         KnockUpHeight: 4
-        KnockUpDuration: 0.8
+        KnockUpDuration: 0.3
       - Name: "H\xECnh qu\u1EA1t"
         Enabled: 1
         Shape: 0

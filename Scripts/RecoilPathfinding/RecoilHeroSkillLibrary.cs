@@ -18,7 +18,9 @@ namespace RecoilPathfinding
         [InspectorName("Bám mục tiêu di chuyển")] FollowTarget = 3,
         [InspectorName("Đạn bay thẳng")] StraightProjectile = 4
     }
-    public enum HeroHitForce { [InspectorName("Không")] None, [InspectorName("Hút vào tâm")] Pull, [InspectorName("Đẩy tỏa tròn")] RadialPush, [InspectorName("Đẩy về phía trước")] ForwardPush, [InspectorName("Hất tung")] KnockUp }
+    public enum HeroHitForce { [InspectorName("Không")] None, [InspectorName("Hút vào tâm")] Pull, [InspectorName("Đẩy tỏa tròn")] RadialPush, [InspectorName("Đẩy về phía trước")] ForwardPush, [InspectorName("Hất tung")] KnockUp,
+        [InspectorName("Đẩy ra từ trục X (tiến / lùi)")] AxisPushX,
+        [InspectorName("Đẩy ra từ trục Y (sang hai bên)")] AxisPushY }
     public enum HeroHitMode { [InspectorName("Đánh cả vùng")] Instant, [InspectorName("Thanh sát thương quét")] Sweep }
 
     public static class HeroSkillTimeline
@@ -75,12 +77,13 @@ namespace RecoilPathfinding
         /// <summary>Hero body radius (2) + the largest target body (another hero, 2): centers this far apart are touching.</summary>
         public const float ContactPadding = 4f;
 
-        public float EngagementReach(float configuredRange)
+        /// <param name="scale">The hero's zone scale (zones grow / shrink with the hero's size).</param>
+        public float EngagementReach(float configuredRange, float scale = 1f)
         {
             if (Anchor == HeroHitAnchor.Target || Anchor == HeroHitAnchor.FollowTarget || IsProjectile)
                 return Mathf.Max(.1f, configuredRange);
             float extent = Shape == HeroHitShape.Box ? BoxSize.magnitude * .5f : Radius;
-            float reach = new Vector2(Offset.x, Offset.z).magnitude + Mathf.Max(.01f, extent);
+            float reach = (new Vector2(Offset.x, Offset.z).magnitude + Mathf.Max(.01f, extent)) * Mathf.Max(.01f, scale);
             // The configured range is the gap between bodies, but reach is measured center to center: add both bodies
             // (the hero's and, at most, another hero's). Capping at the bare range (1.5 for melee heroes) made every
             // melee skill unusable, since two heroes' centers never get closer than their bodies allow.
@@ -93,6 +96,26 @@ namespace RecoilPathfinding
             float z = local.z - Mathf.Clamp(local.z, -Mathf.Max(0, length), 0);
             return local.x * local.x + z * z <= Mathf.Pow(Mathf.Max(.01f, Radius) + Mathf.Max(0, bodyRadius), 2);
         }
+        /// <summary>Box zones only: pushed away from one of the box's axes (X = across, Y = forward).</summary>
+        public bool IsAxisPush => Shape == HeroHitShape.Box && (Force == HeroHitForce.AxisPushX || Force == HeroHitForce.AxisPushY);
+        /// <summary>Pushed out to the end line / ring (radial or from an axis).</summary>
+        public bool IsPushOut => Force == HeroHitForce.RadialPush || IsAxisPush;
+
+        /// <summary>
+        /// For an axis push: the zone-local direction a target at <paramref name="local"/> is pushed (away from the
+        /// axis, on its own side) and its distance from the axis.
+        /// </summary>
+        public Vector3 AxisPushDirection(Vector3 local, out float fromAxis)
+        {
+            if (Force == HeroHitForce.AxisPushX)
+            {
+                fromAxis = Mathf.Abs(local.z);
+                return new Vector3(0, 0, local.z >= 0 ? 1 : -1);
+            }
+            fromAxis = Mathf.Abs(local.x);
+            return new Vector3(local.x >= 0 ? 1 : -1, 0, 0);
+        }
+
         public float RadialPushDistance(float radius)
         {
             float start = Mathf.Max(0, PushStartRadius), end = Mathf.Max(start, PushEndRadius);

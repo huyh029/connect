@@ -80,7 +80,7 @@ namespace RecoilPathfindingEditor
                         for (var part = 0; part < original.Length; part++)
                         {
                             var source = original[part];
-                            var mesh = source.GetComponent<MeshFilter>()?.sharedMesh;
+                            var mesh = (source.TryGetComponent<MeshFilter>(out var meshFilter5) ? meshFilter5.sharedMesh : null);
                             if (mesh == null) throw new InvalidOperationException("Missing VAT mesh: " + source.name);
                             if (level == 0) originalCount += mesh.vertexCount;
                             if (mesh.vertexCount < 128) { lower.Add(source); reducedCount += mesh.vertexCount; continue; }
