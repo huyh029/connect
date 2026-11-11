@@ -230,7 +230,8 @@ namespace RecoilPathfinding
             }
             GUI.color = Color.white;
             var label = new Rect(rect.x, art.center.y - visualHeight * .26f - 42f, rect.width, 38f);
-            DrawHighlightedLabel(label, _poolPrewarmLabel, _poolPrewarmLabelStyle, 1f);
+            // Viewers only see a generic line; the detailed step (_poolPrewarmLabel) stays internal.
+            DrawHighlightedLabel(label, "Đang tải trận đấu…", _poolPrewarmLabelStyle, 1f);
             GUI.enabled = previousEnabled;
             GUI.color = old;
         }

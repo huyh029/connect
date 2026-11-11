@@ -303,7 +303,7 @@ namespace RecoilPathfinding
             if (endgameTitleImage != null) GUI.DrawTexture(title, endgameTitleImage, ScaleMode.ScaleToFit, true);
             else GUI.Label(title, "KẾT THÚC TRẬN ĐẤU", _endgameHeadingStyle);
             GUI.matrix = oldMatrix;
-            _endgameHeadingStyle.normal.textColor = _endgameBlueWins ? new Color(.45f, .75f, 1f) : new Color(1f, .45f, .3f);
+            SetLabelTextColor(_endgameHeadingStyle, _endgameBlueWins ? new Color(.45f, .75f, 1f) : new Color(1f, .45f, .3f));
             DrawHighlightedLabel(new Rect(Screen.width * .5f - 320 * scale, 245 * scale, 640 * scale, 45 * scale),
                 _endgameBlueWins ? "ĐỘI XANH CHIẾN THẮNG" : "ĐỘI ĐỎ CHIẾN THẮNG", _endgameHeadingStyle, scale);
             for (var rank = 0; rank < 3; rank++)
@@ -334,11 +334,11 @@ namespace RecoilPathfinding
                 GUI.DrawTexture(new Rect(nameRect.x, nameRect.y, nameRect.width, nameRect.height + 54 * scale),
                     _endgameNameGradient, ScaleMode.StretchToFill, true);
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01(local * 4));
-                _endgameNameStyle.normal.textColor = UserNameColor(_endgameNames[rank]);
                 _endgameNameStyle.fontSize = Mathf.Max(12, Mathf.RoundToInt(22 * scale));
                 var fittedName = FitTopName(_endgameNames[rank], _endgameNameStyle, nameRect.width);
-                DrawHighlightedLabel(nameRect, fittedName, _endgameNameStyle, scale);
-                _endgameScoreStyle.normal.textColor = new Color(1f, .82f, .3f);
+                DrawOutlinedNameLabel(nameRect, fittedName, _endgameNameStyle, scale,
+                    UserNameColor(_endgameNames[rank], _endgameBlueWins));
+                SetLabelTextColor(_endgameScoreStyle, new Color(1f, .82f, .3f));
                 var points = Mathf.RoundToInt(_endgameScores[rank] * Mathf.SmoothStep(0, 1, Mathf.Clamp01((local - .5f) / 1.2f)));
                 var scoreY = string.IsNullOrWhiteSpace(_endgameNames[rank])
                     ? nameRect.y + 23 * scale : nameRect.yMax + 4 * scale;

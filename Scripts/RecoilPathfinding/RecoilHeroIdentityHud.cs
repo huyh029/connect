@@ -33,9 +33,9 @@ namespace RecoilPathfinding
             _heroHealthLabel.clipping = TextClipping.Clip;
             _heroHealthLabel.richText = false;
             _heroHealthLabel.wordWrap = false;
-            _heroHealthLabel.normal.textColor = Color.black;
+            SetLabelTextColor(_heroHealthLabel, Color.black);
             GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 1), text, _heroHealthLabel);
-            _heroHealthLabel.normal.textColor = color;
+            SetLabelTextColor(_heroHealthLabel, color);
             GUI.Label(rect, text, _heroHealthLabel);
         }
     }

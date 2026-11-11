@@ -121,7 +121,7 @@ namespace RecoilPathfinding
             var modeLabel = new GUIStyle(GUIStyle.none)
             {
                 font = SettingsFont, fontSize = 16, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = ThemeTextDim }
+                normal = { textColor = ThemeTextDim }, hover = { textColor = ThemeTextDim }
             };
             // CSV / drag mode only matters to the soldier, gift and hero tabs.
             if (!_initialArmySettingsOpen && !_cursorSettingsOpen)

@@ -137,7 +137,7 @@ namespace RecoilPathfinding
             {
                 13, 15,
                 RecoilBattleHudLayout.FontSize(hud.poolTitle, BattleHudPieceId.PoolTitle, Screen.width),
-                score, Mathf.RoundToInt(score * 1.2f),
+                score, Mathf.RoundToInt(score * 1.8f),
                 Mathf.RoundToInt(18f * scale), Mathf.RoundToInt(20f * scale), Mathf.RoundToInt(34f * scale)
             };
             foreach (var size in sizes)

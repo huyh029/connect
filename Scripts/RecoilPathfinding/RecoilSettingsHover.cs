@@ -124,7 +124,8 @@ namespace RecoilPathfinding
         private GUIStyle SettingsPageTitleStyle => _settingsPageTitleStyle ??= new GUIStyle(GUIStyle.none)
         {
             font = SettingsFont, fontSize = 24, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft,
-            wordWrap = false, clipping = TextClipping.Clip, normal = { textColor = ThemeGoldBright }
+            wordWrap = false, clipping = TextClipping.Clip, normal = { textColor = ThemeGoldBright },
+            hover = { textColor = ThemeGoldBright }
         };
 
         /// <summary>Page title in gold with a fine rule under it.</summary>

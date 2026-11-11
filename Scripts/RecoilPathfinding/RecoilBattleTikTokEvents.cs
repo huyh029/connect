@@ -292,7 +292,7 @@ namespace RecoilPathfinding
                 if (pending <= 0) continue;
                 var total = team == 0 ? _blueSelectedSpawnTotal : _redSelectedSpawnTotal;
                 var amount = Math.Min(pending, int.MaxValue - total);
-                if (!_combatStarted) amount = Math.Min(amount, RemainingStagingCapacity(team == 0, type));
+                if (!_combatStarted) amount = Math.Min(amount, RemainingStagingCapacity(team == 0));
                 if (amount <= 0) continue;
                 if (!_combatStarted && !PrepareWaitingReinforcement(type, team == 0 ? amount : 0, team == 1 ? amount : 0)) continue;
                 EnqueueSpawnType(team == 0 ? _blueSelectedSpawnQueue : _redSelectedSpawnQueue, type, amount);

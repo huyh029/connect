@@ -343,9 +343,9 @@ namespace RecoilPathfinding
 
             _heroIntroUserStyle.fontSize = Mathf.Max(18, Mathf.RoundToInt(25f * scale));
             _heroIntroTitleStyle.fontSize = Mathf.Max(16, Mathf.RoundToInt(25f * scale));
-            _heroIntroUserStyle.normal.textColor = UserNameColor(slot.Request.Name);
-            _heroIntroTitleStyle.normal.textColor = Color.white;
-            DrawHighlightedLabel(name, slot.Request.Name, _heroIntroUserStyle, scale);
+            SetLabelTextColor(_heroIntroTitleStyle, Color.white);
+            DrawOutlinedNameLabel(name, slot.Request.Name, _heroIntroUserStyle, scale,
+                UserNameColor(slot.Request.Name, slot.Request.Blue));
             DrawHighlightedLabel(new Rect(name.x, name.yMax, name.width, 30 * scale), slot.Request.Title,
                 _heroIntroTitleStyle, scale);
         }

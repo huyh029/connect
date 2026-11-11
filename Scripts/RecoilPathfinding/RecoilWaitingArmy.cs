@@ -48,14 +48,15 @@ namespace RecoilPathfinding
         }
         private float _nextStagingQueueCheck;
 
-        private int RemainingStagingCapacity(bool blue, int type)
+        /// <summary>Places left on this side before the battle (all soldier types together, heroes not counted).</summary>
+        private int RemainingStagingCapacity(bool blue)
         {
             var used = 0;
             foreach (var soldier in blue ? _blueTeam : _redTeam)
-                if (soldier != null && !soldier.Retired && soldier.HeroId == 0 && soldier.CharacterType == type && IsAlive(soldier)) used++;
+                if (soldier != null && !soldier.Retired && soldier.HeroId == 0 && IsAlive(soldier)) used++;
             foreach (var batch in blue ? _blueSelectedSpawnQueue : _redSelectedSpawnQueue)
-                if (batch.CharacterType == type) used += batch.Remaining;
-            return Mathf.Max(0, MaximumStagedPerTypePerTeam - used);
+                used += batch.Remaining;
+            return Mathf.Max(0, MaximumStagedPerTeam - used);
         }
         private void FlushDeferredWaitingArmy()
         {
@@ -63,8 +64,8 @@ namespace RecoilPathfinding
             _nextStagingQueueCheck = Time.unscaledTime + .25f;
             for (var type = 0; type < CharacterTypeCount; type++)
             {
-                var blue = Mathf.Min(_waitingDeferred[0, type], RemainingStagingCapacity(true, type));
-                var red = Mathf.Min(_waitingDeferred[1, type], RemainingStagingCapacity(false, type));
+                var blue = Mathf.Min(_waitingDeferred[0, type], RemainingStagingCapacity(true));
+                var red = Mathf.Min(_waitingDeferred[1, type], RemainingStagingCapacity(false));
                 if (blue + red <= 0) continue;
                 if (Time.unscaledTime < _nextWaitingPlanAttempt) return;
                 if (!PrepareWaitingReinforcement(type, blue, red))
@@ -84,26 +85,6 @@ namespace RecoilPathfinding
         private readonly List<Vector3>[][] _waitingSlots = { new List<Vector3>[CharacterTypeCount], new List<Vector3>[CharacterTypeCount] };
         private readonly int[][] _waitingAssigned = { new int[CharacterTypeCount], new int[CharacterTypeCount] };
 
-        private List<RecoilInitialArmyPlanner.Block> BuildWaitingArmyBlocks(
-            List<RecoilInitialArmyPlanner.Block> source, int[] counts)
-        {
-            var radii = new float[CharacterTypeCount];
-            var fallback = new List<RecoilInitialArmyPlanner.Block>();
-            foreach (var block in CreateDefaultInitialArmyLayout().Blocks)
-                fallback.Add(new RecoilInitialArmyPlanner.Block
-                    { Type = block.Type, X = block.X, Y = block.Y, Count = block.Count });
-            for (var type = 0; type < CharacterTypeCount; type++)
-            {
-                radii[type] = .5f;
-                for (var team = 0; team < 2; team++)
-                {
-                    var template = FindTemplateForType(team == 0, type);
-                    if (template != null && template.TryGetComponent<RecoilNavMeshPathAgent>(out var agent))
-                        radii[type] = Mathf.Max(radii[type], agent.MovementSettings.BodyRadius);
-                }
-            }
-            return RecoilInitialArmyPlanner.Resize(source, counts, fallback, radii);
-        }
         private bool ReplanWaitingArmy(int addedType = -1, int blueAdded = 0, int redAdded = 0)
         {
             var blue = new int[CharacterTypeCount];

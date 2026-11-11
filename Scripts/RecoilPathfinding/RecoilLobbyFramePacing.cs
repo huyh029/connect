@@ -217,7 +217,7 @@ namespace RecoilPathfinding
             _cursorNoteStyle ??= new GUIStyle(GUIStyle.none)
             {
                 font = SettingsFont, fontSize = 16, wordWrap = true, alignment = TextAnchor.MiddleLeft,
-                normal = { textColor = ThemeTextDim }
+                normal = { textColor = ThemeTextDim }, hover = { textColor = ThemeTextDim }
             };
             _cursorToggleStyle ??= new GUIStyle(GUI.skin.toggle)
             { fontSize = 18, wordWrap = true, normal = { textColor = ThemeText }, onNormal = { textColor = ThemeText } };

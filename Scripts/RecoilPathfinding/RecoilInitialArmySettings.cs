@@ -320,80 +320,141 @@ namespace RecoilPathfinding
         }
 
 
+        [SerializeField, Min(.15f), Tooltip("Khoảng trống (m) giữa hai lính cạnh nhau trong đội hình tập kết đầu trận; " +
+                                          "giữa hai loại lính cách gấp đôi.")]
+        private float formationUnitSpacing = 1f;
+        [SerializeField, Min(1), Tooltip("Mỗi hàng của đội hình tập kết có khoảng chừng này lính (mỗi loại lính chia " +
+                                         "thành các hàng đều nhau, hàng nào cũng trải hết chiều ngang).")]
+        private int formationUnitsPerLine = 50;
+
         private bool TryBuildCustomInitialArmy(out string error, int[] runtimeCounts = null)
         {
             EnsureInitialArmyLayout();
             error = null;
             if (!_initialArmy.Enabled && runtimeCounts == null) return true;
-            if (runtimeCounts == null)
-            {
-                runtimeCounts = new int[CharacterTypeCount];
-                for (var type = 0; type < CharacterTypeCount; type++) runtimeCounts[type] = PreparedTypeCount(true, type);
-            }
-            for (var type = 0; type < runtimeCounts.Length; type++)
-                runtimeCounts[type] = Mathf.Min(runtimeCounts[type], MaximumStagedPerTypePerTeam);
+            runtimeCounts = runtimeCounts == null ? PreparedTypeCounts(true) : LimitToTeamCapacity(runtimeCounts);
             _preparedBluePositions.Clear();
             _preparedRedPositions.Clear();
             var middle = (GetSpawnTargetPosition(true) + GetSpawnTargetPosition(false)) * .5f;
             var axis = BattleAxis();
             var lateral = Vector3.Cross(Vector3.up, axis);
-            var blocks = new List<RecoilInitialArmyPlanner.Block>();
-            foreach (var block in _initialArmy.Blocks)
-            {
-                if (block.Type < 0) continue;
-                var radius = .5f;
-                for (var team = 0; team < 2; team++)
-                {
-                    var template = FindTemplateForType(team == 0, block.Type);
-                    if (template != null && template.TryGetComponent<RecoilNavMeshPathAgent>(out var agent))
-                        radius = Mathf.Max(radius, agent.MovementSettings.BodyRadius);
-                }
-                blocks.Add(new RecoilInitialArmyPlanner.Block
-                {
-                    Type = block.Type, X = Mathf.Abs(block.X), Y = block.Y,
-                    Count = block.Count, Radius = radius
-                });
-            }
-            if (runtimeCounts != null) blocks = BuildWaitingArmyBlocks(blocks, runtimeCounts);
-            if (blocks.Count == 0) { error = "Hãy thêm loại quân vào đội hình."; return false; }
-            var plans = new List<List<RecoilInitialArmyPlanner.Slot>>();
-            foreach (var widthFactor in new[] { 1f, .75f, .5f, .25f, 1.25f, 1.5f })
-            foreach (var aspect in new[] { 2f, 1f, 4f, .5f })
-                if (RecoilInitialArmyPlanner.TryBuild(blocks,
-                    Mathf.Max(8f, preparedFormationHalfWidth * widthFactor), aspect, out var plan))
-                    plans.Add(plan);
+            var rows = BuildFormationRows(runtimeCounts, out var widest);
+            if (rows.Count == 0) { error = "Hãy thêm loại quân vào đội hình."; return false; }
 
-            // Try narrower/deeper layouts and move the complete formation back together.
-            // Individual units are never clamped, which would break symmetry or cause overlaps.
-            for (var front = 8f; front <= 248f; front += 8f)
-            foreach (var plan in plans)
+            // One wide rectangle, 80% as wide as the map (across the battle axis), laid out like the formation config.
+            // Spots that cannot hold a unit (the castle, water, off the map) are skipped and the lines go on further
+            // back, so the army spills around the castle instead of stopping at its wall. A spot is used only when it
+            // is free on both sides, so the two armies stay mirror images.
+            var width = Mathf.Max(widest, MapWidthAcross(lateral) * FormationMapWidthShare);
+            var placements = new List<RecoilInitialArmyPlanner.Placement>();
+            var projectedBlue = new Dictionary<(float, float), (Vector3 Blue, Vector3 Red)>();
+            bool CanPlace(float cross, float depth, float radius)
+            {
+                var blue = middle + lateral * cross - axis * depth;
+                var red = middle + lateral * cross + axis * depth;
+                if (!TryProjectInitialArmyPoint(blue, true, radius, out var bp) ||
+                    !TryProjectInitialArmyPoint(red, false, radius, out var rp)) return false;
+                projectedBlue[(cross, depth)] = (bp, rp);
+                return true;
+            }
+            _waitingPositionTypes.Clear();
+            if (!RecoilInitialArmyPlanner.Place(rows, width, formationUnitSpacing, formationUnitsPerLine,
+                    FormationFrontGap, FormationMaxDepth, CanPlace, placements))
             {
                 _preparedBluePositions.Clear();
                 _preparedRedPositions.Clear();
-                _waitingPositionTypes.Clear();
-                var fits = true;
-                foreach (var slot in plan)
-                {
-                    var depth = front + slot.Depth;
-                    var blue = middle + lateral * slot.Cross - axis * depth;
-                    var red = middle + lateral * slot.Cross + axis * depth;
-                    if (!TryProjectInitialArmyPoint(blue, true, slot.Radius, out var bp) ||
-                        !TryProjectInitialArmyPoint(red, false, slot.Radius, out var rp))
-                    { fits = false; break; }
-                    _waitingPositionTypes.Add(slot.Type);
-                    _preparedBluePositions.Add(bp);
-                    _preparedRedPositions.Add(rp);
-                }
-                if (!fits) continue;
-                _preparedPositionsBuilt = true;
-                return true;
+                _preparedPositionsBuilt = false;
+                error = "Không đủ vùng đi được cho số quân này. Hãy giảm tổng quân.";
+                return false;
             }
-            _preparedBluePositions.Clear();
-            _preparedRedPositions.Clear();
-            _preparedPositionsBuilt = false;
-            error = "Không đủ vùng đi được cho số quân này sau khi tự cân đối đội hình. Hãy giảm tổng quân.";
-            return false;
+            foreach (var placement in placements)
+            {
+                var spot = projectedBlue[(placement.Cross, placement.Depth)];
+                _waitingPositionTypes.Add(placement.Type);
+                _preparedBluePositions.Add(spot.Blue);
+                _preparedRedPositions.Add(spot.Red);
+            }
+            SortPreparedPositionsByType();
+            _preparedPositionsBuilt = true;
+            return true;
         }
+
+        /// <summary>
+        /// Soldiers spawn type by type (type 0 first) and take the prepared positions in order, so the positions are
+        /// grouped by type; within a type they stay front line first.
+        /// </summary>
+        private void SortPreparedPositionsByType()
+        {
+            var order = new List<int>(_waitingPositionTypes.Count);
+            for (var i = 0; i < _waitingPositionTypes.Count; i++) order.Add(i);
+            order.Sort((a, b) =>
+            {
+                var byType = _waitingPositionTypes[a].CompareTo(_waitingPositionTypes[b]);
+                return byType != 0 ? byType : a.CompareTo(b);
+            });
+            var types = new List<int>(order.Count);
+            var blue = new List<Vector3>(order.Count);
+            var red = new List<Vector3>(order.Count);
+            foreach (var i in order)
+            {
+                types.Add(_waitingPositionTypes[i]);
+                blue.Add(_preparedBluePositions[i]);
+                red.Add(_preparedRedPositions[i]);
+            }
+            _waitingPositionTypes.Clear(); _waitingPositionTypes.AddRange(types);
+            _preparedBluePositions.Clear(); _preparedBluePositions.AddRange(blue);
+            _preparedRedPositions.Clear(); _preparedRedPositions.AddRange(red);
+        }
+
+        // Share of the map's width the opening formation spans, its distance behind the middle, and how far back it may go.
+        private const float FormationMapWidthShare = .8f, FormationFrontGap = 8f, FormationMaxDepth = 400f;
+
+        /// <summary>
+        /// The formation config's rows (front to back) with its blocks in place, sized for <paramref name="counts"/>
+        /// (units per type for one side). <paramref name="widest"/> is the widest unit's diameter.
+        /// </summary>
+        private List<RecoilInitialArmyPlanner.Row> BuildFormationRows(int[] counts, out float widest)
+        {
+            static List<RecoilInitialArmyPlanner.ConfigBlock> Convert(List<InitialArmyBlock> blocks)
+            {
+                var result = new List<RecoilInitialArmyPlanner.ConfigBlock>();
+                foreach (var block in blocks)
+                    if (block != null && block.Type >= 0 && block.Type < CharacterTypeCount)
+                        result.Add(new RecoilInitialArmyPlanner.ConfigBlock
+                            { Type = block.Type, X = Mathf.Abs(block.X), Y = block.Y, Count = block.Count });
+                return result;
+            }
+            var radii = new float[CharacterTypeCount];
+            widest = 0f;
+            for (var type = 0; type < CharacterTypeCount; type++)
+            {
+                radii[type] = .5f;
+                for (var team = 0; team < 2; team++)
+                {
+                    var template = FindTemplateForType(team == 0, type);
+                    if (template != null && template.TryGetComponent<RecoilNavMeshPathAgent>(out var agent))
+                        radii[type] = Mathf.Max(radii[type], agent.MovementSettings.BodyRadius);
+                }
+                if (type < counts.Length && counts[type] > 0) widest = Mathf.Max(widest, radii[type] * 2f);
+            }
+            return RecoilInitialArmyPlanner.BuildRows(Convert(_initialArmy.Blocks),
+                Convert(CreateDefaultInitialArmyLayout().Blocks), counts, radii);
+        }
+
+        /// <summary>Width of the playable map measured along <paramref name="lateral"/> (across the battle axis).</summary>
+        private static float MapWidthAcross(Vector3 lateral)
+        {
+            float min = float.MaxValue, max = float.MinValue;
+            foreach (var x in new[] { SpawnMinX, SpawnMaxX })
+            foreach (var z in new[] { SpawnMinZ, SpawnMaxZ })
+            {
+                var along = x * lateral.x + z * lateral.z;
+                min = Mathf.Min(min, along);
+                max = Mathf.Max(max, along);
+            }
+            return max - min;
+        }
+
         private bool TryProjectInitialArmyPoint(Vector3 point, bool blue, float radius, out Vector3 projected)
         {
             projected = default;

@@ -64,22 +64,43 @@ namespace RecoilPathfinding
         }
 
         /// <summary>
-        /// Time left, above the score pool: the very same lettering as the pool's points (font, weight, gold colour,
-        /// dark outline), 1.2 times their size.
+        /// Time left, above the score pool: the same lettering as the pool's points (font, weight, gold colour),
+        /// 1.8 times their size, with a thinner dark edge.
         /// </summary>
         private void DrawMatchTimer(Rect rect, GUIStyle scoreStyle, float outlineScale)
         {
             if (!HasMatchTimeLimit) return;
             _matchTimerStyle = new GUIStyle(scoreStyle)
             {
-                fontSize = Mathf.Max(1, Mathf.RoundToInt(scoreStyle.fontSize * 1.2f)),
+                fontSize = Mathf.Max(1, Mathf.RoundToInt(scoreStyle.fontSize * 1.8f)),
                 clipping = TextClipping.Overflow
             };
             var seconds = Mathf.CeilToInt(MatchSecondsLeft);
             // Under an hour: minutes and seconds only; otherwise hours, minutes and seconds.
             var text = seconds >= 3600 ? $"{seconds / 3600:00}:{seconds / 60 % 60:00}:{seconds % 60:00}"
                 : $"{seconds / 60:00}:{seconds % 60:00}";
-            DrawHighlightedLabel(rect, text, _matchTimerStyle, outlineScale * 1.2f);
+            DrawMatchTimerText(rect, text, _matchTimerStyle, outlineScale);
+        }
+
+        private GUIStyle _matchTimerOutlineStyle, _matchTimerShadowStyle;
+
+        /// <summary>
+        /// The pool's gold lettering with a thin, slightly soft dark edge (the shared outline is too heavy at this
+        /// size and blurs the digits).
+        /// </summary>
+        private void DrawMatchTimerText(Rect rect, string text, GUIStyle style, float scale)
+        {
+            _matchTimerOutlineStyle = new GUIStyle(style);
+            SetLabelTextColor(_matchTimerOutlineStyle, new Color(0f, 0f, 0f, .7f));
+            _matchTimerShadowStyle = new GUIStyle(style);
+            SetLabelTextColor(_matchTimerShadowStyle, new Color(.62f, .25f, .015f, 1f));
+            var edge = Mathf.Clamp(1.2f * scale, 1f, 2f);
+            for (var dx = -1; dx <= 1; dx++)
+            for (var dy = -1; dy <= 1; dy++)
+                if (dx != 0 || dy != 0)
+                    GUI.Label(new Rect(rect.x + dx * edge, rect.y + dy * edge, rect.width, rect.height), text, _matchTimerOutlineStyle);
+            GUI.Label(new Rect(rect.x, rect.y + Mathf.Max(1f, scale), rect.width, rect.height), text, _matchTimerShadowStyle);
+            GUI.Label(rect, text, style);
         }
     }
 }

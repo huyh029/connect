@@ -1324,9 +1324,81 @@ namespace RecoilPathfinding
         [SerializeField] private bool useFightCorridors = true;
         [SerializeField, Min(0f)] private float fightLeash = 12f;
         [SerializeField, Min(1f)] private float preparedFormationHalfWidth = 120f;
-        private const int MaximumStagedPerTypePerTeam = 150;
-        private int PreparedTypeCount(bool blue, int type) =>
-            Mathf.Min(MaximumStagedPerTypePerTeam, RequestedPreparedTypeCount(blue, type));
+        // At most this many soldiers (heroes not counted) per side before the battle starts; the rest wait.
+        private const int MaximumStagedPerTeam = 1500;
+        [SerializeField, Min(0), Tooltip("Số lính mỗi phe lúc bắt đầu trận (không tính tướng). Tỉ lệ các loại lính lấy theo " +
+                                         "đội hình đã chỉnh; 0 = dùng đúng số lượng trong đội hình. Tối đa 1500.")]
+        private int initialSoldiersPerTeam = 1000;
+        private int PreparedTypeCount(bool blue, int type) => PreparedTypeCounts(blue)[type];
+
+        /// <summary>
+        /// Soldiers per type for the opening army: the formation's mix scaled to <see cref="initialSoldiersPerTeam"/>
+        /// (siege engines kept to <see cref="preparedSiegePerTeam"/>), within the per-side limit.
+        /// </summary>
+        private int[] PreparedTypeCounts(bool blue)
+        {
+            var counts = new int[CharacterTypeCount];
+            var total = 0;
+            for (var type = 0; type < CharacterTypeCount; type++)
+                total += counts[type] = RequestedPreparedTypeCount(blue, type);
+            if (initialSoldiersPerTeam <= 0 || total <= 0) return LimitToTeamCapacity(counts);
+            var target = Mathf.Min(initialSoldiersPerTeam, MaximumStagedPerTeam);
+            var scaled = ScaleToTotal(counts, target);
+            const int siege = 4;
+            if (siege < scaled.Length && scaled[siege] > preparedSiegePerTeam)
+            {
+                // Siege engines stay few; the other types fill the places they leave.
+                var others = (int[])counts.Clone();
+                others[siege] = 0;
+                var siegeCount = Mathf.Min(counts[siege], preparedSiegePerTeam);
+                scaled = ScaleToTotal(others, target - siegeCount);
+                scaled[siege] = siegeCount;
+            }
+            return scaled;
+        }
+
+        /// <summary>
+        /// Scales <paramref name="counts"/> to add up to <paramref name="total"/>, keeping their proportions (largest
+        /// remainders get the leftover places). Types at 0 stay at 0.
+        /// </summary>
+        private static int[] ScaleToTotal(int[] counts, int total)
+        {
+            long sum = 0;
+            foreach (var count in counts) sum += Mathf.Max(0, count);
+            var result = new int[counts.Length];
+            if (sum <= 0 || total <= 0) return result;
+            var remainder = new double[counts.Length];
+            var used = 0;
+            for (var type = 0; type < counts.Length; type++)
+            {
+                var exact = Mathf.Max(0, counts[type]) * (double)total / sum;
+                result[type] = (int)System.Math.Floor(exact);
+                remainder[type] = counts[type] > 0 ? exact - result[type] : -1;
+                used += result[type];
+            }
+            while (used < total)
+            {
+                var best = -1;
+                for (var type = 0; type < counts.Length; type++)
+                    if (counts[type] > 0 && (best < 0 || remainder[type] > remainder[best])) best = type;
+                if (best < 0) break;
+                result[best]++;
+                remainder[best] -= 1;
+                used++;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Keeps the side within <see cref="MaximumStagedPerTeam"/> soldiers: every type is reduced in proportion
+        /// (largest remainders get the leftover places), so the army keeps its mix.
+        /// </summary>
+        private static int[] LimitToTeamCapacity(int[] counts)
+        {
+            long total = 0;
+            foreach (var count in counts) total += Mathf.Max(0, count);
+            return total <= MaximumStagedPerTeam ? counts : ScaleToTotal(counts, MaximumStagedPerTeam);
+        }
         private int RequestedPreparedTypeCount(bool blue, int type)
         {
             if (_testHeroesOnly) return 0; // hero test: heroes only, no soldiers
@@ -1340,7 +1412,7 @@ namespace RecoilPathfinding
         private int PreparedTeamTarget(bool blue)
         {
             var total = 0;
-            for (var type = 0; type < CharacterTypeCount; type++) total += PreparedTypeCount(blue, type);
+            foreach (var count in PreparedTypeCounts(blue)) total += count;
             return total;
         }
         private int PreparedArmyTarget => PreparedTeamTarget(true) + PreparedTeamTarget(false);
@@ -3914,10 +3986,12 @@ namespace RecoilPathfinding
                     _preparedBluePositions.Clear();
                     _preparedRedPositions.Clear();
                 }
+                var bluePrepared = PreparedTypeCounts(true);
+                var redPrepared = PreparedTypeCounts(false);
                 for (var type = 0; type < CharacterTypeCount; type++)
                 {
-                    var blueAmount = PreparedTypeCount(true, type);
-                    var redAmount = PreparedTypeCount(false, type);
+                    var blueAmount = bluePrepared[type];
+                    var redAmount = redPrepared[type];
                     _waitingDeferred[0, type] += Mathf.Max(0, RequestedPreparedTypeCount(true, type) - blueAmount);
                     _waitingDeferred[1, type] += Mathf.Max(0, RequestedPreparedTypeCount(false, type) - redAmount);
                     if (blueAmount > 0) EnqueueSpawnType(_blueSelectedSpawnQueue, type, blueAmount);
@@ -5190,6 +5264,7 @@ namespace RecoilPathfinding
 
         private void OnGUI()
         {
+            TextOnly(GUI.skin.label);
             var previousDepth = GUI.depth;
             GUI.depth = -100;
             try
@@ -5302,7 +5377,7 @@ namespace RecoilPathfinding
                 string title = lobbyHeroStats != null ? System.Array.Find(lobbyHeroStats, h => h.Id == hero.HeroId)?.Name : null;
                 string text = string.IsNullOrEmpty(title) ? "Tướng " + hero.HeroId : title;
                 var donor = string.IsNullOrWhiteSpace(hero.DonorName) ? "Người ủng hộ" : hero.DonorName;
-                DrawHeroIdentityLine(label, donor, UserNameColor(donor));
+                DrawHeroIdentityLine(label, donor, UserNameColor(donor, hero.IsBlue));
                 DrawHeroIdentityLine(new Rect(label.x, bar.yMax + 3, label.width, bar.height), text, Color.white);
             }
         }
@@ -5516,7 +5591,7 @@ namespace RecoilPathfinding
         private GUIStyle RadarLabelStyle => _radarLabelStyle ??= new GUIStyle(GUIStyle.none)
         {
             font = SettingsFont, alignment = TextAnchor.MiddleCenter, fontSize = 15, fontStyle = FontStyle.Bold,
-            wordWrap = true, normal = { textColor = ThemeTextDim }
+            wordWrap = true, normal = { textColor = ThemeTextDim }, hover = { textColor = ThemeTextDim }
         };
 
         private static void DrawRadarLine(Vector2 start, Vector2 end, Color color)
@@ -5541,12 +5616,12 @@ namespace RecoilPathfinding
         private GUIStyle SettingsUnitNameStyle => _settingsUnitNameStyle ??= new GUIStyle(GUIStyle.none)
         {
             font = SettingsFont, fontSize = 34, fontStyle = FontStyle.Bold, padding = new RectOffset(2, 16, 4, 4),
-            normal = { textColor = ThemeGoldBright }
+            normal = { textColor = ThemeGoldBright }, hover = { textColor = ThemeGoldBright }
         };
         private GUIStyle SettingsAttributeLabelStyle => _settingsAttributeLabelStyle ??= new GUIStyle(GUIStyle.none)
         {
             font = SettingsFont, fontSize = 19, fontStyle = FontStyle.Bold, wordWrap = true,
-            alignment = TextAnchor.MiddleLeft, normal = { textColor = ThemeText }
+            alignment = TextAnchor.MiddleLeft, normal = { textColor = ThemeText }, hover = { textColor = ThemeText }
         };
 
         private float SettingsButtonHover(Rect rect)
@@ -5836,11 +5911,11 @@ namespace RecoilPathfinding
                 fontSize = RecoilBattleHudLayout.FontSize(hud.poolTitle, BattleHudPieceId.PoolTitle, Screen.width),
                 fontStyle = FontStyle.Bold
             };
-            poolStyle.normal.textColor = Color.white;
+            SetLabelTextColor(poolStyle, Color.white);
             DrawHighlightedLabel(RecoilBattleHudLayout.GuiRect(hud.poolTitle, BattleHudPieceId.PoolTitle, Screen.width),
                 "BỂ ĐIỂM", poolStyle, scale * hud.poolTitle.scale);
             poolStyle.fontSize = RecoilBattleHudLayout.FontSize(hud.poolScore, BattleHudPieceId.PoolScore, Screen.width);
-            poolStyle.normal.textColor = new Color(1f, 0.8f, 0.3f, 1f);
+            SetLabelTextColor(poolStyle, new Color(1f, 0.8f, 0.3f, 1f));
             DrawHighlightedLabel(RecoilBattleHudLayout.GuiRect(hud.poolScore, BattleHudPieceId.PoolScore, Screen.width),
                 (matchScoring?.TotalFixedPoints ?? 0m).ToString("N0"), poolStyle, scale * hud.poolScore.scale);
             DrawMatchTimer(RecoilBattleHudLayout.GuiRect(hud.timer, BattleHudPieceId.Timer, Screen.width),
@@ -5936,12 +6011,12 @@ namespace RecoilPathfinding
             var scoreHeight = scoreStyle.lineHeight;
             text.y = bar.center.y - (nameHeight + 1f + scoreHeight) * 0.5f;
             text.height = nameHeight;
-            style.normal.textColor = UserNameColor(playerName);
+            SetLabelTextColor(style, UserNameColor(playerName, rightSide));
             GUI.Label(text, FitTopName(playerName, style, text.width), style);
             text.y += nameHeight + 1f;
             text.height = scoreHeight;
             style.fontSize = Mathf.RoundToInt(18f * scale);
-            style.normal.textColor = new Color(1f, 0.8f, 0.3f, 1f);
+            SetLabelTextColor(style, new Color(1f, 0.8f, 0.3f, 1f));
             GUI.Label(text, score.ToString("N0"), style);
         }
         private static void DrawHealthFill(Rect rect, int current, int maximum,
@@ -6047,7 +6122,7 @@ namespace RecoilPathfinding
                 fontSize = Mathf.RoundToInt(34f * scale),
                 fontStyle = FontStyle.Bold
             };
-            style.normal.textColor = new Color(1f, 0.68f, 0.12f, 1f);
+            SetLabelTextColor(style, new Color(1f, 0.68f, 0.12f, 1f));
             var labelHeight = 38f * scale;
             var labelRect = new Rect(frameRect.x, frameRect.yMax - labelHeight - verticalOffset * scale,
                 frameRect.width, labelHeight);
@@ -6110,14 +6185,37 @@ namespace RecoilPathfinding
             }
         }
 
+        /// <summary>Sets the text colour of every state, so the label looks the same under the mouse (no hover on text).</summary>
         private static void SetLabelTextColor(GUIStyle style, Color color)
         {
-            foreach (var state in new[]
-                     {
-                         style.normal, style.hover, style.active, style.focused,
-                         style.onNormal, style.onHover, style.onActive, style.onFocused
-                     })
-                state.textColor = color;
+            style.normal.textColor = style.hover.textColor = style.active.textColor = style.focused.textColor = color;
+            style.onNormal.textColor = style.onHover.textColor = style.onActive.textColor = style.onFocused.textColor = color;
+        }
+
+        /// <summary>A text-only style: its hover / active / focus states look exactly like its normal state.</summary>
+        private static GUIStyle TextOnly(GUIStyle style)
+        {
+            SetLabelTextColor(style, style.normal.textColor);
+            style.hover.background = style.active.background = style.focused.background = style.normal.background;
+            return style;
+        }
+
+        /// <summary>
+        /// A viewer's name: the same dark outline as the gold labels, but the name's own (team) colour instead of the
+        /// gold gradient.
+        /// </summary>
+        private static void DrawOutlinedNameLabel(Rect rect, string text, GUIStyle style, float scale, Color color)
+        {
+            var outline = new GUIStyle(style);
+            SetLabelTextColor(outline, Color.black);
+            var offset = Mathf.Max(1.5f, 3f * scale);
+            for (var dx = -1; dx <= 1; dx++)
+            for (var dy = -1; dy <= 1; dy++)
+                if (dx != 0 || dy != 0)
+                    GUI.Label(new Rect(rect.x + dx * offset, rect.y + dy * offset, rect.width, rect.height), text, outline);
+            var fill = new GUIStyle(style);
+            SetLabelTextColor(fill, color);
+            GUI.Label(rect, text, fill);
         }
 
         private static void DrawFrameScaledToWidth(Rect target, Texture2D frame,
@@ -6153,7 +6251,7 @@ namespace RecoilPathfinding
             GUI.Label(new Rect(centerX - 240f, centerY - 32f, 480f, 28f),
                 _templateValidationFailed
                     ? _templateValidationError
-                    : $"Đang kiểm tra mẫu quân: {_templatesValidatedCount:N0} / {_templateValidationTotal:N0}...",
+                    : "Đang tải…",
                 GUI.skin.label);
 
             var bar = new Rect(centerX - 240f, centerY + 8f, 480f, 22f);
@@ -6166,16 +6264,12 @@ namespace RecoilPathfinding
                 GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * progress, bar.height),
                     Texture2D.whiteTexture);
                 GUI.color = Color.white;
-                GUI.Label(new Rect(centerX - 240f, centerY + 38f, 480f, 24f),
-                    $"{progress * 100f:F1}%   |   Hiển thị bằng prefab/Animator.");
             }
             else
             {
                 GUI.color = Color.white;
-                GUI.Label(new Rect(centerX - 240f, centerY + 38f, 480f, 24f),
-                    _templateValidationFailed
-                        ? "Hãy sửa cấu hình mẫu lính rồi tải lại scene."
-                        : "Hiển thị bằng prefab/Animator.");
+                if (_templateValidationFailed)
+                    GUI.Label(new Rect(centerX - 240f, centerY + 38f, 480f, 24f), "Hãy sửa cấu hình mẫu lính rồi tải lại scene.");
             }
             GUI.color = Color.white;
         }
