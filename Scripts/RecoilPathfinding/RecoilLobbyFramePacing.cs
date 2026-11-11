@@ -16,8 +16,8 @@ namespace RecoilPathfinding
     /// <item>UI (Windows vẽ): the same image, resized to the chosen size, handed to the OS as its cursor: no lag,
     /// but some Windows setups shrink large OS cursors (about 32x32 in Unity).</item>
     /// </list>
-    /// The player's choices are kept in PlayerPrefs. All styles keep the existing rule that no cursor shows while
-    /// <c>_hideLobbyCursor</c> is set (battle, loading, C key).
+    /// The player's choices are kept in PlayerPrefs and apply to the whole game (lobby and battle). No cursor shows
+    /// while <c>_hideLobbyCursor</c> is set (C key); the pointer is then locked at the screen center.
     /// </summary>
     public sealed partial class RecoilAutoBattleDemo
     {
@@ -33,8 +33,8 @@ namespace RecoilPathfinding
                                  "Normal = chuột thường của Windows, UI = con trỏ hình do game vẽ, " +
                                  "WindowsDrawnUI = con trỏ hình do Windows vẽ.")]
         private LobbyCursorStyle defaultLobbyCursorStyle = LobbyCursorStyle.UI;
-        [SerializeField, Tooltip("Mặc định của mục \"Mượt hơn ở sảnh\": chạy theo tần số màn hình + VSync, giảm hàng đợi khung hình " +
-                                 "để con trỏ UI (game vẽ) bám tay hơn. Vào trận trả lại giới hạn FPS cũ.")]
+        [SerializeField, Tooltip("Mặc định của mục \"Mượt hơn\": chạy theo tần số màn hình + VSync, giảm hàng đợi khung hình " +
+                                 "để con trỏ UI (game vẽ) bám tay hơn (cả ở sảnh lẫn trong trận).")]
         private bool smoothLobbyCursor = true;
 
         private bool _cursorSettingsOpen;
@@ -212,7 +212,7 @@ namespace RecoilPathfinding
         private void DrawCursorSettings()
         {
             float left = SetupNavigationWidth + 28, width = Screen.width - left - 20;
-            DrawSettingsTitle(new Rect(left, 16, width, 36), "CON TRỎ CHUỘT — dùng ở sảnh");
+            DrawSettingsTitle(new Rect(left, 16, width, 36), "CON TRỎ CHUỘT — dùng cho cả game");
 
             _cursorNoteStyle ??= new GUIStyle(GUIStyle.none)
             {
@@ -266,7 +266,7 @@ namespace RecoilPathfinding
             y += 58f;
             GUI.enabled = wasEnabled && CurrentLobbyCursorStyle == LobbyCursorStyle.UI;
             var smooth = GUI.Toggle(new Rect(left, y, column, 56f), LobbyCursorSmooth,
-                "  Mượt hơn ở sảnh (chạy theo tần số màn hình + VSync) — cho UI (game vẽ)", _cursorToggleStyle);
+                "  Mượt hơn (chạy theo tần số màn hình + VSync) — cho UI (game vẽ)", _cursorToggleStyle);
             if (smooth != LobbyCursorSmooth)
             {
                 _lobbyCursorSmooth = smooth;
@@ -365,7 +365,7 @@ namespace RecoilPathfinding
                 _cursorPrefsDirty = false;
             }
 
-            var want = LobbyCursorSmooth && Application.isPlaying && !_hideLobbyCursor && !_lobbyStarted &&
+            var want = LobbyCursorSmooth && Application.isPlaying && !_hideLobbyCursor &&
                        lobbyCursorTexture != null && CurrentLobbyCursorStyle == LobbyCursorStyle.UI;
             if (want == _lobbyPacingApplied) return;
             if (!want)

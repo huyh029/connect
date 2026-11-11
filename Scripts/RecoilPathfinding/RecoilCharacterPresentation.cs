@@ -711,6 +711,24 @@ namespace RecoilPathfinding
             System.Collections.Generic.Queue<GameObject>> _available = new();
         private readonly System.Collections.Generic.List<ActiveFlight> _activeFlights = new(256);
 
+        /// <summary>Creates hidden copies of <paramref name="prefab"/> until <paramref name="count"/> wait in its pool.</summary>
+        internal void Prewarm(GameObject prefab, int count)
+        {
+            if (prefab == null) return;
+            if (!_available.TryGetValue(prefab, out var pool))
+            {
+                pool = new System.Collections.Generic.Queue<GameObject>();
+                _available.Add(prefab, pool);
+            }
+            count = Mathf.Min(count, MaxRetainedPerPrefab);
+            while (pool.Count < count)
+            {
+                var projectile = Instantiate(prefab, transform);
+                projectile.SetActive(false);
+                pool.Enqueue(projectile);
+            }
+        }
+
         internal void ReturnAllToPool()
         {
             foreach (var flight in _activeFlights)

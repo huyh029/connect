@@ -345,12 +345,15 @@ namespace GameToolsEditor
         private void DrawSampleText(Rect rect, int index, float fit)
         {
             _textStyle ??= new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Overflow };
-            _textStyle.fontSize = Mathf.Max(1, Mathf.RoundToInt(RecoilBattleHudLayout.FontOf(Ids[index]) *
-                                                                 Mathf.Max(.05f, _pieces[index].scale) * fit));
+            // The timer uses the points' lettering at 1.2 times their size (as in the battle).
+            var sizeOf = index == (int)BattleHudPieceId.Timer ? (int)BattleHudPieceId.PoolScore : index;
+            _textStyle.fontSize = Mathf.Max(1, Mathf.RoundToInt(RecoilBattleHudLayout.FontOf(Ids[sizeOf]) *
+                                                                 Mathf.Max(.05f, _pieces[sizeOf].scale) * fit *
+                                                                 (index == (int)BattleHudPieceId.Timer ? 1.2f : 1f)));
             var shadow = Mathf.Max(1f, 2f * _pieces[index].scale * fit);
             _textStyle.normal.textColor = Color.black;
             GUI.Label(new Rect(rect.x + shadow, rect.y + shadow, rect.width, rect.height), Samples[index], _textStyle);
-            _textStyle.normal.textColor = index == (int)BattleHudPieceId.PoolScore ? new Color(1f, .8f, .3f) : Color.white;
+            _textStyle.normal.textColor = index != (int)BattleHudPieceId.PoolTitle ? new Color(1f, .8f, .3f) : Color.white;
             GUI.Label(rect, Samples[index], _textStyle);
         }
 

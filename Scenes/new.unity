@@ -6598,6 +6598,24 @@ MonoBehaviour:
   - {fileID: 32900000, guid: 7e7d9b8b59f674a49a01c426300b4272, type: 3}
   - {fileID: 32900000, guid: 057dade3b3c4d2a4ebdb2115adb7b391, type: 3}
   - {fileID: 32900000, guid: 03f1db44209118d499fa59180a770b6d, type: 3}
+  soldierIntroBlueClips:
+  - {fileID: 32900000, guid: 53e47a258b49fa54ca10a951e094c07d, type: 3}
+  - {fileID: 0}
+  - {fileID: 32900000, guid: 6502b7183f32f5342b3d189f353b202a, type: 3}
+  - {fileID: 32900000, guid: 003d26efd30b4d941add5362e471c7f1, type: 3}
+  - {fileID: 32900000, guid: 28fa60ef0b72ce6499bcb45c05222846, type: 3}
+  - {fileID: 32900000, guid: c41387f0df09ac54787a481e94956b54, type: 3}
+  - {fileID: 32900000, guid: 15dbfa77e6ae4f547b3b87ead8a1a655, type: 3}
+  - {fileID: 32900000, guid: b66f2a7f48c20bf46a0c7e8f136bfc6f, type: 3}
+  soldierIntroRedClips:
+  - {fileID: 32900000, guid: d4f9b6b313f53254fb012aaca7247f71, type: 3}
+  - {fileID: 0}
+  - {fileID: 32900000, guid: 82f08ef0e647f8e4f99bd9d4afb7c920, type: 3}
+  - {fileID: 32900000, guid: 816e011c91e59264bb1d8ce710cdf3d8, type: 3}
+  - {fileID: 32900000, guid: 0a86829e88e662e4eb11ec44ab0812d6, type: 3}
+  - {fileID: 32900000, guid: c41387f0df09ac54787a481e94956b54, type: 3}
+  - {fileID: 32900000, guid: 4783ddebbce50224ea5d9c6a9c15e259, type: 3}
+  - {fileID: 32900000, guid: ef10ed18408b7d0448907028eb9e9f43, type: 3}
   lobbyClockCanvas: {fileID: 1838913606}
   lobbyClockOnTop: 1
   lobbyExitDuration: 0.6

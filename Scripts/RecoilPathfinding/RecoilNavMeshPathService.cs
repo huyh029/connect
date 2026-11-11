@@ -3314,6 +3314,13 @@ namespace RecoilPathfinding
             _crowdCapacity = 0;
         }
 
+        /// <summary>Loading: size the crowd job data for <paramref name="count"/> units now, never while a move job runs.</summary>
+        public void PrewarmCrowdCapacity(int count)
+        {
+            if (_crowdMovementPending || count <= 0) return;
+            EnsureCrowdJobCapacity(count);
+        }
+
         private void EnsureCrowdJobCapacity(int count)
         {
             if (count <= _crowdCapacity)

@@ -334,7 +334,7 @@ namespace RecoilPathfinding
                 GUI.DrawTexture(new Rect(nameRect.x, nameRect.y, nameRect.width, nameRect.height + 54 * scale),
                     _endgameNameGradient, ScaleMode.StretchToFill, true);
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01(local * 4));
-                _endgameNameStyle.normal.textColor = Color.white;
+                _endgameNameStyle.normal.textColor = UserNameColor(_endgameNames[rank]);
                 _endgameNameStyle.fontSize = Mathf.Max(12, Mathf.RoundToInt(22 * scale));
                 var fittedName = FitTopName(_endgameNames[rank], _endgameNameStyle, nameRect.width);
                 DrawHighlightedLabel(nameRect, fittedName, _endgameNameStyle, scale);

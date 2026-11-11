@@ -24,6 +24,8 @@ namespace RecoilPathfinding
         [SerializeField, Min(.05f), Tooltip("Bấm Bắt đầu: các nút và đồng hồ bay ra khỏi màn hình trong chừng này giây, " +
                                            "chỉ còn logo và thanh loading.")]
         private float lobbyExitDuration = .6f;
+        [SerializeField, Min(0f), Tooltip("Sau khi các nút đã bay đi, nghỉ chừng này giây rồi thanh loading mới hiện lên.")]
+        private float lobbyLoadingBarDelay = .3f;
 
         // The open clock with its TIME button stays within this many clock units of its center.
         private const float LobbyClockReach = 700f;
@@ -44,12 +46,32 @@ namespace RecoilPathfinding
             _templatesValidated && !_matchFinished && !_initialFormationLoading && !_poolPrewarmRunning &&
             !_lobbyStarted && !_settingsOpen;
 
-        /// <summary>Loading the match after Start was pressed, while the lobby is still on screen.</summary>
-        private bool LobbyLoading => !_lobbyStarted && !_matchFinished && (_poolPrewarmRunning || _initialFormationLoading);
+        /// <summary>
+        /// Loading the match after Start was pressed, while the lobby is still on screen: the pools, then the army
+        /// forming up (the match already counts as started then, but the lobby is still what is shown).
+        /// </summary>
+        private bool LobbyLoading => !_matchFinished && (_poolPrewarmRunning || _initialFormationLoading);
 
-        /// <summary>0..1 through the lobby's exit animation; 0 while not loading.</summary>
+        /// <summary>Seconds since the lobby started leaving; 0 while at home.</summary>
+        private float LobbyExitElapsed => _lobbyExitStart < 0f ? 0f : Time.unscaledTime - _lobbyExitStart;
+
+        /// <summary>0..1 through the lobby's exit animation; 0 while at home.</summary>
         private float LobbyExitProgress =>
-            _lobbyExitStart < 0f ? 0f : Mathf.Clamp01((Time.unscaledTime - _lobbyExitStart) / Mathf.Max(lobbyExitDuration, .05f));
+            _lobbyExitStart < 0f ? 0f : Mathf.Clamp01(LobbyExitElapsed / Mathf.Max(lobbyExitDuration, .05f));
+
+        /// <summary>
+        /// 0..1 how far the loading bar has come in: it waits until the buttons are gone plus a short beat, then rises
+        /// into place. -1 while it is not shown yet.
+        /// </summary>
+        private float LobbyLoadingBarIn
+        {
+            get
+            {
+                if (_lobbyExitStart < 0f) return -1f;
+                var shown = LobbyExitElapsed - Mathf.Max(lobbyExitDuration, .05f) - lobbyLoadingBarDelay;
+                return shown < 0f ? -1f : Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(shown / .25f));
+            }
+        }
 
         /// <summary>Exit easing (back-in): a small pull back, then away faster and faster.</summary>
         private float LobbyExitEased
@@ -64,8 +86,10 @@ namespace RecoilPathfinding
 
         private void UpdateLobbyExit()
         {
-            if (!LobbyLoading) _lobbyExitStart = -1f;
-            else if (_lobbyExitStart < 0f) _lobbyExitStart = Time.unscaledTime;
+            // Reset only back at home: the formation step (match already started, lobby still shown) must not bring
+            // the flown-off buttons back.
+            if (LobbyHomeVisible) _lobbyExitStart = -1f;
+            else if (LobbyLoading && _lobbyExitStart < 0f) _lobbyExitStart = Time.unscaledTime;
         }
 
         private void UpdateLobbyClock()

@@ -22,7 +22,9 @@ namespace RecoilPathfinding
         [SerializeField] private Texture2D endgameCoinImage;
         [SerializeField, Min(.2f)] private float poolAwardAnimationSeconds = 1.2f;
         [SerializeField, Min(0)] private float poolAwardAnimationStagger = .4f;
-        private const float PoolCoinIntroSeconds = 1.65f;
+        // Big intro coin: grows at the screen center, spins until the ranking has faded in, then flies into the
+        // winning side's top 1 row (pool awards start flying at 3.1 s).
+        private const float CoinZoomSeconds = .36f, CoinTravelStart = 2.35f, CoinLandSeconds = 3f, CoinPopSeconds = .35f;
 
         private float PoolAwardProgress(RecoilScoreRow row, float reveal)
         {
@@ -91,12 +93,17 @@ namespace RecoilPathfinding
             var coinSize = 38f * scale;
             var coinRect = new Rect(poolRect.x + 4f * scale, poolRect.center.y - coinSize * .5f,
                 coinSize, coinSize);
-            DrawPoolCoinIntro(coinRect, reveal, scale);
+            float headerY = panel.y + 39 * scale, half = (panel.width - 20) * .5f;
+            float bodyY = headerY + 73 * scale, height = Mathf.Max(1, panel.yMax - bodyY - 5 * scale);
+            float rowHeight = Mathf.Max(46, 64 * scale);
+            DrawPoolCoinIntro(coinRect, WinnerTopRowLanding(panel, half, bodyY, rowHeight, scale, coinRect), reveal, scale);
             if (fade <= 0) return;
 
             var oldColor = GUI.color;
             GUI.color = new Color(1, 1, 1, fade);
             EnsureRankingStyles(scale);
+            if (endgameCoinImage != null && Event.current.type == EventType.Repaint)
+                GUI.DrawTexture(coinRect, endgameCoinImage, ScaleMode.ScaleToFit, true); // the pool's coin icon
             decimal remaining = matchScoring.PoolPoints;
             foreach (var row in matchScoring.Results)
                 remaining -= row.PoolBonus * (decimal)PoolAwardProgress(row, reveal);
@@ -104,11 +111,8 @@ namespace RecoilPathfinding
                 poolRect.width - coinSize - 8f * scale, poolRect.height);
             GUI.Label(poolTextRect, $"BỂ ĐIỂM {matchScoring.TotalFixedPoints:N0}  |  QUỸ CHIA 20%: {remaining:N0}", rankingRankStyle);
             GUI.Label(new Rect(panel.x, panel.y - 13 * scale, panel.width, 46 * scale), "BẢNG XẾP HẠNG", rankingTitleStyle);
-            float headerY = panel.y + 39 * scale, half = (panel.width - 20) * .5f;
             DrawRankingTeamHeader(new Rect(panel.x, headerY, half, 52 * scale), false, scale);
             DrawRankingTeamHeader(new Rect(panel.x + half + 2, headerY, half, 52 * scale), true, scale);
-            float bodyY = headerY + 73 * scale, height = Mathf.Max(1, panel.yMax - bodyY - 5 * scale);
-            float rowHeight = Mathf.Max(46, 64 * scale);
             float contentHeight = Mathf.Max(height, Mathf.Max(redRanking.Count, blueRanking.Count) * (rowHeight + 1));
             float visibleTop = Mathf.Max(0, rankingScroll.y - bodyY);
             float visibleHeight = Mathf.Min(Screen.height, 975 * scale);
@@ -118,51 +122,62 @@ namespace RecoilPathfinding
             GUI.color = oldColor;
         }
 
-        private void DrawPoolCoinIntro(Rect target, float reveal, float scale)
+        /// <summary>Where the intro coin lands: the winning side's top 1 row, or the pool icon if that side has nobody ranked.</summary>
+        private Rect WinnerTopRowLanding(Rect panel, float half, float bodyY, float rowHeight, float scale, Rect poolIcon)
         {
-            if (endgameCoinImage == null || Event.current.type != EventType.Repaint || reveal < 0f)
+            var rows = _endgameBlueWins ? blueRanking : redRanking;
+            if (rows.Count == 0) return poolIcon;
+            var size = Mathf.Max(18f, 30f * scale);
+            var x = _endgameBlueWins ? panel.x + half + 2 + half * .35f : panel.x + half * .65f; // where its awards land
+            var y = bodyY + rowHeight * .5f - rankingScroll.y;
+            return new Rect(x - size * .5f, y - size * .5f, size, size);
+        }
+
+        /// <summary>
+        /// The big intro coin: grows at the screen center and spins until the ranking is up, then flies into the
+        /// winner's top 1 row (shrinking to that row's size), pops and melts into it.
+        /// </summary>
+        private void DrawPoolCoinIntro(Rect poolIcon, Rect landing, float reveal, float scale)
+        {
+            if (endgameCoinImage == null || Event.current.type != EventType.Repaint || reveal < 0f ||
+                reveal > CoinLandSeconds + CoinPopSeconds)
                 return;
 
-            var progress = Mathf.Clamp01(reveal / PoolCoinIntroSeconds);
-            var coinRect = target;
-            var alpha = 1f;
-            var angle = 0f;
-            if (progress < 1f)
+            var center = new Vector2(Screen.width * .5f, Screen.height * .42f);
+            var peakSize = Mathf.Max(128f * scale, poolIcon.width * 4.5f);
+            float size, angle, alpha = 1f;
+            Vector2 position;
+            if (reveal < CoinZoomSeconds)
             {
-                var zoomEnd = .22f;
-                var travelStart = .58f;
-                var center = new Vector2(Screen.width * .5f, Screen.height * .42f);
-                var peakSize = Mathf.Max(128f * scale, target.width * 4.5f);
-                var size = target.width;
-                Vector2 position;
-
-                if (progress < zoomEnd)
-                {
-                    var zoom = Mathf.SmoothStep(0f, 1f, progress / zoomEnd);
-                    size = Mathf.Lerp(target.width * .2f, peakSize, zoom);
-                    position = center;
-                    angle = progress / PoolCoinIntroSeconds * 1080f;
-                }
-                else if (progress < travelStart)
-                {
-                    size = peakSize;
-                    position = center;
-                    angle = progress / PoolCoinIntroSeconds * 1080f;
-                }
-                else
-                {
-                    var travel = Mathf.SmoothStep(0f, 1f,
-                        (progress - travelStart) / (1f - travelStart));
-                    var zoom = Mathf.Lerp(1f, target.width / peakSize, travel);
-                    size = peakSize * zoom;
-                    position = Vector2.Lerp(center, target.center, travel);
-                    angle = (1f - travel) * 1080f;
-                    alpha = Mathf.Lerp(1f, .9f, travel);
-                }
-
-                coinRect = new Rect(position.x - size * .5f, position.y - size * .5f, size, size);
+                size = Mathf.Lerp(poolIcon.width * .2f, peakSize, Mathf.SmoothStep(0f, 1f, reveal / CoinZoomSeconds));
+                position = center;
+                angle = reveal * 420f;
+            }
+            else if (reveal < CoinTravelStart)
+            {
+                size = peakSize;
+                position = center;
+                angle = reveal * 420f;
+            }
+            else if (reveal < CoinLandSeconds)
+            {
+                var travel = Mathf.SmoothStep(0f, 1f, (reveal - CoinTravelStart) / (CoinLandSeconds - CoinTravelStart));
+                size = Mathf.Lerp(peakSize, landing.width, travel);
+                position = Vector2.Lerp(center, landing.center, travel);
+                position.y -= Mathf.Sin(travel * Mathf.PI) * 60f * scale; // a little arc on the way down
+                angle = CoinTravelStart * 420f * (1f - travel);
+            }
+            else
+            {
+                // Landed: a short pop, then it melts into the row.
+                var pop = (reveal - CoinLandSeconds) / CoinPopSeconds;
+                size = landing.width * (1f + .35f * Mathf.Sin(pop * Mathf.PI));
+                position = landing.center;
+                angle = 0f;
+                alpha = 1f - pop;
             }
 
+            var coinRect = new Rect(position.x - size * .5f, position.y - size * .5f, size, size);
             var oldColor = GUI.color;
             var oldMatrix = GUI.matrix;
             GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -229,6 +244,8 @@ namespace RecoilPathfinding
             rankingTitleStyle.fontSize = Mathf.Max(18, Mathf.RoundToInt(32 * scale));
             rankingNameStyle.normal.textColor = Color.white;
             rankingRankStyle.normal.textColor = rankingPointsStyle.normal.textColor = rankingTitleStyle.normal.textColor = new Color(1, .79f, .24f);
+            WithoutHover(rankingNameStyle); WithoutHover(rankingPointsStyle); WithoutHover(rankingRankStyle);
+            WithoutHover(rankingTitleStyle); WithoutHover(rankingIndexStyle); WithoutHover(rankingIndexOutlineStyle);
             if (rankingFade != null) return;
             if (endgameRedRankingIcon == null) endgameRedRankingIcon = Resources.Load<Texture2D>("InitialArmyIcons/shield");
             if (endgameBlueRankingIcon == null) endgameBlueRankingIcon = Resources.Load<Texture2D>("InitialArmyIcons/shield");
@@ -344,7 +361,7 @@ namespace RecoilPathfinding
                 float nameX = blue ? 10 * scale : avatar.xMax + 12 * scale;
                 float nameWidth = blue ? avatar.x - nameX - 12 * scale : contentWidth - nameX - 10 * scale;
                 rankingNameStyle.alignment = rankingPointsStyle.alignment = blue ? TextAnchor.MiddleRight : TextAnchor.MiddleLeft;
-                rankingNameShadowStyle ??= new GUIStyle(rankingNameStyle);
+                rankingNameShadowStyle ??= WithoutHover(new GUIStyle(rankingNameStyle));
                 rankingNameShadowStyle.fontSize = rankingNameStyle.fontSize;
                 rankingNameShadowStyle.alignment = rankingNameStyle.alignment;
                 rankingNameShadowStyle.normal.textColor = new Color(.015f, .02f, .035f, .95f);
@@ -352,7 +369,9 @@ namespace RecoilPathfinding
                 float shadowOffset = Mathf.Max(1, 1.5f * scale);
                 GUI.Label(new Rect(nameRect.x + shadowOffset, nameRect.y + shadowOffset, nameRect.width, nameRect.height),
                     entry.Score.Name ?? entry.Score.UserId, rankingNameShadowStyle);
+                rankingNameStyle.normal.textColor = rankingNameStyle.hover.textColor = UserNameColor(entry.Score.Name ?? entry.Score.UserId);
                 GUI.Label(nameRect, entry.Score.Name ?? entry.Score.UserId, rankingNameStyle);
+                rankingNameStyle.normal.textColor = rankingNameStyle.hover.textColor = Color.white;
                 string points = award >= 1 ? entry.Points : AnimatedRankingPoints(entry.Score, reveal).ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + " điểm";
                 GUI.Label(new Rect(nameX, y + rowHeight * .56f, nameWidth, rowHeight * .4f), points, rankingPointsStyle);
         }

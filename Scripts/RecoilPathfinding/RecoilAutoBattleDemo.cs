@@ -1808,8 +1808,7 @@ namespace RecoilPathfinding
             if (Application.isPlaying)
             {
                 TikTokUdpReceiver.EnsureListening();
-                _hideLobbyCursor = _lobbyStarted || _initialFormationLoading || _poolPrewarmRunning;
-                UpdateSystemCursorVisibility();
+                UpdateSystemCursorVisibility(); // the cursor setup applies to the whole game, battle included
                 EnsureBattleAudioSources();
             }
             if (!_hasStarted || _world == null || !_world.IsCreated) return;
@@ -1843,6 +1842,10 @@ namespace RecoilPathfinding
         {
             if (Application.isPlaying)
             {
+                // Hidden (C key): the pointer is also locked at the screen center, so it cannot wander off the
+                // window or stray to the edges; shown again, it is free.
+                var lockState = _hideLobbyCursor && Application.isFocused ? CursorLockMode.Locked : CursorLockMode.None;
+                if (Cursor.lockState != lockState) Cursor.lockState = lockState;
                 // Settings > Setup chuột: the Windows pointer, or the cursor image drawn by Windows, instead of
                 // the game-drawn one.
                 if (UseOsCursor)
@@ -1862,6 +1865,7 @@ namespace RecoilPathfinding
         {
             if (!_hasPreviousCursorVisibility) return;
             Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+            Cursor.lockState = CursorLockMode.None;
             Cursor.visible = _previousCursorVisibility;
             _hasPreviousCursorVisibility = false;
             _osCursorShown = false;
@@ -2033,6 +2037,12 @@ namespace RecoilPathfinding
             var spawnKeyboard = UnityEngine.InputSystem.Keyboard.current;
             if (Application.isFocused && spawnKeyboard != null && spawnKeyboard.tabKey.wasPressedThisFrame)
                 _showBattleVitalsHud = !_showBattleVitalsHud;
+            // Quick result: R = red wins at once, B = blue wins at once.
+            if (Application.isFocused && spawnKeyboard != null)
+            {
+                if (spawnKeyboard.rKey.wasPressedThisFrame) { FinishMatch("ĐỘI ĐỎ CHIẾN THẮNG", false); return; }
+                if (spawnKeyboard.bKey.wasPressedThisFrame) { FinishMatch("ĐỘI XANH CHIẾN THẮNG", true); return; }
+            }
             if (!_initialFormationLoading && Application.isFocused && spawnKeyboard != null)
             {
                 for (var type = 0; type < CharacterTypeCount; type++)
@@ -3876,7 +3886,6 @@ namespace RecoilPathfinding
                 }
             }
 
-            _hideLobbyCursor = true;
             if (prewarmSoldierPools && (prewarmPerTypePerTeam > 0 || prewarmHeroesPerTypePerTeam > 0) && !_poolPrewarmFinished)
             {
                 BeginPoolPrewarm();
@@ -5293,7 +5302,7 @@ namespace RecoilPathfinding
                 string title = lobbyHeroStats != null ? System.Array.Find(lobbyHeroStats, h => h.Id == hero.HeroId)?.Name : null;
                 string text = string.IsNullOrEmpty(title) ? "Tướng " + hero.HeroId : title;
                 var donor = string.IsNullOrWhiteSpace(hero.DonorName) ? "Người ủng hộ" : hero.DonorName;
-                DrawHeroIdentityLine(label, donor, new Color(1f, .88f, .4f));
+                DrawHeroIdentityLine(label, donor, UserNameColor(donor));
                 DrawHeroIdentityLine(new Rect(label.x, bar.yMax + 3, label.width, bar.height), text, Color.white);
             }
         }
@@ -5350,7 +5359,13 @@ namespace RecoilPathfinding
             var errorRect = RecoilLobbyLayout.GuiRect(layout.errorText, RecoilLobbyLayout.ErrorTextBounds, screenW, screenH);
             if (_poolPrewarmRunning || _initialFormationLoading)
             {
-                DrawPoolLoadingBar(loadingRect);
+                // Buttons fly off first, a short beat, then the bar rises into place.
+                var barIn = LobbyLoadingBarIn;
+                if (barIn >= 0f)
+                {
+                    loadingRect.y += (1f - barIn) * 28f * RecoilLobbyLayout.FitScale(Screen.width, Screen.height);
+                    DrawPoolLoadingBar(loadingRect);
+                }
             }
             else if (!string.IsNullOrEmpty(_lobbyError))
             {
@@ -5829,7 +5844,7 @@ namespace RecoilPathfinding
             DrawHighlightedLabel(RecoilBattleHudLayout.GuiRect(hud.poolScore, BattleHudPieceId.PoolScore, Screen.width),
                 (matchScoring?.TotalFixedPoints ?? 0m).ToString("N0"), poolStyle, scale * hud.poolScore.scale);
             DrawMatchTimer(RecoilBattleHudLayout.GuiRect(hud.timer, BattleHudPieceId.Timer, Screen.width),
-                scale * hud.timer.scale);
+                poolStyle, scale * hud.poolScore.scale);
         }
 
         private static Texture2D _healthFillRoundTexture;
@@ -5921,7 +5936,7 @@ namespace RecoilPathfinding
             var scoreHeight = scoreStyle.lineHeight;
             text.y = bar.center.y - (nameHeight + 1f + scoreHeight) * 0.5f;
             text.height = nameHeight;
-            style.normal.textColor = Color.white;
+            style.normal.textColor = UserNameColor(playerName);
             GUI.Label(text, FitTopName(playerName, style, text.width), style);
             text.y += nameHeight + 1f;
             text.height = scoreHeight;

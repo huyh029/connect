@@ -213,6 +213,7 @@ namespace RecoilPathfinding
             }
             JoinMatchScoring(user, message.user?.nickname ?? message.user?.unique_id ?? user, blue);
             if (kind == "gift") RecordDonationTop(message, user, blue);
+            var donorName = !string.IsNullOrWhiteSpace(message.user?.nickname) ? message.user.nickname : message.user?.unique_id ?? user;
             foreach (var rule in _tikTokArmySettings.Rules)
             {
                 if (!rule.Enabled || !rule.MatchesEvent(kind)) continue;
@@ -233,9 +234,9 @@ namespace RecoilPathfinding
                 if (rule.RandomRewards != null && rule.RandomRewards.Count > 0)
                 {
                     // Roll once for each earned reward, preserving the configured probabilities.
-                    for (long roll = 0; roll < rolls; roll++) QueueTikTokRandomReward(rule, blue);
+                    for (long roll = 0; roll < rolls; roll++) QueueTikTokRandomReward(rule, blue, user, donorName);
                 }
-                else QueueTikTokReward(rule, blue, rolls, 1f);
+                else QueueTikTokReward(rule, blue, rolls, 1f, user, donorName);
             }
         }
 
@@ -244,7 +245,7 @@ namespace RecoilPathfinding
             return ReferenceEquals(rule, RecoilTikTokGiftMapping.FindReward(_tikTokArmySettings?.Rules, gift));
         }
 
-        private void QueueTikTokRandomReward(TikTokArmyRule source, bool blue)
+        private void QueueTikTokRandomReward(TikTokArmyRule source, bool blue, string user = null, string donorName = null)
         {
             long weightTotal = 0;
             foreach (var choice in source.RandomRewards) if (choice != null) weightTotal += Math.Max(0, choice.Weight);
@@ -256,12 +257,13 @@ namespace RecoilPathfinding
                 pick -= choice.Weight;
                 if (pick > 0) continue;
                 var reward = _tikTokArmySettings.Rules.Find(r => r.Enabled && r.EventType == "gift" && r.Name == choice.GiftName);
-                if (reward != null) QueueTikTokReward(reward, blue, 1, choice.CountMultiplier);
+                if (reward != null) QueueTikTokReward(reward, blue, 1, choice.CountMultiplier, user, donorName);
                 return;
             }
         }
 
-        private void QueueTikTokReward(TikTokArmyRule rule, bool blue, long rolls, float multiplier)
+        private void QueueTikTokReward(TikTokArmyRule rule, bool blue, long rolls, float multiplier,
+            string user = null, string donorName = null)
         {
             if (rule.UnitCount <= 0) return;
             if (rule.UnitType < 0 || rule.UnitType >= CharacterTypeCount || FindTemplateForType(blue, rule.UnitType) == null)
@@ -274,6 +276,7 @@ namespace RecoilPathfinding
             var available = int.MaxValue - (long)_tikTokPendingUnits[team, rule.UnitType];
             var amount = perRoll == 0 ? 0 : Math.Min(available, rolls > available / perRoll ? available : rolls * perRoll);
             _tikTokPendingUnits[team, rule.UnitType] += (int)amount;
+            if (amount > 0) QueueSoldierSummonIntro(user, donorName, rule.UnitType, blue);
             if (amount > 0) Debug.Log($"TikTok {rule.Name}: +{amount} {CharacterTypeLabels[rule.UnitType]} → {(blue ? "Xanh" : "Đỏ")}." +
                 (!_combatStarted ? " Chờ bắt đầu trận bằng L." : ""), this);
         }

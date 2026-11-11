@@ -32,15 +32,7 @@ namespace RecoilPathfinding
                 if (candidate.Object != null && !candidate.Object.activeSelf) { effect = candidate; break; }
             if (effect == null && _siegeImpactEffects.Count < MaximumSiegeImpactEffects)
             {
-                var instance = Instantiate(siegeImpactPrefab, transform);
-                instance.SetActive(false);
-                effect = new SiegeImpactEffect { Object = instance, Particles = instance.GetComponentsInChildren<ParticleSystem>(true) };
-                foreach (var particle in effect.Particles)
-                {
-                    var main = particle.main;
-                    main.loop = false;
-                    main.stopAction = ParticleSystemStopAction.None;
-                }
+                effect = CreateSiegeImpactEffect();
                 _siegeImpactEffects.Add(effect);
             }
             if (effect == null)
@@ -53,6 +45,21 @@ namespace RecoilPathfinding
             effect.Object.transform.SetPositionAndRotation(position, siegeImpactPrefab.transform.rotation);
             effect.Object.SetActive(true);
             foreach (var particle in effect.Particles) particle.Play(false);
+        }
+
+        /// <summary>One hidden siege impact, ready to play (also created ahead of time during loading).</summary>
+        private SiegeImpactEffect CreateSiegeImpactEffect()
+        {
+            var instance = Instantiate(siegeImpactPrefab, transform);
+            instance.SetActive(false);
+            var effect = new SiegeImpactEffect { Object = instance, Particles = instance.GetComponentsInChildren<ParticleSystem>(true) };
+            foreach (var particle in effect.Particles)
+            {
+                var main = particle.main;
+                main.loop = false;
+                main.stopAction = ParticleSystemStopAction.None;
+            }
+            return effect;
         }
 
         private void UpdateSiegeImpactEffects()

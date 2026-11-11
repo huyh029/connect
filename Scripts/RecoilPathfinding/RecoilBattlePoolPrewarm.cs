@@ -152,6 +152,7 @@ namespace RecoilPathfinding
             }
             yield return PrepareEndgamePresentation();
             yield return PreloadPoolRenderAssets(pools);
+            yield return PrewarmBattleExtras(pools);
             var minimum = pools.Count > 0 ? int.MaxValue : 0;
             foreach (var pool in pools) minimum = Mathf.Min(minimum, pool.Pool.Count);
             var seconds = Time.realtimeSinceStartupAsDouble - start;
@@ -196,6 +197,7 @@ namespace RecoilPathfinding
                 fontStyle = FontStyle.Bold
             };
             _poolPrewarmLabelStyle.fontSize = Mathf.Clamp(Mathf.RoundToInt(Screen.width / 70f), 20, 30);
+            WarmHudGlyphs(); // OnGUI only: build the battle HUD's glyphs while the bar is up
             SetLabelTextColor(_poolPrewarmLabelStyle, Color.white);
             var old = GUI.color;
             GUI.color = Color.white;
