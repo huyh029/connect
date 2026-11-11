@@ -29,7 +29,7 @@ namespace RecoilPathfinding
         private float PoolAwardProgress(RecoilScoreRow row, float reveal)
         {
             if (row.PoolBonus <= 0) return 1;
-            float start = 3.1f + Mathf.Max(0, row.DonationRank - 1) * poolAwardAnimationStagger;
+            float start = 3.1f + Mathf.Max(0, row.PoolRank - 1) * poolAwardAnimationStagger;
             return Mathf.SmoothStep(0, 1, Mathf.Clamp01((reveal - start - .45f) / Mathf.Max(.2f, poolAwardAnimationSeconds)));
         }
 
@@ -197,7 +197,7 @@ namespace RecoilPathfinding
                 {
                     var row = rows[i].Score;
                     if (row.PoolBonus <= 0) continue;
-                    float start = 3.1f + Mathf.Max(0, row.DonationRank - 1) * poolAwardAnimationStagger;
+                    float start = 3.1f + Mathf.Max(0, row.PoolRank - 1) * poolAwardAnimationStagger;
                     float elapsed = reveal - start;
                     if (elapsed < 0 || elapsed > poolAwardAnimationSeconds + .9f) continue;
                     float targetY = viewport.y + i * (rowHeight + 1) + rowHeight * .75f;

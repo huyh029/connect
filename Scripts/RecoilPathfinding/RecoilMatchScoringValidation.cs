@@ -19,9 +19,9 @@ namespace RecoilPathfinding
             var winner = Find(result, "winner");
             var loser = Find(result, "loser");
             var noGift = Find(result, "noGift");
-            Equal(winner.PoolBonus, 8000m, "Global Top 1 receives 40 percent of pool");
+            Equal(winner.PoolBonus, 8000m, "Winning Top 1 receives 40 percent of pool");
             Equal(noGift.PoolBonus, 0m, "Non-donor receives no donation pool share");
-            Equal(loser.PoolBonus, 5000m, "Global Top 2 receives pool regardless of team");
+            Equal(loser.PoolBonus, 0m, "Losing side gets no pool share, even as global Top 2");
             Equal(loser.MatchEndingStreak, 60m, "Loser retains 60 percent");
             Equal(winner.StreakDelta, 12m, "Top 1 gets 30 percent of lost streak");
             Equal(noGift.StreakDelta, 10m, "Winning Top 2 award rounds 9.6 to 10");
@@ -49,8 +49,18 @@ namespace RecoilPathfinding
             for (int i = 0; i < gains.Length; i++)
             {
                 Equal(Find(top.Results, "top" + i).StreakDelta, gains[i], "Top 5 streak share " + i);
-                Equal(Find(top.Results, "top" + i).PoolBonus, poolAwards[i], "Global Top 5 pool share " + i);
+                Equal(Find(top.Results, "top" + i).PoolBonus, poolAwards[i], "Winning Top 5 pool share " + i);
             }
+
+            var mixed = new RecoilScoreSession().BeginMatch();
+            mixed.Donate("bigLoser", "Big loser", false, 100m);
+            for (int i = 0; i < 6; i++) mixed.Donate("w" + i, "W " + i, true, 6 - i);
+            mixed.Settle(true);
+            Equal(Find(mixed.Results, "bigLoser").PoolBonus, 0m, "Top donor on the losing side gets no pool");
+            decimal mixedPool = mixed.PoolPoints;
+            decimal[] mixedShares = { .40m, .25m, .15m, .12m, .08m, 0m };
+            for (int i = 0; i < mixedShares.Length; i++)
+                Equal(Find(mixed.Results, "w" + i).PoolBonus, mixedPool * mixedShares[i], "Winning side top 5 share " + i);
 
             var roundingSession = new RecoilScoreSession();
             roundingSession.Apply("a", 9m);
