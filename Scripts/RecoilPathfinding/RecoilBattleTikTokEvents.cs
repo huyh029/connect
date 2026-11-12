@@ -264,6 +264,27 @@ namespace RecoilPathfinding
             }
         }
 
+        // ---------------------------------------------------------------- gift simulation caps (test popup)
+
+        /// <summary>User ids of the test popup's simulated viewers start with this.</summary>
+        public const string GiftSimulationUserPrefix = "sim-";
+
+        /// <summary>Most units of a type (máy bắn đá 4, pháp sư 5) one "1.000 người" simulation may hand out in all.</summary>
+        public static readonly IReadOnlyDictionary<int, int> GiftSimulationCaps = new Dictionary<int, int> { [4] = 3, [5] = 10 };
+
+        private static readonly Dictionary<int, int> GiftSimulationRemaining = new();
+
+        /// <summary>A simulation starts: the capped types get their full allowance again.</summary>
+        public static void BeginGiftSimulationCaps()
+        {
+            GiftSimulationRemaining.Clear();
+            foreach (var cap in GiftSimulationCaps) GiftSimulationRemaining[cap.Key] = cap.Value;
+        }
+
+        /// <summary>True once the simulation has handed out all it may of <paramref name="type"/>.</summary>
+        public static bool GiftSimulationTypeUsedUp(int type) =>
+            GiftSimulationRemaining.TryGetValue(type, out var left) && left <= 0;
+
         private void QueueTikTokReward(TikTokArmyRule rule, bool blue, long rolls, float multiplier,
             string user = null, string donorName = null)
         {
@@ -277,6 +298,13 @@ namespace RecoilPathfinding
             var team = blue ? 0 : 1;
             var available = int.MaxValue - (long)_tikTokPendingUnits[team, rule.UnitType];
             var amount = perRoll == 0 ? 0 : Math.Min(available, rolls > available / perRoll ? available : rolls * perRoll);
+            // The test popup's "1.000 người tặng quà random" caps a few unit types over the whole simulation.
+            if (user != null && user.StartsWith(GiftSimulationUserPrefix, StringComparison.Ordinal) &&
+                GiftSimulationRemaining.TryGetValue(rule.UnitType, out var simulationLeft))
+            {
+                amount = Math.Min(amount, simulationLeft);
+                GiftSimulationRemaining[rule.UnitType] = simulationLeft - (int)amount;
+            }
             _tikTokPendingUnits[team, rule.UnitType] += (int)amount;
             if (amount > 0) QueueSoldierSummonIntro(user, donorName, rule.UnitType, blue);
             if (amount > 0) Debug.Log($"TikTok {rule.Name}: +{amount} {CharacterTypeLabels[rule.UnitType]} → {(blue ? "Xanh" : "Đỏ")}." +

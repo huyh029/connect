@@ -21,7 +21,7 @@ namespace RecoilPathfinding
             var noGift = Find(result, "noGift");
             Equal(winner.PoolBonus, 8000m, "Winning Top 1 receives 40 percent of pool");
             Equal(noGift.PoolBonus, 0m, "Non-donor receives no donation pool share");
-            Equal(loser.PoolBonus, 0m, "Losing side gets no pool share, even as global Top 2");
+            Equal(loser.PoolBonus, 5000m, "The pool's Top 2 gets 25 percent, whichever side it fought for");
             Equal(loser.MatchEndingStreak, 60m, "Loser retains 60 percent");
             Equal(winner.StreakDelta, 12m, "Top 1 gets 30 percent of lost streak");
             Equal(noGift.StreakDelta, 10m, "Winning Top 2 award rounds 9.6 to 10");
@@ -56,11 +56,11 @@ namespace RecoilPathfinding
             mixed.Donate("bigLoser", "Big loser", false, 100m);
             for (int i = 0; i < 6; i++) mixed.Donate("w" + i, "W " + i, true, 6 - i);
             mixed.Settle(true);
-            Equal(Find(mixed.Results, "bigLoser").PoolBonus, 0m, "Top donor on the losing side gets no pool");
             decimal mixedPool = mixed.PoolPoints;
-            decimal[] mixedShares = { .40m, .25m, .15m, .12m, .08m, 0m };
+            Equal(Find(mixed.Results, "bigLoser").PoolBonus, mixedPool * .40m, "Top donor on the losing side still gets the Top 1 share");
+            decimal[] mixedShares = { .25m, .15m, .12m, .08m, 0m, 0m };
             for (int i = 0; i < mixedShares.Length; i++)
-                Equal(Find(mixed.Results, "w" + i).PoolBonus, mixedPool * mixedShares[i], "Winning side top 5 share " + i);
+                Equal(Find(mixed.Results, "w" + i).PoolBonus, mixedPool * mixedShares[i], "Top 5 of the whole match, share " + i);
 
             var roundingSession = new RecoilScoreSession();
             roundingSession.Apply("a", 9m);

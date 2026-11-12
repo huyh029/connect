@@ -123,14 +123,17 @@ namespace RecoilPathfinding
             GUI.color = oldColor;
         }
 
-        /// <summary>Where the intro coin lands: the winning side's top 1 row, or the pool icon if that side has nobody ranked.</summary>
+        /// <summary>Where the intro coin lands: the row of the pool's Top 1 (either side), or the pool icon if nobody shares it.</summary>
         private Rect WinnerTopRowLanding(Rect panel, float half, float bodyY, float rowHeight, float scale, Rect poolIcon)
         {
-            var rows = _endgameBlueWins ? blueRanking : redRanking;
-            if (rows.Count == 0) return poolIcon;
+            // The pool's Top 1 (the biggest share), on whichever side it is listed.
+            var blue = false;
+            var index = redRanking.FindIndex(entry => entry.Score.PoolRank == 1);
+            if (index < 0) { blue = true; index = blueRanking.FindIndex(entry => entry.Score.PoolRank == 1); }
+            if (index < 0) return poolIcon;
             var size = Mathf.Max(18f, 30f * scale);
-            var x = _endgameBlueWins ? panel.x + half + 2 + half * .35f : panel.x + half * .65f; // where its awards land
-            var y = bodyY + rowHeight * .5f - rankingScroll.y;
+            var x = blue ? panel.x + half + 2 + half * .35f : panel.x + half * .65f; // where its awards land
+            var y = bodyY + index * (rowHeight + 1) + rowHeight * .5f - rankingScroll.y;
             return new Rect(x - size * .5f, y - size * .5f, size, size);
         }
 

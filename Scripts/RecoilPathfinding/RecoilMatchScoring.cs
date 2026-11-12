@@ -18,7 +18,7 @@ namespace RecoilPathfinding
         public string Name { get; internal set; }
         public bool Blue { get; internal set; }
         public int DonationRank { get; internal set; }
-        /// <summary>1..5 among the winning side's donors who share the pool; 0 for everyone else.</summary>
+        /// <summary>1..5 among the match's top donors (both sides) who share the pool; 0 for everyone else.</summary>
         public int PoolRank { get; internal set; }
         public decimal Coins { get; internal set; }
         public decimal FixedPoints => Coins * 50m;
@@ -100,13 +100,11 @@ namespace RecoilPathfinding
             donors.Sort(CompareDonations);
             winners.Sort(CompareDonations);
             for (int i = 0; i < donors.Count; i++) donors[i].DonationRank = i + 1;
-            // The pool goes to the winning side's top 5 donors only.
-            int poolRank = 0;
-            foreach (var winner in winners)
+            // The pool goes to the match's top 5 donors (most points), whichever side they fought for.
+            for (int i = 0; i < Math.Min(donors.Count, PoolShares.Length); i++)
             {
-                if (winner.Coins <= 0 || poolRank >= PoolShares.Length) continue;
-                winner.PoolBonus = PoolPoints * PoolShares[poolRank];
-                winner.PoolRank = ++poolRank;
+                donors[i].PoolBonus = PoolPoints * PoolShares[i];
+                donors[i].PoolRank = i + 1;
             }
             for (int i = 0; i < Math.Min(winners.Count, StreakShares.Length); i++)
                 winners[i].StreakDelta = RoundStreak(lost * StreakShares[i]);

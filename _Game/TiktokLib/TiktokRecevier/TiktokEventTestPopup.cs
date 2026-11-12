@@ -59,15 +59,24 @@ public class TiktokEventTestPopup : MonoBehaviour
     private IEnumerator SimulateRandomGifts(List<TikTokArmyRule> gifts)
     {
         var batchId = Guid.NewGuid().ToString("N");
+        // At most 3 máy bắn đá and 10 pháp sư over the whole simulation (the game also clamps what it hands out).
+        RecoilPathfinding.RecoilAutoBattleDemo.BeginGiftSimulationCaps();
+        var allowed = new List<TikTokArmyRule>(gifts.Count);
         try
         {
             for (int i = 0; i < 1000; i++)
             {
-                var user = new TikUser { user_id = $"sim-{batchId}-{i}", nickname = $"Test User {i + 1}" };
+                var user = new TikUser { user_id = $"{RecoilPathfinding.RecoilAutoBattleDemo.GiftSimulationUserPrefix}{batchId}-{i}",
+                    nickname = $"Test User {i + 1}" };
                 // Select a team before donating, independent of the popup's auto-team toggle.
                 TikTokUdpReceiver.OnEvent?.Invoke(new TikEvent { type = "comment", user = user,
                     comment = UnityEngine.Random.value < .5f ? "1" : "2" });
-                var gift = gifts[UnityEngine.Random.Range(0, gifts.Count)];
+                // Gifts whose unit type is used up are left out, so the 1.000 viewers still get soldiers.
+                allowed.Clear();
+                foreach (var candidate in gifts)
+                    if (!RecoilPathfinding.RecoilAutoBattleDemo.GiftSimulationTypeUsedUp(candidate.UnitType)) allowed.Add(candidate);
+                var pool = allowed.Count > 0 ? allowed : gifts;
+                var gift = pool[UnityEngine.Random.Range(0, pool.Count)];
                 TikTokUdpReceiver.OnEvent?.Invoke(new TikEvent { type = "gift", user = user,
                     gift = new TikGift { id = gift.GiftId, name = gift.Name, price = gift.Coins },
                     delta = 1, count = 1 });

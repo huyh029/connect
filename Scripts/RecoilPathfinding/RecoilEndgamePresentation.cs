@@ -21,6 +21,7 @@ namespace RecoilPathfinding
         private Quaternion _endgameStartRotation, _endgameCameraRotation;
         private readonly string[] _endgameNames = new string[3];
         private readonly int[] _endgameScores = new int[3];
+        private readonly bool[] _endgameNameBlue = new bool[3]; // each top 3 name in its own side's colours
         private GUIStyle _endgameHeadingStyle, _endgameNameStyle, _endgameScoreStyle;
 
         private IEnumerator PrepareEndgamePresentation()
@@ -156,14 +157,20 @@ namespace RecoilPathfinding
             _endgameBlueWins = blueWins;
             _endgameStartedAt = Time.unscaledTime;
             _startCountdownEndsAt = 0;
-            var names = blueWins ? battleBlueTopNames : battleRedTopNames;
-            var scores = blueWins ? battleBlueTopScores : battleRedTopScores;
+            // The match's top 3 by final points (pool share and streak bonus included), whichever side they were on.
+            var best = new System.Collections.Generic.List<RecoilScoreRow>();
+            if (matchScoring != null && matchScoring.Settled)
+                foreach (var row in matchScoring.Results)
+                    if (row.RankingPoints > 0m) best.Add(row);
+            best.Sort((a, b) => a.RankingPoints != b.RankingPoints ? b.RankingPoints.CompareTo(a.RankingPoints)
+                : a.Coins != b.Coins ? b.Coins.CompareTo(a.Coins) : string.CompareOrdinal(a.UserId, b.UserId));
             for (var i = 0; i < 3; i++)
             {
-                var source = BattleTopSourceIndex(blueWins, i);
-                _endgameNames[i] = source >= 0 ? names[source] : null;
-                _endgameDonors[i] = source >= 0 ? _topDonors[blueWins ? 1 : 0,source] : null;
-                _endgameScores[i] = source >= 0 ? scores[source] : 0;
+                var row = i < best.Count ? best[i] : null;
+                _endgameNames[i] = row != null ? (string.IsNullOrWhiteSpace(row.Name) ? row.UserId : row.Name) : null;
+                _endgameNameBlue[i] = row?.Blue ?? blueWins;
+                _endgameDonors[i] = row != null && _donationTopUsers.TryGetValue(row.UserId, out var donor) ? donor : null;
+                _endgameScores[i] = row != null ? (int)System.Math.Min(int.MaxValue, decimal.Round(row.RankingPoints)) : 0;
             }
             var losingTeam = blueWins ? RecoilCastleTeam.Red : RecoilCastleTeam.Blue;
             if (!TryGetCastleBounds(losingTeam, out var bounds))
@@ -344,7 +351,7 @@ namespace RecoilPathfinding
                 _endgameNameStyle.fontSize = Mathf.Max(12, Mathf.RoundToInt(22 * scale));
                 var fittedName = FitTopName(_endgameNames[rank], _endgameNameStyle, nameRect.width);
                 DrawOutlinedNameLabel(nameRect, fittedName, _endgameNameStyle, scale,
-                    UserNameColor(_endgameNames[rank], _endgameBlueWins));
+                    UserNameColor(_endgameNames[rank], _endgameNameBlue[rank]));
                 SetLabelTextColor(_endgameScoreStyle, new Color(1f, .82f, .3f));
                 var points = Mathf.RoundToInt(_endgameScores[rank] * Mathf.SmoothStep(0, 1, Mathf.Clamp01((local - .5f) / 1.2f)));
                 var scoreY = string.IsNullOrWhiteSpace(_endgameNames[rank])
