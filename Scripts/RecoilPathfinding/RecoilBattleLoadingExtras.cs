@@ -18,24 +18,29 @@ namespace RecoilPathfinding
         private IEnumerator PrewarmBattleExtras(List<PrewarmPool> pools)
         {
             _poolPrewarmLabel = "Đang nạp âm thanh…";
-            yield return PreloadBattleAudio();
+            yield return PreloadBattleAudio(); // 0 .. 40% of this part
 
             _poolPrewarmLabel = "Đang chuẩn bị hiệu ứng…";
             PrewarmSiegeImpacts();
+            SetLoadingPart(.45f);
             yield return null;
             yield return PrewarmAdvisorEffects();
+            SetLoadingPart(.6f);
             PrewarmProjectiles(pools);
+            SetLoadingPart(.7f);
             yield return null;
 
             _poolPrewarmLabel = "Đang chuẩn bị bộ nhớ trận…";
             ReserveBattleBuffers(pools);
             try { EnsureHeroIntroPlayer(); }
             catch (System.Exception exception) { Debug.LogException(exception, this); }
+            SetLoadingPart(.85f);
             yield return null;
 
             _poolPrewarmLabel = "Đang dọn bộ nhớ…";
             yield return Resources.UnloadUnusedAssets();
             System.GC.Collect();
+            SetLoadingPart(1f);
             yield return null;
         }
 
@@ -62,6 +67,7 @@ namespace RecoilPathfinding
                 if (clip.loadState == AudioDataLoadState.Unloaded) clip.LoadAudioData();
                 if (++loaded % 8 == 0)
                 {
+                    SetLoadingPart(.4f * loaded / Mathf.Max(1, clips.Count));
                     _poolPrewarmLabel = $"Đang nạp âm thanh… {loaded}/{clips.Count}";
                     yield return null; // spread the decoding over frames so the bar keeps moving
                 }

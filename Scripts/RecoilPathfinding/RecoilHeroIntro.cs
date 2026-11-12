@@ -75,7 +75,7 @@ namespace RecoilPathfinding
             {
                 User = user, Name = string.IsNullOrWhiteSpace(displayName) ? user : displayName, HeroId = heroId, Blue = blue,
                 Clip = heroIntroClips[heroId - 1], QueuedAt = Time.unscaledTime,
-                Title = "TRIỆU HỒI " + HeroLabels[heroId - 1].ToUpperInvariant() + (blue ? " • PHE XANH" : " • PHE ĐỎ")
+                Title = "TRIỆU HỒI " + HeroLabels[heroId - 1].ToUpperInvariant() // the side shows in the name's colour
             });
         }
 
@@ -95,7 +95,7 @@ namespace RecoilPathfinding
             {
                 User = user, Name = string.IsNullOrWhiteSpace(displayName) ? user : displayName, Blue = blue,
                 Soldier = true, Clip = clips[type], QueuedAt = Time.unscaledTime,
-                Title = "TRIỆU HỒI " + CharacterTypeLabels[type].ToUpperInvariant() + (blue ? " • PHE XANH" : " • PHE ĐỎ")
+                Title = "TRIỆU HỒI " + CharacterTypeLabels[type].ToUpperInvariant() // the side shows in the name's colour
             });
         }
 
@@ -308,6 +308,30 @@ namespace RecoilPathfinding
             return new Rect(x, bottom - height, width, height);
         }
 
+        private static Texture2D _introNameBand;
+
+        /// <summary>Black, strongest in the middle, fading to nothing at the left and right ends.</summary>
+        private static void EnsureIntroNameBand()
+        {
+            if (_introNameBand != null) return;
+            const int width = 256;
+            _introNameBand = new Texture2D(width, 1, TextureFormat.RGBA32, false)
+            {
+                name = "Intro name band",
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+            var pixels = new Color[width];
+            for (var i = 0; i < width; i++)
+            {
+                var edge = Mathf.Min(i, width - 1 - i) / (width * .5f); // 0 at the ends, 1 in the middle
+                pixels[i] = new Color(0f, 0f, 0f, .72f * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(edge / .7f)));
+            }
+            _introNameBand.SetPixels(pixels);
+            _introNameBand.Apply(false, true);
+        }
+
         private void DrawIntroSlot(IntroSlot slot, Rect video, float scale)
         {
             var now = Time.unscaledTime;
@@ -331,12 +355,12 @@ namespace RecoilPathfinding
                 GUI.DrawTexture(video, slot.Player.texture, ScaleMode.ScaleToFit, true);
             }
             var name = new Rect(video.x, video.y - 68f * scale, video.width, 32f * scale);
-            EnsureEndgameNameGradient();
+            // A dark band behind the name and title, darkest in the middle and fading out to the left and right, so
+            // the viewer's name reads clearly on any video or battlefield without a hard-edged box.
+            EnsureIntroNameBand();
             GUI.color = new Color(1, 1, 1, alpha);
-            GUI.DrawTexture(new Rect(name.x, name.y, name.width, 64f * scale), _endgameNameGradient, ScaleMode.StretchToFill, true);
-            // A dark plate over the gradient so the viewer's name reads clearly on any video or battlefield.
-            GUI.DrawTexture(new Rect(name.x, name.y - 4f * scale, name.width, 70f * scale), Texture2D.whiteTexture,
-                ScaleMode.StretchToFill, true, 0, new Color(0f, 0f, 0f, .62f * alpha), 0, 10f * scale);
+            GUI.DrawTexture(new Rect(name.x, name.y - 4f * scale, name.width, 70f * scale), _introNameBand,
+                ScaleMode.StretchToFill, true);
             _heroIntroUserStyle ??= new GUIStyle(GUI.skin.label)
                 { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, richText = false, clipping = TextClipping.Clip };
             _heroIntroTitleStyle ??= new GUIStyle(_heroIntroUserStyle);

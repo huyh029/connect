@@ -9,7 +9,7 @@ namespace RecoilPathfinding
 
         private IEnumerator PrepareInitialLayoutAndStart()
         {
-            _poolPrewarmProgress = 0f;
+            BeginLoadingPart(LoadingPartFormation); // the whole bar when the pools were loaded earlier
             _poolPrewarmLabel = "Đang tính đội hình…";
             // Render the loading screen before calculating or projecting formation slots.
             yield return null;
@@ -29,11 +29,14 @@ namespace RecoilPathfinding
         {
             if (!_initialFormationLoading || !_lobbyStarted) return;
             var target = Mathf.Max(1, PreparedArmyTarget);
-            _poolPrewarmProgress = Mathf.Clamp01(_fullDetailSoldierCount / (float)target);
-            _poolPrewarmLabel = $"Đang xếp đội hình… {_poolPrewarmProgress * 100f:F0}%";
+            var formed = Mathf.Clamp01(_fullDetailSoldierCount / (float)target);
+            SetLoadingPart(formed);
+            _poolPrewarmLabel = $"Đang xếp đội hình… {formed * 100f:F0}%";
             if (!InitialWaitingArmySpawned || !IsPreparedArmyRendered()) return;
             if (_waitingFormationActive && !_formationReady) return;
+            SetLoadingPart(1f);
             _initialFormationLoading = false;
+            _loadingWithPrewarm = false; // the next match only forms up: it fills the whole bar
         }
 
         private void DrawInitialFormationLoading()

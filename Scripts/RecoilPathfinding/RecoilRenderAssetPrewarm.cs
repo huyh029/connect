@@ -37,6 +37,7 @@ namespace RecoilPathfinding
             foreach (var root in roots)
             {
                 _poolPrewarmLabel = $"Đang chuẩn bị hình ảnh… {++ready}/{roots.Count}";
+                SetLoadingPart(ready / (float)Mathf.Max(1, roots.Count));
                 foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
                     PreloadRenderMesh(filter.sharedMesh, hasGraphics);
                 foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
@@ -61,7 +62,10 @@ namespace RecoilPathfinding
                 }
                 yield return null;
             }
+            SetLoadingPart(1f);
+            BeginLoadingPart(LoadingPartRenderWarm);
             if (hasGraphics) yield return RenderPreloadedMaterials(roots);
+            SetLoadingPart(1f);
             Debug.Log($"[Render asset prewarm] Retained {_preloadedRenderAssets.Count} mesh/material/shader/texture assets before gameplay.", this);
         }
 
@@ -76,6 +80,18 @@ namespace RecoilPathfinding
             quad.RecalculateNormals(); quad.RecalculateBounds();
             var rendered = new HashSet<(Material Material, Mesh Mesh)>();
             var drawCount = 0;
+            // How many model / material pairs will be drawn, so the loading bar moves evenly through them.
+            var planned = new HashSet<(Material Material, Mesh Mesh)>();
+            foreach (var root in roots)
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                var plannedFilter = renderer.GetComponent<MeshFilter>();
+                var plannedMesh = renderer is SkinnedMeshRenderer plannedSkin ? plannedSkin.sharedMesh
+                    : plannedFilter != null ? plannedFilter.sharedMesh : null;
+                foreach (var material in renderer.sharedMaterials)
+                    if (material != null && material.shader != null && material.shader.isSupported)
+                        planned.Add((material, plannedMesh != null ? plannedMesh : quad));
+            }
             var properties = new MaterialPropertyBlock();
             try
             {
@@ -92,6 +108,7 @@ namespace RecoilPathfinding
                     {
                         if (material == null || material.shader == null || !material.shader.isSupported || !rendered.Add((material, mesh))) continue;
                         _poolPrewarmLabel = $"Đang render trước mô hình / FX… {rendered.Count}";
+                        SetLoadingPart(rendered.Count / (float)Mathf.Max(1, planned.Count));
                         if (material.passCount == 0) continue;
                         var passes = new List<int>();
                         var forward = material.FindPass("UniversalForward");

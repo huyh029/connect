@@ -53,11 +53,43 @@ namespace RecoilPathfinding
             return unit;
         }
 
+        // ---------------------------------------------------------------- one loading bar for every step
+        // The first match loads in five equal parts: soldier / hero pools, render assets, offscreen render warm-up,
+        // sounds / effects / buffers, and forming the army up. Later matches (Retry, Home then Start) only form the
+        // army up, which then fills the whole bar.
+        private const int LoadingPartPools = 0, LoadingPartRenderAssets = 1, LoadingPartRenderWarm = 2,
+            LoadingPartExtras = 3, LoadingPartFormation = 4, LoadingParts = 5;
+        private bool _loadingWithPrewarm;
+        private float _loadingPartStart, _loadingPartSpan = 1f;
+
+        /// <summary>Starts loading part <paramref name="part"/>; its own progress then fills its share of the bar.</summary>
+        private void BeginLoadingPart(int part)
+        {
+            if (_loadingWithPrewarm)
+            {
+                _loadingPartStart = part / (float)LoadingParts;
+                _loadingPartSpan = 1f / LoadingParts;
+            }
+            else
+            {
+                // Only the army forming up is left to load: it gets the whole bar.
+                _loadingPartStart = 0f;
+                _loadingPartSpan = 1f;
+            }
+            _poolPrewarmProgress = Mathf.Max(_loadingWithPrewarm ? _poolPrewarmProgress : 0f, _loadingPartStart);
+        }
+
+        /// <summary>0..1 through the current loading part. The bar never moves backwards.</summary>
+        private void SetLoadingPart(float progress) =>
+            _poolPrewarmProgress = Mathf.Max(_poolPrewarmProgress, _loadingPartStart + _loadingPartSpan * Mathf.Clamp01(progress));
+
         private void BeginPoolPrewarm()
         {
             if (_poolPrewarmRunning) return;
             _poolPrewarmRunning = true;
+            _loadingWithPrewarm = true;
             _poolPrewarmProgress = 0f;
+            BeginLoadingPart(LoadingPartPools);
             _poolPrewarmLabel = "Đang tải… 0%";
             _poolPrewarmCoroutine = StartCoroutine(PrewarmPoolsBeforeMatch());
         }
@@ -142,17 +174,22 @@ namespace RecoilPathfinding
                 var ready = 0;
                 int totalTarget = 0;
                 foreach (var pool in pools) { ready += Mathf.Min(pool.Target, pool.Pool.Count); totalTarget += pool.Target; }
-                _poolPrewarmProgress = totalTarget > 0 ? Mathf.Clamp01(ready / (float)totalTarget) : 1f;
+                var poolProgress = totalTarget > 0 ? Mathf.Clamp01(ready / (float)totalTarget) : 1f;
+                SetLoadingPart(finished ? 1f : poolProgress);
                 if (Time.realtimeSinceStartupAsDouble - lastStatus >= 0.25d || finished)
                 {
-                    _poolPrewarmLabel = $"Đang tải… {_poolPrewarmProgress * 100f:F0}%";
+                    _poolPrewarmLabel = $"Đang tải… {poolProgress * 100f:F0}%";
                     lastStatus = Time.realtimeSinceStartupAsDouble;
                 }
                 if (!finished) yield return null;
             }
+            SetLoadingPart(1f);
+            BeginLoadingPart(LoadingPartRenderAssets);
             yield return PrepareEndgamePresentation();
-            yield return PreloadPoolRenderAssets(pools);
+            yield return PreloadPoolRenderAssets(pools); // also runs the render warm-up part
+            BeginLoadingPart(LoadingPartExtras);
             yield return PrewarmBattleExtras(pools);
+            SetLoadingPart(1f);
             var minimum = pools.Count > 0 ? int.MaxValue : 0;
             foreach (var pool in pools) minimum = Mathf.Min(minimum, pool.Pool.Count);
             var seconds = Time.realtimeSinceStartupAsDouble - start;
@@ -165,7 +202,7 @@ namespace RecoilPathfinding
                 $"elapsed={seconds:F1}s, added Unity allocated memory={addedMb:F1} MB, stop={stopReason}. " +
                 "Hidden models have no simulation entities or GPU skin registrations; normal spawn fills any shortfall.", this);
             _poolPrewarmFinished = true;
-            _poolPrewarmProgress = 1f;
+            BeginLoadingPart(LoadingPartFormation); // the army forming up fills the last part
             _poolPrewarmRunning = false;
             _poolPrewarmCoroutine = null;
             if (isActiveAndEnabled && !_lobbyStarted) StartMatchFromLobby();
