@@ -11,18 +11,24 @@ using UnityEngine.Networking;
 namespace NhiQuoc.Tools
 {
     /// <summary>
-    /// Writes the Unity Cloud leaderboard the battle shows (Weekly by default) with a service account:
-    /// push, update and delete scores, one entry at a time (Single) or a JSON list (Multi), and see what is on it.
+    /// Writes the Unity Cloud leaderboard the battle shows (Weekly by default): push, update and delete scores, one
+    /// entry at a time (Single) or a JSON list typed in or read from a .json file (Multi), and see what is on it.
     /// Each entry: { "tiktokID", "name", "avatarurl", "score" }; the TikTok id is the leaderboard's player id and
     /// tiktokID / name / avatarurl go in the score's metadata.
-    /// The service account key stays on this computer (EditorPrefs); it is never saved in the project.
+    /// Only the leaderboard id is asked: the project is the one this Unity project is linked to, the environment is
+    /// "production" (looked up by name), and the calls are made as the Unity account signed in to the Editor. A
+    /// service account key can be given instead under "Nâng cao" (kept in EditorPrefs, never in the project).
     /// </summary>
     public sealed class CongThanhLeaderboardTool : EditorWindow
     {
         private const string Prefix = "CongThanhLeaderboard.";
         private const string AdminApi = "https://services.api.unity.com";
 
-        private string _projectId, _environmentId, _leaderboardId, _keyId, _secret;
+        private string _leaderboardId, _environmentName, _keyId, _secret;
+        private string _environmentId; // looked up from _environmentName
+        private bool _advanced;
+        private static string ProjectId => CloudProjectSettings.projectId;
+        private bool UseServiceAccount => !string.IsNullOrWhiteSpace(_keyId) && !string.IsNullOrWhiteSpace(_secret);
         private int _mode; // 0 single, 1 multi
         private RecoilCloudLeaderboard.Entry _single = new();
         private string _multiJson = "[\n  { \"tiktokID\": \"user1\", \"name\": \"Người chơi 1\", \"avatarurl\": \"\", \"score\": 1000 }\n]";
@@ -40,9 +46,7 @@ namespace NhiQuoc.Tools
 
         private void OnEnable()
         {
-            _projectId = EditorPrefs.GetString(Prefix + "Project", CloudProjectSettings.projectId);
-            if (string.IsNullOrEmpty(_projectId)) _projectId = CloudProjectSettings.projectId;
-            _environmentId = EditorPrefs.GetString(Prefix + "Environment", "");
+            _environmentName = EditorPrefs.GetString(Prefix + "EnvironmentName", "production");
             _leaderboardId = EditorPrefs.GetString(Prefix + "Leaderboard", RecoilCloudLeaderboard.DefaultLeaderboardId);
             _keyId = EditorPrefs.GetString(Prefix + "KeyId", "");
             _secret = EditorPrefs.GetString(Prefix + "Secret", "");
@@ -52,8 +56,7 @@ namespace NhiQuoc.Tools
 
         private void SaveSettings()
         {
-            EditorPrefs.SetString(Prefix + "Project", _projectId ?? "");
-            EditorPrefs.SetString(Prefix + "Environment", _environmentId ?? "");
+            EditorPrefs.SetString(Prefix + "EnvironmentName", _environmentName ?? "");
             EditorPrefs.SetString(Prefix + "Leaderboard", _leaderboardId ?? "");
             EditorPrefs.SetString(Prefix + "KeyId", _keyId ?? "");
             EditorPrefs.SetString(Prefix + "Secret", _secret ?? "");
@@ -67,20 +70,27 @@ namespace NhiQuoc.Tools
         {
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             EditorGUI.BeginChangeCheck();
-            EditorGUILayout.LabelField("Kết nối", EditorStyles.boldLabel);
-            _projectId = EditorGUILayout.TextField(new GUIContent("Project ID", "Unity Cloud project (mặc định lấy từ dự án)."), _projectId);
-            _environmentId = EditorGUILayout.TextField(new GUIContent("Environment ID",
-                "ID môi trường (Dashboard > Projects > Environments), ví dụ môi trường production."), _environmentId);
             _leaderboardId = EditorGUILayout.TextField("Leaderboard ID", _leaderboardId);
-            _keyId = EditorGUILayout.TextField(new GUIContent("Service account Key ID",
-                "Dashboard > Administration > Service accounts > Keys. Cần quyền Leaderboards."), _keyId);
-            using (new EditorGUILayout.HorizontalScope())
+            EditorGUILayout.LabelField(
+                $"Project {(string.IsNullOrEmpty(ProjectId) ? "(chưa liên kết)" : ProjectId)} · môi trường {_environmentName} · " +
+                (UseServiceAccount ? "service account" : "tài khoản Unity đang đăng nhập Editor"), EditorStyles.miniLabel);
+            if (string.IsNullOrEmpty(ProjectId))
+                EditorGUILayout.HelpBox("Dự án chưa liên kết Unity Cloud (Edit > Project Settings > Services).", MessageType.Warning);
+            _advanced = EditorGUILayout.Foldout(_advanced, "Nâng cao", true);
+            if (_advanced)
             {
-                _secret = _showKey ? EditorGUILayout.TextField("Secret key", _secret) : EditorGUILayout.PasswordField("Secret key", _secret);
-                _showKey = GUILayout.Toggle(_showKey, "Hiện", GUILayout.Width(44f));
+                EditorGUI.indentLevel++;
+                _environmentName = EditorGUILayout.TextField("Tên môi trường", _environmentName);
+                _keyId = EditorGUILayout.TextField(new GUIContent("Service account Key ID",
+                    "Để trống: dùng tài khoản Unity đang đăng nhập Editor."), _keyId);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _secret = _showKey ? EditorGUILayout.TextField("Secret key", _secret) : EditorGUILayout.PasswordField("Secret key", _secret);
+                    _showKey = GUILayout.Toggle(_showKey, "Hiện", GUILayout.Width(44f));
+                }
+                EditorGUI.indentLevel--;
             }
-            EditorGUILayout.HelpBox("Khoá chỉ lưu trên máy này (EditorPrefs), không nằm trong dự án hay bản build.", MessageType.None);
-            if (EditorGUI.EndChangeCheck()) { SaveSettings(); _accessToken = null; }
+            if (EditorGUI.EndChangeCheck()) { SaveSettings(); _accessToken = null; _environmentId = null; }
 
             EditorGUILayout.Space(6f);
             EditorGUI.BeginChangeCheck();
@@ -119,7 +129,11 @@ namespace NhiQuoc.Tools
 
         private void DrawMulti()
         {
-            EditorGUILayout.LabelField("Mảng JSON: [{ \"tiktokID\", \"name\", \"avatarurl\", \"score\" }, …]", EditorStyles.miniLabel);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField("Mảng JSON: [{ \"tiktokID\", \"name\", \"avatarurl\", \"score\" }, …]", EditorStyles.miniLabel);
+                if (GUILayout.Button("📂 Nhập từ file JSON…", GUILayout.Width(150f))) ImportJsonFile();
+            }
             EditorGUI.BeginChangeCheck();
             _multiJson = EditorGUILayout.TextArea(_multiJson, GUILayout.MinHeight(140f));
             if (EditorGUI.EndChangeCheck()) SaveSettings();
@@ -180,6 +194,30 @@ namespace NhiQuoc.Tools
             EditorGUILayout.EndScrollView();
         }
 
+        /// <summary>Reads a .json file (an array of entries, or one entry) into the Multi list.</summary>
+        private void ImportJsonFile()
+        {
+            var folder = EditorPrefs.GetString(Prefix + "JsonFolder", Application.dataPath);
+            var path = EditorUtility.OpenFilePanel("Nhập danh sách bảng xếp hạng", folder, "json");
+            if (string.IsNullOrEmpty(path)) return;
+            EditorPrefs.SetString(Prefix + "JsonFolder", System.IO.Path.GetDirectoryName(path));
+            string text;
+            try { text = System.IO.File.ReadAllText(path, Encoding.UTF8); }
+            catch (Exception exception) { SetStatus("Không đọc được file: " + exception.Message, MessageType.Error); return; }
+            var previous = _multiJson;
+            _multiJson = text;
+            if (!TryParseMulti(out var entries)) { _multiJson = previous; return; }
+            // Shown back as a tidy list, ready to push / update / delete.
+            var array = new JArray();
+            foreach (var entry in entries)
+                array.Add(new JObject { ["tiktokID"] = entry.tiktokID, ["name"] = entry.name, ["avatarurl"] = entry.avatarurl, ["score"] = entry.score });
+            _multiJson = array.ToString();
+            _mode = 1;
+            SaveSettings();
+            GUI.FocusControl(null);
+            SetStatus($"Đã nhập {entries.Count} người từ {System.IO.Path.GetFileName(path)}. Bấm Push / Update để gửi lên.", MessageType.Info);
+        }
+
         private bool TryParseMulti(out List<RecoilCloudLeaderboard.Entry> entries)
         {
             entries = new List<RecoilCloudLeaderboard.Entry>();
@@ -207,10 +245,9 @@ namespace NhiQuoc.Tools
         private async void Run(Func<Task> work)
         {
             if (_busy) return;
-            if (string.IsNullOrWhiteSpace(_projectId) || string.IsNullOrWhiteSpace(_environmentId) ||
-                string.IsNullOrWhiteSpace(_leaderboardId) || string.IsNullOrWhiteSpace(_keyId) || string.IsNullOrWhiteSpace(_secret))
+            if (string.IsNullOrWhiteSpace(ProjectId) || string.IsNullOrWhiteSpace(_leaderboardId))
             {
-                SetStatus("Điền đủ Project ID, Environment ID, Leaderboard ID và khoá service account.", MessageType.Warning);
+                SetStatus(string.IsNullOrWhiteSpace(ProjectId) ? "Dự án chưa liên kết Unity Cloud." : "Nhập Leaderboard ID.", MessageType.Warning);
                 return;
             }
             _busy = true;
@@ -230,11 +267,13 @@ namespace NhiQuoc.Tools
                 // Update sets exactly this score: the old one goes first (the board may keep only the best).
                 if (replace)
                 {
-                    var removed = await Send("DELETE", AdminScoreUrl(entry.tiktokID), null);
+                    var removed = await Send("DELETE", await AdminScoreUrl(entry.tiktokID), null);
                     if (removed.Error != null && removed.Code != 404) { failures.Add($"{entry.tiktokID}: {removed.Error}"); continue; }
                 }
                 var body = new JObject { ["score"] = entry.score, ["metadata"] = entry.Metadata() }.ToString();
-                var result = await Send("POST", PlayerScoreUrl(entry.tiktokID), body);
+                await EnvironmentId();
+                var result = await Send("POST", PlayerScoreUrl(entry.tiktokID, true), body);
+                if (result.Code == 404 || result.Code == 405) result = await Send("POST", PlayerScoreUrl(entry.tiktokID, false), body);
                 if (result.Error != null) failures.Add($"{entry.tiktokID}: {result.Error}");
                 else done++;
             }
@@ -250,7 +289,7 @@ namespace NhiQuoc.Tools
             {
                 if (string.IsNullOrWhiteSpace(id)) continue;
                 SetStatus($"Xoá {done + 1}/{ids.Count}: {id}…", MessageType.Info);
-                var result = await Send("DELETE", AdminScoreUrl(id), null);
+                var result = await Send("DELETE", await AdminScoreUrl(id), null);
                 if (result.Error != null && result.Code != 404) failures.Add($"{id}: {result.Error}");
                 else done++;
             }
@@ -264,8 +303,11 @@ namespace NhiQuoc.Tools
             var total = 0;
             for (var offset = 0; offset < 1000; offset += 100)
             {
-                var result = await Send("GET", $"{RecoilCloudLeaderboard.PlayerApi}/projects/{_projectId}/leaderboards/" +
-                                               $"{Uri.EscapeDataString(_leaderboardId)}/scores?offset={offset}&limit=100&includeMetadata=true", null);
+                var query = $"/leaderboards/{Uri.EscapeDataString(_leaderboardId)}/scores?offset={offset}&limit=100&includeMetadata=true";
+                var environment = await EnvironmentId();
+                var result = await Send("GET", $"{RecoilCloudLeaderboard.PlayerApi}/projects/{ProjectId}/environments/{environment}{query}", null);
+                if (result.Code == 404 || result.Code == 405)
+                    result = await Send("GET", $"{RecoilCloudLeaderboard.PlayerApi}/projects/{ProjectId}{query}", null);
                 if (result.Error != null)
                 {
                     SetStatus("Không tải được bảng: " + result.Error, MessageType.Error);
@@ -289,13 +331,34 @@ namespace NhiQuoc.Tools
             else SetStatus($"Đã {verb} {done}/{count}. Lỗi:\n" + string.Join("\n", failures), MessageType.Warning);
         }
 
-        private string PlayerScoreUrl(string playerId) =>
-            $"{RecoilCloudLeaderboard.PlayerApi}/projects/{_projectId}/leaderboards/{Uri.EscapeDataString(_leaderboardId)}" +
-            $"/scores/players/{Uri.EscapeDataString(playerId)}";
+        /// <summary>Adding a score for a given player (the server form, in the environment; or the plain form).</summary>
+        private string PlayerScoreUrl(string playerId, bool inEnvironment) =>
+            $"{RecoilCloudLeaderboard.PlayerApi}/projects/{ProjectId}" + (inEnvironment ? $"/environments/{_environmentId}" : "") +
+            $"/leaderboards/{Uri.EscapeDataString(_leaderboardId)}/scores/players/{Uri.EscapeDataString(playerId)}";
 
-        private string AdminScoreUrl(string playerId) =>
-            $"{AdminApi}/leaderboards/v1/projects/{_projectId}/environments/{_environmentId}/leaderboards/" +
+        private async Task<string> AdminScoreUrl(string playerId) =>
+            $"{AdminApi}/leaderboards/v1/projects/{ProjectId}/environments/{await EnvironmentId()}/leaderboards/" +
             $"{Uri.EscapeDataString(_leaderboardId)}/scores/players/{Uri.EscapeDataString(playerId)}";
+
+        /// <summary>The id of the environment named _environmentName ("production"), looked up once.</summary>
+        private async Task<string> EnvironmentId()
+        {
+            if (!string.IsNullOrEmpty(_environmentId)) return _environmentId;
+            using var request = UnityWebRequest.Get($"{AdminApi}/unity/v1/projects/{ProjectId}/environments");
+            request.SetRequestHeader("Authorization", UseServiceAccount ? BasicAuth() : "Bearer " + await AccessToken());
+            await request.SendWebRequest();
+            if (request.result != UnityWebRequest.Result.Success)
+                throw new Exception("Không lấy được danh sách môi trường: " + RecoilCloudLeaderboard.Describe(request));
+            var root = JToken.Parse(request.downloadHandler.text);
+            var list = root as JArray ?? root["results"] as JArray ?? new JArray();
+            foreach (var environment in list)
+                if (string.Equals((string)environment["name"], _environmentName, StringComparison.OrdinalIgnoreCase))
+                    return _environmentId = (string)environment["id"];
+            throw new Exception($"Dự án không có môi trường \"{_environmentName}\".");
+        }
+
+        private string BasicAuth() =>
+            "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(_keyId.Trim() + ":" + _secret.Trim()));
 
         private readonly struct Response
         {
@@ -331,24 +394,41 @@ namespace NhiQuoc.Tools
             }
         }
 
-        /// <summary>A short-lived token for this project and environment, from the service account key.</summary>
+        /// <summary>
+        /// A short-lived services token: from the service account key when one is given, otherwise from the Unity
+        /// account signed in to the Editor.
+        /// </summary>
         private async Task<string> AccessToken()
         {
             if (!string.IsNullOrEmpty(_accessToken) && DateTime.UtcNow < _accessTokenExpires) return _accessToken;
-            var url = $"{AdminApi}/auth/v1/token-exchange?projectId={_projectId}&environmentId={_environmentId}";
-            using var request = new UnityWebRequest(url, "POST")
+            UnityWebRequest request;
+            if (UseServiceAccount)
             {
-                uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes("{}")),
-                downloadHandler = new DownloadHandlerBuffer()
-            };
-            request.SetRequestHeader("Content-Type", "application/json");
-            request.SetRequestHeader("Authorization",
-                "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(_keyId.Trim() + ":" + _secret.Trim())));
-            await request.SendWebRequest();
-            if (request.result != UnityWebRequest.Result.Success)
-                throw new Exception("Không lấy được token từ service account: " + RecoilCloudLeaderboard.Describe(request));
-            _accessToken = (string)JObject.Parse(request.downloadHandler.text)["accessToken"];
-            if (string.IsNullOrEmpty(_accessToken)) throw new Exception("Token exchange không trả về accessToken.");
+                var environment = await EnvironmentId();
+                request = new UnityWebRequest($"{AdminApi}/auth/v1/token-exchange?projectId={ProjectId}&environmentId={environment}", "POST")
+                    { uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes("{}")) };
+                request.SetRequestHeader("Authorization", BasicAuth());
+            }
+            else
+            {
+                var editorToken = CloudProjectSettings.accessToken;
+                if (string.IsNullOrEmpty(editorToken))
+                    throw new Exception("Editor chưa đăng nhập tài khoản Unity (góc trên bên phải Editor).");
+                request = new UnityWebRequest($"{AdminApi}/auth/v1/genesis-token-exchange/unity", "POST")
+                    { uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(new JObject { ["token"] = editorToken }.ToString())) };
+            }
+            using (request)
+            {
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                await request.SendWebRequest();
+                if (request.result != UnityWebRequest.Result.Success)
+                    throw new Exception((UseServiceAccount ? "Không lấy được token từ service account: " : "Không lấy được token từ tài khoản Editor: ") +
+                                        RecoilCloudLeaderboard.Describe(request));
+                var json = JObject.Parse(request.downloadHandler.text);
+                _accessToken = (string)json["accessToken"] ?? (string)json["token"];
+            }
+            if (string.IsNullOrEmpty(_accessToken)) throw new Exception("Dịch vụ không trả về token.");
             _accessTokenExpires = DateTime.UtcNow.AddMinutes(50);
             return _accessToken;
         }
