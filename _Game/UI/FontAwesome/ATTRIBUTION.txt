@@ -4,3 +4,4 @@ Source: https://github.com/FortAwesome/Font-Awesome/tree/6.7.2/svgs/solid
 SVG icons and their PNG derivatives: CC BY 4.0 (see LICENSE.txt).
 PNG derivatives are white 128x128 renders for Unity IMGUI; original SVG paths are unchanged.
 Order: bullseye, khanda, shield-halved, chess-knight, bomb, book-open, paw, shield.
+Battle HUD: ranking-star (Leaderboard button, bottom-left) -> Resources/HudIcons/ranking-star.png, white 256x256.

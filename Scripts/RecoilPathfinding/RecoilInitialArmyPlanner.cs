@@ -116,7 +116,8 @@ namespace RecoilPathfinding
         /// says whether a spot can hold a unit. False when the army does not fit within <paramref name="maxDepth"/>.
         /// <paramref name="reservedGap"/> &gt; 0 leaves a strip that deep empty after the first
         /// <paramref name="gapAfterLines"/> lines of units (for the heroes); <paramref name="gapStart"/> is where it
-        /// begins (-1 when none).
+        /// begins (-1 when none). With no strip (<paramref name="reservedGap"/> = 0) <paramref name="gapStart"/> is
+        /// the depth of the line after those (-1 when the army has fewer lines).
         /// </summary>
         internal static bool Place(List<Row> rows, float width, float clearance, int unitsPerLine, float frontGap,
             float maxDepth, Func<float, float, float, bool> canPlace, List<Placement> output,
@@ -175,11 +176,15 @@ namespace RecoilPathfinding
                 for (var i = 0; i < segments.Count; i++) left_ += remaining[i] = segments[i].Count;
                 while (left_ > 0)
                 {
-                    if (gapStart < 0f && reservedGap > 0f && linesPlaced == Math.Max(1, gapAfterLines))
+                    if (gapStart < 0f && linesPlaced == Math.Max(1, gapAfterLines))
                     {
-                        // The heroes' strip goes here, before this line.
-                        gapStart = line - rowRadius;
-                        line = gapStart + reservedGap + clearance + rowRadius;
+                        if (reservedGap > 0f)
+                        {
+                            // The heroes' strip goes here, before this line.
+                            gapStart = line - rowRadius;
+                            line = gapStart + reservedGap + clearance + rowRadius;
+                        }
+                        else gapStart = line; // no strip: the depth of this line, for the heroes to stand in
                     }
                     if (line > maxDepth) return false;
                     for (var i = 0; i < segments.Count; i++)

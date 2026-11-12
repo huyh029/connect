@@ -366,11 +366,11 @@ namespace RecoilPathfinding
                 return true;
             }
             _waitingPositionTypes.Clear();
-            // With heroes on the field, a strip behind the first row stays free for their line.
-            var heroGap = WaitingHeroCount() > 0 ? HeroOccupiedRadius * 2f + .5f : 0f;
+            // No strip is kept free for the heroes: they walk through soldiers, so they stand inside the army on
+            // its heroFormationLine-th line (_heroLineDepth).
             if (!RecoilInitialArmyPlanner.Place(rows, width, formationUnitSpacing, formationUnitsPerLine,
-                    FormationFrontGap, FormationMaxDepth, CanPlace, placements, heroGap, heroFormationLine - 1,
-                    out _heroGapStart))
+                    FormationFrontGap, FormationMaxDepth, CanPlace, placements, 0f, heroFormationLine - 1,
+                    out _heroLineDepth))
             {
                 _preparedBluePositions.Clear();
                 _preparedRedPositions.Clear();
@@ -417,22 +417,8 @@ namespace RecoilPathfinding
             _preparedRedPositions.Clear(); _preparedRedPositions.AddRange(red);
         }
 
-        // Where the heroes' strip behind the first row starts (distance behind the middle), and how deep it is; -1 = none.
-        private float _heroGapStart = -1f;
-        private float HeroGapDepth => HeroOccupiedRadius * 2f + .5f;
-
-        /// <summary>Heroes alive on the bigger side (both sides share one formation layout).</summary>
-        private int WaitingHeroCount()
-        {
-            int Count(List<Soldier> team)
-            {
-                var count = 0;
-                foreach (var soldier in team)
-                    if (soldier != null && !soldier.Retired && soldier.HeroId != 0 && IsAlive(soldier)) count++;
-                return count;
-            }
-            return Mathf.Max(Count(_blueTeam), Count(_redTeam));
-        }
+        // Depth (behind the middle) of the army line the heroes stand in; -1 = the army has fewer lines.
+        private float _heroLineDepth = -1f;
 
         // Distance of the opening formation behind the middle, and how far back it may go.
         private const float FormationFrontGap = 8f, FormationMaxDepth = 400f;

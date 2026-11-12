@@ -9,13 +9,8 @@ namespace RecoilPathfinding
 
         private bool AssignWaitingHeroRows()
         {
-            // The first heroes: re-plan the army once so it leaves the heroes' strip behind its first row.
-            if (_heroGapStart < 0f && WaitingHeroCount() > 0 && _initialArmy != null && _initialArmy.Enabled &&
-                !ReplanWaitingArmy())
-            {
-                _nextHeroFormationAttempt = Time.unscaledTime + 1f;
-                return false;
-            }
+            // Heroes do not get a row of their own: they walk through soldiers, so they stand inside the army, on
+            // its heroFormationLine-th line, and the soldiers keep their usual formation.
             var middle = (GetSpawnTargetPosition(true) + GetSpawnTargetPosition(false)) * .5f;
             var axis = BattleAxis();
             var lateral = Vector3.Cross(Vector3.up, axis);
@@ -25,15 +20,14 @@ namespace RecoilPathfinding
                 var team = side == 0 ? _blueTeam : _redTeam;
                 var forward = side == 0 ? axis : -axis;
                 var heroes = new List<Soldier>();
-                var rear = 8f;
-                var armyRadius = .5f;
+                var front = float.MaxValue;
+                var rear = FormationFrontGap;
                 var heroRadius = .5f;
                 foreach (var soldier in team)
                 {
                     if (soldier == null || soldier.Retired || !IsAlive(soldier)) continue;
                     if (soldier.HeroId != 0)
                     { heroes.Add(soldier); heroRadius = Mathf.Max(heroRadius, soldier.BodyRadius); }
-                    else armyRadius = Mathf.Max(armyRadius, soldier.BodyRadius);
                 }
                 if (heroes.Count == 0) continue;
                 foreach (var slots in _waitingSlots[side])
@@ -41,16 +35,17 @@ namespace RecoilPathfinding
                         foreach (var slot in slots)
                         {
                             var slotDepth = -Vector3.Dot(slot - middle, forward);
-                            rear = Mathf.Max(rear, slotDepth + armyRadius);
+                            front = Mathf.Min(front, slotDepth);
+                            rear = Mathf.Max(rear, slotDepth);
                         }
+                if (front > rear) front = rear;
                 var pitch = heroRadius * 2f + 1f;
                 var columns = Mathf.Max(1, Mathf.Min(heroes.Count,
                     Mathf.FloorToInt(preparedFormationHalfWidth * 2f / pitch)));
                 var found = false;
                 var positions = new List<Vector3>();
-                // Heroes line up near the head of the army: in the strip left free behind its first row. When there
-                // is no strip (or it cannot hold them) they fall back to a row behind the army.
-                var rowsNeeded = (heroes.Count + columns - 1) / columns;
+                // Heroes line up on the army's heroFormationLine-th line (its last line when it has fewer), among the
+                // soldiers. If the ground there cannot take them they try a little further back, still in the army.
                 bool TryRows(float firstRowDepth)
                 {
                     positions.Clear();
@@ -66,14 +61,13 @@ namespace RecoilPathfinding
                     }
                     return true;
                 }
-                if (_heroGapStart >= 0f && (rowsNeeded - 1) * pitch + heroRadius * 2f <= HeroGapDepth + .01f &&
-                    TryRows(_heroGapStart + HeroGapDepth * .5f)) found = true;
+                var line = _heroLineDepth >= 0f ? Mathf.Clamp(_heroLineDepth, front, rear) : rear;
                 for (var shift = 0f; !found && shift <= 128f; shift += Mathf.Max(2f, pitch))
-                    found = TryRows(rear + heroRadius + 2f + shift);
+                    found = TryRows(line + shift);
                 if (!found)
                 {
                     _nextHeroFormationAttempt = Time.unscaledTime + 1f;
-                    _assemblyStatus = "Chưa tìm được vùng đi được cho hàng tướng phía sau đội quân.";
+                    _assemblyStatus = "Chưa tìm được vùng đi được cho tướng trong đội hình.";
                     return false;
                 }
                 for (var i = 0; i < heroes.Count; i++) assignments.Add((heroes[i], positions[i]));

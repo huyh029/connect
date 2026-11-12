@@ -52,6 +52,8 @@ namespace RecoilPathfinding
             UpdateDonationAvatar(portrait, null);
             if (reward.Active != null) reward.Active.DonorName = reward.DisplayName;
             if (reward.Active == null || reward.Active.Retired) reward.Pending = true;
+            // The intro plays now, even while the army is still gathering and the hero waits to spawn.
+            if (!_testSkipIntroUsers.Contains(user)) QueueHeroSummonIntro(user, reward.DisplayName, id, blue);
         }
 
         private void FlushTikTokHeroes()

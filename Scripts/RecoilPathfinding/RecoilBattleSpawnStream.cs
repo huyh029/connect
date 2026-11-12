@@ -99,6 +99,35 @@ namespace RecoilPathfinding
             }
         }
 
+        /// <summary>
+        /// Where a hero appears: heroes walk through soldiers, so any walkable ground near the spawn point will do,
+        /// however crowded it is (a hero never waits for room). Leaves the soldiers' spawn rows untouched.
+        /// </summary>
+        private bool TryFindHeroSpawnPosition(bool blue, out NavMeshHit hit)
+        {
+            hit = default;
+            var forward = BattleAxis() * (blue ? 1f : -1f);
+            var right = new Vector3(forward.z, 0f, -forward.x);
+            var anchor = GetSpawnTargetPosition(blue);
+            anchor.x = Mathf.Clamp(anchor.x, SpawnMinX, SpawnMaxX);
+            anchor.z = Mathf.Clamp(anchor.z, SpawnMinZ, SpawnMaxZ);
+            const float step = 2f;
+            for (var back = 0; back <= 12; back++)
+            for (var side = 0; side <= 12; side++)
+            {
+                // 0, +1, -1, +2, -2 ... steps across, then one step further back.
+                var across = (side + 1) / 2 * (side % 2 == 0 ? -1f : 1f) * step;
+                var desired = anchor - forward * (back * step) + right * across;
+                if (TryGetGroundHeight(desired, out var height)) desired.y = height;
+                if (!IsWithinSpawnBounds(desired) ||
+                    !pathService.TrySamplePosition(desired, step, GetSpawnAreaMask(blue), out var ground) ||
+                    !IsWithinSpawnBounds(ground) || !IsTerrainPositionWalkableForTeam(ground, blue)) continue;
+                hit = new NavMeshHit { position = ground };
+                return true;
+            }
+            return false;
+        }
+
         private bool TryFindStreamSpawnPosition(bool blue, float radius, out NavMeshHit hit)
         {
             hit = default;

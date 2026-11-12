@@ -4119,9 +4119,10 @@ namespace RecoilPathfinding
             var templateAgent = template.GetComponent<RecoilNavMeshPathAgent>();
             var hasSpawnPosition = preparedSpawn
                 ? TryGetPreparedSpawnPosition(isBlue, out spawn)
-                : TryFindStreamSpawnPosition(isBlue,
-                    hero != null ? HeroOccupiedRadius :
-                    templateAgent != null ? Mathf.Max(0.15f, templateAgent.MovementSettings.BodyRadius) : 0.5f, out spawn);
+                : hero != null
+                    ? TryFindHeroSpawnPosition(isBlue, out spawn)
+                    : TryFindStreamSpawnPosition(isBlue,
+                        templateAgent != null ? Mathf.Max(0.15f, templateAgent.MovementSettings.BodyRadius) : 0.5f, out spawn);
             if (!hasSpawnPosition || !IsWithinSpawnBounds(spawn.position))
                 return false;
 
@@ -5316,6 +5317,7 @@ namespace RecoilPathfinding
                 DrawHeroHealthBars();
                 DrawBattleVitalsHud();
                 DrawStartCountdown();
+                DrawHeroIntro(); // summon intros keep playing through the countdown
                 return;
             }
             if (!_templatesValidated)
@@ -5341,6 +5343,7 @@ namespace RecoilPathfinding
             }
             DrawHeroHealthBars();
             DrawBattleHud();
+            DrawBattleLeaderboardButton(); // bottom-left; the hero intro videos may cover it while they play
             DrawHeroIntro();
         }
 
@@ -5970,6 +5973,7 @@ namespace RecoilPathfinding
             var width = 80f * scale;
             var margin = 10f * scale;
             var y = top - 40f;
+            _battleTopsTop = y; // the leaderboard opens in this column's place
             for (var i = 0; i < battleTopBorderImages.Length; i++)
             {
                 var image = battleTopBorderImages[i];

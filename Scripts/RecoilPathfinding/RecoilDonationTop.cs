@@ -165,13 +165,17 @@ namespace RecoilPathfinding
             var ease=EndgameBack(t);
             border.x+=(blue ? 1 : -1)*(1-ease)*85f*scale;
             border.y-=(1-ease)*10f*scale;
+            // The leaderboard pulls the tops in: score bar into the frame, then the frame off its screen edge.
+            var hideReveal=1f; var hideAlpha=1f;
+            ApplyBattleTopHide(ref border,ref hideReveal,ref hideAlpha,blue,scale);
+            if(hideAlpha<=0f) return;
             var oldColor=GUI.color; var oldMatrix=GUI.matrix;
-            GUI.color=new Color(oldColor.r,oldColor.g,oldColor.b,oldColor.a*Mathf.SmoothStep(0,1,t));
+            GUI.color=new Color(oldColor.r,oldColor.g,oldColor.b,oldColor.a*Mathf.SmoothStep(0,1,t)*hideAlpha);
             GUIUtility.ScaleAroundPivot(Vector2.one*Mathf.LerpUnclamped(.85f,1f,ease),border.center);
             var scoreT=Mathf.Clamp01((Time.unscaledTime-_topAppearedAt[side,rank]-.55f)/.45f);
-            if(scoreT>0f)
+            if(scoreT>0f && hideReveal>0f)
             {
-                var reveal=Mathf.SmoothStep(0,1,scoreT);
+                var reveal=Mathf.SmoothStep(0,1,scoreT)*hideReveal;
                 var barWidth=Mathf.Min(310f*scale,Screen.width*.5f-border.width-20f*scale);
                 var clip=new Rect(blue ? border.center.x-barWidth : border.center.x,
                     border.y-8f*scale,barWidth,border.height+16f*scale);
@@ -197,6 +201,7 @@ namespace RecoilPathfinding
             battleBlueTopScores=new int[3]; battleRedTopScores=new int[3];
             Array.Clear(_topAnimatedUsers,0,_topAnimatedUsers.Length);
             Array.Clear(_topAppearedAt,0,_topAppearedAt.Length);
+            ResetLeaderboardPanel();
         }
     }
 }

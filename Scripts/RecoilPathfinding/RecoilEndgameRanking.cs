@@ -32,7 +32,7 @@ namespace RecoilPathfinding
 
         private float PoolAwardProgress(RecoilScoreRow row, float reveal)
         {
-            if (row.PoolBonus <= 0) return 1;
+            if (row.PoolBonus <= 0 || matchScoring == null || matchScoring.PoolPoints <= 0m) return 1;
             float start = PoolAwardStart + Mathf.Max(0, row.PoolRank - 1) * poolAwardAnimationStagger;
             return Mathf.SmoothStep(0, 1, Mathf.Clamp01((reveal - start - PoolAwardDelay) / Mathf.Max(.2f, poolAwardAnimationSeconds)));
         }
@@ -100,17 +100,17 @@ namespace RecoilPathfinding
             float headerY = panel.y + 39 * scale, half = (panel.width - 20) * .5f;
             float bodyY = headerY + 73 * scale, height = Mathf.Max(1, panel.yMax - bodyY - 5 * scale);
             float rowHeight = Mathf.Max(46, 64 * scale);
-            DrawPoolCoinIntro(coinRect, WinnerTopRowLanding(panel, half, bodyY, rowHeight, scale, coinRect), reveal, scale);
+            // An empty pool has nothing to share out: no coin flies to the winner, no awards fly to the rows.
+            var poolHasPoints = matchScoring.PoolPoints > 0m;
+            if (poolHasPoints)
+                DrawPoolCoinIntro(coinRect, WinnerTopRowLanding(panel, half, bodyY, rowHeight, scale, coinRect), reveal, scale);
             if (fade <= 0) return;
 
             var oldColor = GUI.color;
             GUI.color = new Color(1, 1, 1, fade);
             EnsureRankingStyles(scale);
-            if (endgameCoinImage != null && Event.current.type == EventType.Repaint)
-                GUI.DrawTexture(coinRect, endgameCoinImage, ScaleMode.ScaleToFit, true); // the pool's coin icon
-            var poolTextRect = new Rect(poolRect.x + coinSize + 8f * scale, poolRect.y,
-                poolRect.width - coinSize - 8f * scale, poolRect.height);
-            GUI.Label(poolTextRect, $"BỂ ĐIỂM {matchScoring.TotalFixedPoints:N0}", rankingRankStyle);
+            // No coin icon beside the pool any more (it sat on its own under the top 2 card); the text is centred.
+            GUI.Label(poolRect, $"BỂ ĐIỂM {matchScoring.TotalFixedPoints:N0}", rankingRankStyle);
             GUI.Label(new Rect(panel.x, panel.y - 13 * scale, panel.width, 46 * scale), "BẢNG XẾP HẠNG", rankingTitleStyle);
             DrawRankingTeamHeader(new Rect(panel.x, headerY, half, 52 * scale), false, scale);
             DrawRankingTeamHeader(new Rect(panel.x + half + 2, headerY, half, 52 * scale), true, scale);
@@ -119,7 +119,7 @@ namespace RecoilPathfinding
             float visibleHeight = Mathf.Min(Screen.height, 975 * scale);
             DrawRankingTeam(new Rect(panel.x, bodyY, half, contentHeight), redRanking, false, scale, visibleTop, visibleHeight);
             DrawRankingTeam(new Rect(panel.x + half + 2, bodyY, half, contentHeight), blueRanking, true, scale, visibleTop, visibleHeight);
-            DrawPoolAwardFlights(poolRect.center, new Rect(panel.x, bodyY, panel.width - 18, contentHeight), half, rowHeight, scale, reveal);
+            if (poolHasPoints) DrawPoolAwardFlights(poolRect.center,new Rect(panel.x, bodyY, panel.width - 18, contentHeight), half, rowHeight, scale, reveal);
             GUI.color = oldColor;
         }
 
