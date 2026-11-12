@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RecoilPathfinding
@@ -45,6 +46,20 @@ namespace RecoilPathfinding
             foreach (var particle in _castleBurningParticles[index])
                 if (particle != null && !particle.isPlaying)
                     particle.Play(false);
+        }
+
+        /// <summary>
+        /// Loading: makes both castles' (hidden) burning copies now instead of at the first hit, and hands them to the
+        /// render warm-up so their meshes, materials and shaders are ready before the castle first catches fire.
+        /// </summary>
+        private void PrepareCastleBurningEffects(HashSet<GameObject> renderRoots)
+        {
+            for (var index = 0; index < 2; index++)
+            {
+                if (_castleBurningEffects[index] == null && !CreateCastleBurningEffects(index)) continue;
+                CacheCastleBaseRenderers(index);
+                renderRoots?.Add(_castleBurningEffects[index]);
+            }
         }
 
         private void CacheCastleBaseRenderers(int index)

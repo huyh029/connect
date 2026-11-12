@@ -32,6 +32,9 @@ namespace RecoilPathfinding
                              effects.AdvisorHitPrefab, effects.AdvisorOrbSource })
                     if (fx != null) roots.Add(fx);
             if (siegeImpactPrefab != null) roots.Add(siegeImpactPrefab);
+            // Burning castles: made now (hidden) and warmed with the rest, not at the first arrow / stone / Quân sư hit.
+            try { PrepareCastleBurningEffects(roots); }
+            catch (System.Exception exception) { Debug.LogException(exception, this); }
             var ready = 0;
             var hasGraphics = SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
             foreach (var root in roots)

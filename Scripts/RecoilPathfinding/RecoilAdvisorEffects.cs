@@ -94,7 +94,10 @@ namespace RecoilPathfinding
         /// A Quân sư strikes <paramref name="target"/>: the magic circle under it, its orbs circle it and fly to the
         /// target, and the fire plays where they land.
         /// </summary>
-        private void OnAdvisorAttack(Soldier attacker, Soldier target, Vector3 targetPosition, int damage)
+        /// <param name="burnCastle">Set when the strike is on a castle: it catches fire when the orbs hit its wall,
+        /// like after an arrow or a stone.</param>
+        private void OnAdvisorAttack(Soldier attacker, Soldier target, Vector3 targetPosition, int damage,
+            RecoilCastleTeam? burnCastle = null)
         {
             if (!IsAdvisor(attacker) || attacker.Agent == null) return; // only drawn advisors
             var settings = RecoilBattleEffects.Load();
@@ -109,6 +112,7 @@ namespace RecoilPathfinding
                 () => !attacker.Retired && attacker.Agent != null, (where, direction) =>
                 {
                     PlayAdvisorEffect(2, RecoilBattleEffects.Place(where, direction, RecoilBattleEffects.Load().AdvisorHitOffset));
+                    if (burnCastle.HasValue && !_matchFinished) SetCastleVisualBurning(burnCastle.Value, true);
                     RecordWatchedHit(attacker, target);
                 });
             RecordWatchedAttack(attacker, target, targetPosition, damage, delay);

@@ -2393,6 +2393,8 @@ namespace RecoilPathfinding
                 RecoilCombatFacing.FaceTarget(ref pose, targetPoint);
                 _entityManager.SetComponentData(soldier.Entity, pose);
                 PlayUnitAttackSound(soldier);
+                // A Quân sư casting on the castle: same cast, orbs and burn as on a unit, aimed at the wall.
+                if (damage > 0) OnAdvisorAttack(soldier, null, targetPoint, damage, castleTeam);
                 soldier.Presentation?.PlayAttack(null, targetPoint);
                 soldier.Vat?.RequestAttack(targetPoint);
                 PlayHeroAttack(soldier, targetPoint);
