@@ -22,7 +22,7 @@ MonoBehaviour:
   SiegeBlastDistance: 4
   SiegeBlastDuration: 0.8
   SiegeBlastRandomness: 0.5
-  SiegeBlastAngleJitter: 30
+  SiegeBlastAngleJitter: 45
   AdvisorSummonPrefab: {fileID: 3460763028093827427, guid: 3ced5ee9db3861348850ce833ee32513, type: 3}
   AdvisorCastPrefab: {fileID: 130744013502130647, guid: 10499872f4230274a95143b1a54c0547, type: 3}
   AdvisorHitPrefab: {fileID: 6633122209064573709, guid: dda5003cfaaa82e4d940246fd467f1c8, type: 3}

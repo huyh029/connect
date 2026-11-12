@@ -113,6 +113,7 @@ namespace RecoilPathfinding
                     if (particle != null) particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
                 effect.Object.SetActive(false);
             }
+            StopAdvisorEffectsForNextMatch(); // before the castles are restored: no strike may re-ignite them
             InitializeCastleCombatState();
             ResetRetryCombatBuffers();
             _hasRetirements = false;
@@ -145,6 +146,9 @@ namespace RecoilPathfinding
             }
             _battlefieldClearProgress = 1f;
             yield return null;
+            // Both castles whole again as the loading screen lifts, whatever landed during the clearing.
+            SetCastleVisualBurning(RecoilCastleTeam.Blue, false);
+            SetCastleVisualBurning(RecoilCastleTeam.Red, false);
             _battlefieldClearing = false;
             if (startNextMatch) StartMatchFromLobby();
             // Home: nothing else to do; with the match cleared the lobby shows again, ready to Start.

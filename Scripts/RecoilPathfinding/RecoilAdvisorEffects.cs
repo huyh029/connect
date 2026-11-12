@@ -30,6 +30,7 @@ namespace RecoilPathfinding
             public GameObject Object;
             public ParticleSystem[] Particles;
             public Soldier Follow;
+            public bool CastOffset; // follows at the cast offset (in front of / beside the advisor), not at its feet
         }
 
         private readonly List<AdvisorEffect>[] _advisorEffects = { new(), new(), new() };
@@ -44,11 +45,20 @@ namespace RecoilPathfinding
             // The prefabs loop; here each one plays once.
             var instance = RecoilBattleEffects.CreateOneShot(prefab, transform, out var particles);
             if (kind == 1) RecoilBattleEffects.Load().HideCastParts(instance); // its orbs fly instead
+            if (kind != 2)
+            {
+                // Summon and cast follow the advisor: their particles move with it instead of trailing behind.
+                foreach (var particle in particles)
+                {
+                    var main = particle.main;
+                    main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                }
+            }
             return new AdvisorEffect { Object = instance, Particles = particles };
         }
 
         /// <summary>Plays effect <paramref name="kind"/> at <paramref name="position"/>, following <paramref name="follow"/> if set.</summary>
-        private void PlayAdvisorEffect(int kind, Vector3 position, Soldier follow = null)
+        private void PlayAdvisorEffect(int kind, Vector3 position, Soldier follow = null, bool castOffset = false)
         {
             if (!advisorEffects) return;
             var prefab = AdvisorEffectPrefab(kind);
@@ -63,6 +73,7 @@ namespace RecoilPathfinding
                 pool.Add(effect = CreateAdvisorEffect(kind, prefab));
             }
             effect.Follow = follow;
+            effect.CastOffset = castOffset;
             RecoilBattleEffects.PlayOnce(effect.Object, effect.Particles, prefab, position,
                 RecoilBattleEffects.Load().AdvisorScale(kind));
         }
@@ -103,7 +114,8 @@ namespace RecoilPathfinding
             var settings = RecoilBattleEffects.Load();
             if (settings == null) return;
             var feet = AdvisorFeet(attacker);
-            PlayAdvisorEffect(1, RecoilBattleEffects.Place(feet, attacker.Agent.transform.forward, settings.AdvisorCastOffset));
+            PlayAdvisorEffect(1, RecoilBattleEffects.Place(feet, attacker.Agent.transform.forward, settings.AdvisorCastOffset),
+                attacker, true); // stays with the advisor while it plays
             var delay = AdvisorHitDelay(attacker);
             Vector3? TargetNow() => target != null && !target.Retired && target.Agent != null
                 ? target.Agent.transform.position : null;
@@ -112,7 +124,7 @@ namespace RecoilPathfinding
                 () => !attacker.Retired && attacker.Agent != null, (where, direction) =>
                 {
                     PlayAdvisorEffect(2, RecoilBattleEffects.Place(where, direction, RecoilBattleEffects.Load().AdvisorHitOffset));
-                    if (burnCastle.HasValue && !_matchFinished) SetCastleVisualBurning(burnCastle.Value, true);
+                    if (burnCastle.HasValue && _combatStarted && !_matchFinished) SetCastleVisualBurning(burnCastle.Value, true);
                     RecordWatchedHit(attacker, target);
                 });
             RecordWatchedAttack(attacker, target, targetPosition, damage, delay);
@@ -121,6 +133,7 @@ namespace RecoilPathfinding
         private void UpdateAdvisorEffects()
         {
             _advisorOrbs?.Update(SimulationNow);
+            var settings = RecoilBattleEffects.Load();
             foreach (var pool in _advisorEffects)
                 foreach (var effect in pool)
                 {
@@ -132,7 +145,10 @@ namespace RecoilPathfinding
                     var follow = effect.Follow;
                     if (follow == null) continue;
                     if (follow.Retired || follow.Agent == null) { effect.Follow = null; continue; } // stays where it died
-                    effect.Object.transform.position = follow.Agent.transform.position;
+                    var feet = follow.Agent.transform.position;
+                    effect.Object.transform.position = effect.CastOffset && settings != null
+                        ? RecoilBattleEffects.Place(feet, follow.Agent.transform.forward, settings.AdvisorCastOffset)
+                        : feet;
                 }
         }
 
@@ -157,6 +173,24 @@ namespace RecoilPathfinding
             }
             AdvisorOrbs.Prewarm(advisorEffectsPerKind * 3);
             yield return null;
+        }
+
+        /// <summary>
+        /// Clearing the battlefield: strikes still flying are dropped (they must not land on, or set fire to, the next
+        /// match's castle) and every effect stops; all copies stay pooled.
+        /// </summary>
+        private void StopAdvisorEffectsForNextMatch()
+        {
+            _advisorOrbs?.CancelVolleys();
+            foreach (var pool in _advisorEffects)
+                foreach (var effect in pool)
+                {
+                    effect.Follow = null;
+                    if (effect.Object == null) continue;
+                    foreach (var particle in effect.Particles)
+                        if (particle != null) particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    effect.Object.SetActive(false);
+                }
         }
 
         private void ReleaseAdvisorEffects()

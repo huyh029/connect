@@ -2242,7 +2242,7 @@ namespace RecoilPathfinding
                     var snapshotDistance = RecoilCastleMarch.DistanceToBounds(castleSnapshot.Position.xz,
                         new float2(castleBounds.center.x, castleBounds.center.z),
                         new float2(castleBounds.extents.x, castleBounds.extents.z));
-                    if (snapshotDistance > range) continue;
+                    if (snapshotDistance > CastleAttackRange(soldier, range)) continue;
                 }
                 // Combat resolution may retire an entity after this soldier was copied into
                 // the scheduled list. Validate both ECS handles before reading its pose.
@@ -2260,7 +2260,7 @@ namespace RecoilPathfinding
                     new float2(position.x, position.z),
                     new float2(castleBounds.center.x, castleBounds.center.z),
                     new float2(castleBounds.extents.x, castleBounds.extents.z));
-                if (distance > GetAttackRange(soldier)) continue;
+                if (distance > CastleAttackRange(soldier, GetAttackRange(soldier))) continue;
                 _castleAttackersInRangeLastTick++;
                 var state = _entityManager.GetComponentData<RecoilBattleEcsState>(soldier.Entity);
                 if (state.Active == 0 || state.Health <= 0 || state.Airborne != 0) continue;
@@ -2319,7 +2319,9 @@ namespace RecoilPathfinding
                     ? RecoilCombatProjectileTrajectory.ArcHeight(
                         new float2(shotOrigin.x, shotOrigin.z), new float2(targetPoint.x, targetPoint.z))
                     : 0f;
-                if (!HasCombatLineOfFire(shotOrigin, targetPoint, arcHeight))
+                // Only shots need a clear line: a melee blow on the wall is not stopped by the ground's slope
+                // (the line from its feet to the castle's middle height often runs into a raised castle base).
+                if (soldier.RangedUnitType != 0 && !HasCombatLineOfFire(shotOrigin, targetPoint, arcHeight))
                 {
                     _castleLineOfFireBlockedLastTick++;
                     continue;
@@ -2404,6 +2406,25 @@ namespace RecoilPathfinding
                 FinishMatch("THÀNH XANH BỊ PHÁ — ĐỘI ĐỎ CHIẾN THẮNG", false);
             else if (_redCastleHealthRemaining <= 0)
                 FinishMatch("THÀNH ĐỎ BỊ PHÁ — ĐỘI XANH CHIẾN THẮNG", true);
+        }
+
+        [SerializeField, Min(-1f), Tooltip("Tầm với thêm (m) của quân cận chiến khi đánh thành, cộng vào tầm đánh và bán kính " +
+                                           "thân. -1 = tự tính theo ô bản đồ (đất đi được dừng cách tường thành tới khoảng 1 ô).")]
+        private float castleMeleeExtraReach = -1f;
+
+        /// <summary>
+        /// Reach on a castle, from the soldier's centre to the castle footprint: its weapon range plus its body (it
+        /// stands with its body against the wall), and for melee the strip of unwalkable ground left around the castle by
+        /// the map's coarse cells, which a melee unit can never cross.
+        /// </summary>
+        private float CastleAttackRange(Soldier soldier, float range)
+        {
+            var body = soldier.Simulation != null && soldier.Simulation.Exists ? soldier.Simulation.Settings.BodyRadius : .5f;
+            var reach = range + Mathf.Max(0f, body);
+            if (soldier.RangedUnitType != 0) return reach;
+            var extra = castleMeleeExtraReach >= 0f ? castleMeleeExtraReach
+                : terrainMap != null ? Mathf.Max(terrainMap.CellSize.x, terrainMap.CellSize.y) + .5f : 1.5f;
+            return reach + extra;
         }
 
         private bool TryGetCastleBounds(RecoilCastleTeam team, out Bounds bounds)

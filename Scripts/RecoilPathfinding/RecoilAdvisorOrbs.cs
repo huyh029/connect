@@ -237,6 +237,19 @@ namespace RecoilPathfinding
         }
 
         /// <summary>Drops every orb (e.g. after the orb settings changed).</summary>
+        /// <summary>Drops every strike in progress without landing it (the match was cleared); the orbs stay pooled.</summary>
+        public void CancelVolleys()
+        {
+            foreach (var volley in _volleys) Release(volley);
+            _volleys.Clear();
+            foreach (var orb in _orbs)
+            {
+                if (orb.Object == null) continue;
+                foreach (var particle in orb.Particles) particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                orb.Object.SetActive(false);
+            }
+        }
+
         public void Clear()
         {
             foreach (var volley in _volleys) volley.Orbs.Clear();
