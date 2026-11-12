@@ -127,6 +127,27 @@ namespace RecoilPathfinding
             if (_battleEffectsSource != null) _battleEffectsSource.Stop();
         }
 
+        private float _nextSiegeExplosionSoundAt;
+
+        /// <summary>
+        /// The explosion sound (Resources/RecoilBattleEffects): a siege stone landing (at most one every
+        /// SiegeExplosionMinInterval, so a volley of stones does not stack into noise) or the endgame meteor.
+        /// </summary>
+        private void PlayExplosionSound(bool endgame)
+        {
+            var effects = RecoilBattleEffects.Load();
+            if (effects == null || effects.ExplosionSound == null) return;
+            if (!endgame)
+            {
+                if (Time.unscaledTime < _nextSiegeExplosionSoundAt) return;
+                _nextSiegeExplosionSoundAt = Time.unscaledTime + effects.SiegeExplosionMinInterval;
+            }
+            EnsureBattleAudioSources();
+            if (_battleEffectsSource == null) return;
+            _battleEffectsSource.PlayOneShot(effects.ExplosionSound,
+                endgame ? effects.EndgameExplosionVolume : effects.SiegeExplosionVolume);
+        }
+
         private void PlayUnitAttackSound(Soldier soldier)
         {
             if (soldier == null || Time.unscaledTime < _nextAttackSoundAt ||

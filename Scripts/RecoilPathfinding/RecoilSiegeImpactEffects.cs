@@ -20,6 +20,7 @@ namespace RecoilPathfinding
         private void PlaySiegeImpact(PendingCombatProjectile projectile, Vector3 position)
         {
             if (!projectile.SiegeStone) return;
+            PlayExplosionSound(false);
             if (siegeImpactPrefab == null && !_siegeImpactDefaultsLoaded)
             {
                 _siegeImpactDefaultsLoaded = true;

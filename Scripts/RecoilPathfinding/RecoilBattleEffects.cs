@@ -6,6 +6,51 @@ namespace RecoilPathfinding
     {
         public GameObject SiegeImpactPrefab;
 
+        [Header("Tiếng nổ")]
+        [Tooltip("Tiếng nổ (đá máy bắn đá, thiên thạch cuối trận)")] public AudioClip ExplosionSound;
+        [Range(0f, 3f), Tooltip("Âm lượng tiếng nổ của đá máy bắn đá (trên 1 = khuếch đại)")] public float SiegeExplosionVolume = .9f;
+        [Min(0f), Tooltip("Hai tiếng nổ đá cách nhau ít nhất chừng này giây (nhiều máy bắn cùng lúc không bị ồn)")]
+        public float SiegeExplosionMinInterval = .15f;
+        [Range(0f, 3f), Tooltip("Âm lượng tiếng nổ thiên thạch cuối trận (trên 1 = khuếch đại)")] public float EndgameExplosionVolume = 1.6f;
+
+        [Header("Hất tung khi đá máy bắn đá nổ")]
+        public bool SiegeBlastToss = true;
+        [Min(0f), Tooltip("Độ cao tối đa (lính ở tâm nổ)")] public float SiegeBlastHeight = 3f;
+        [Min(0f), Tooltip("Quãng văng ra tối đa (lính ở tâm nổ)")] public float SiegeBlastDistance = 3f;
+        [Min(.1f), Tooltip("Thời gian trên không (giây)")] public float SiegeBlastDuration = .8f;
+        [Range(0f, 1f), Tooltip("Độ ngẫu nhiên: 0 = đều nhau, 1 = rất khác nhau")] public float SiegeBlastRandomness = .5f;
+        [Range(0f, 90f), Tooltip("Lệch hướng văng ngẫu nhiên tối đa (độ)")] public float SiegeBlastAngleJitter = 30f;
+
+        /// <summary>
+        /// How a siege blast tosses one soldier (shared by the battle and the explosion test ground): outwards from the
+        /// impact like a sphere, full strength at the centre and none at the edge of <paramref name="radius"/>, with
+        /// randomness. False when it is not tossed.
+        /// </summary>
+        /// <param name="surfaceDistance">From the impact point to the soldier's body edge.</param>
+        /// <param name="away">From the impact point to the soldier.</param>
+        public bool SiegeToss(float surfaceDistance, float radius, Vector3 away, System.Random random,
+            out float height, out Vector3 horizontal, out float duration)
+        {
+            height = 0f;
+            horizontal = Vector3.zero;
+            duration = 0f;
+            if (!SiegeBlastToss || radius <= 0f) return false;
+            var t = Mathf.Clamp01(surfaceDistance / radius);
+            var strength = Mathf.Sqrt(1f - t * t);
+            if (strength < .05f) return false;
+            float Jitter(float amount) => 1f + ((float)random.NextDouble() * 2f - 1f) * amount;
+            var randomness = Mathf.Clamp01(SiegeBlastRandomness);
+            height = SiegeBlastHeight * strength * Jitter(randomness);
+            var distance = SiegeBlastDistance * strength * Jitter(randomness);
+            duration = Mathf.Max(.1f, SiegeBlastDuration * Mathf.Lerp(1f, .75f + .5f * strength, .5f) * Jitter(randomness * .4f));
+            away.y = 0f;
+            var direction = away.sqrMagnitude < .01f
+                ? Quaternion.Euler(0f, (float)random.NextDouble() * 360f, 0f) * Vector3.forward
+                : Quaternion.Euler(0f, ((float)random.NextDouble() * 2f - 1f) * SiegeBlastAngleJitter, 0f) * away.normalized;
+            horizontal = direction * distance;
+            return true;
+        }
+
         [Header("Quân sư")]
         [Tooltip("Quân sư được triệu hồi vào trận")] public GameObject AdvisorSummonPrefab;
         [Tooltip("Quân sư ra đòn (dưới chân)")] public GameObject AdvisorCastPrefab;

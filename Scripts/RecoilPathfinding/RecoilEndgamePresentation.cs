@@ -202,6 +202,7 @@ namespace RecoilPathfinding
             if (impactTime >= 0 && !_endgameExplosionPlayed)
             {
                 _endgameExplosionPlayed = true;
+                PlayExplosionSound(true);
                 if (_endgameMeteor != null)
                 {
                     _endgameMeteor.transform.SetPositionAndRotation(_endgameImpact, endgameMeteorPrefab.transform.rotation);

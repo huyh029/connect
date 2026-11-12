@@ -193,7 +193,11 @@ namespace RecoilPathfinding
         }
 
         /// <summary>Siege blast toss settings, for the tool to show and change.</summary>
-        public bool TestTossEnabled { get => siegeBlastToss; set => siegeBlastToss = value; }
+        public bool TestTossEnabled
+        {
+            get => RecoilBattleEffects.Load() is { SiegeBlastToss: true };
+            set { var settings = RecoilBattleEffects.Load(); if (settings != null) settings.SiegeBlastToss = value; }
+        }
         public bool TestAdvisorEffectsEnabled { get => advisorEffects; set => advisorEffects = value; }
     }
 }

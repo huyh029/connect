@@ -9,14 +9,7 @@ namespace RecoilPathfinding
     /// </summary>
     public sealed partial class RecoilAutoBattleDemo
     {
-        [Header("Hất tung khi đá máy bắn đá nổ")]
-        [SerializeField] private bool siegeBlastToss = true;
-        [SerializeField, Min(0f), Tooltip("Độ cao tối đa (lính ở tâm nổ)")] private float siegeBlastHeight = 3f;
-        [SerializeField, Min(0f), Tooltip("Quãng văng ra tối đa (lính ở tâm nổ)")] private float siegeBlastDistance = 3f;
-        [SerializeField, Min(.1f), Tooltip("Thời gian trên không (giây)")] private float siegeBlastDuration = .8f;
-        [SerializeField, Range(0f, 1f), Tooltip("Độ ngẫu nhiên: 0 = đều nhau, 1 = rất khác nhau")] private float siegeBlastRandomness = .5f;
-        [SerializeField, Range(0f, 90f), Tooltip("Lệch hướng văng ngẫu nhiên tối đa (độ)")] private float siegeBlastAngleJitter = 30f;
-
+        // Toss settings: Resources/RecoilBattleEffects (shared with the explosion test ground).
         private readonly System.Random _siegeBlastRandom = new(7919);
 
         /// <summary>
@@ -96,39 +89,19 @@ namespace RecoilPathfinding
             }
         }
 
-        private float SiegeBlastRandom(float randomness) =>
-            1f + ((float)_siegeBlastRandom.NextDouble() * 2f - 1f) * randomness;
-
         /// <param name="surfaceDistance">From the impact point to the soldier's body edge.</param>
         private void TossFromSiegeBlast(Soldier target, Vector3 position, PendingCombatProjectile projectile,
             float surfaceDistance)
         {
-            if (!siegeBlastToss || !projectile.SiegeStone || projectile.AreaRadius <= 0f) return;
+            if (!projectile.SiegeStone || projectile.AreaRadius <= 0f) return;
             // A soldier the blast just killed is tossed too: it dies in the air (see CorpseKeepsFlying).
             if (target == null || target.HeroId > 0 || target.Retired || target.Simulation == null ||
                 !target.Simulation.Exists) return;
-
-            // Sphere profile: full strength at the centre, nothing at the edge of the blast.
-            var t = Mathf.Clamp01(surfaceDistance / projectile.AreaRadius);
-            var strength = Mathf.Sqrt(1f - t * t);
-            if (strength < .05f) return;
-
-            var randomness = Mathf.Clamp01(siegeBlastRandomness);
-            var height = siegeBlastHeight * strength * SiegeBlastRandom(randomness);
-            var distance = siegeBlastDistance * strength * SiegeBlastRandom(randomness);
-            var duration = Mathf.Max(.1f, siegeBlastDuration * Mathf.Lerp(1f, .75f + .5f * strength, .5f) *
-                SiegeBlastRandom(randomness * .4f));
-
-            var away = position - projectile.ImpactPoint;
-            away.y = 0f;
-            Vector3 direction;
-            if (away.sqrMagnitude < .01f)
-                direction = Quaternion.Euler(0f, (float)_siegeBlastRandom.NextDouble() * 360f, 0f) * Vector3.forward;
-            else
-            {
-                var jitter = ((float)_siegeBlastRandom.NextDouble() * 2f - 1f) * siegeBlastAngleJitter;
-                direction = Quaternion.Euler(0f, jitter, 0f) * away.normalized;
-            }
+            var settings = RecoilBattleEffects.Load();
+            if (settings == null || !settings.SiegeToss(surfaceDistance, projectile.AreaRadius, position - projectile.ImpactPoint,
+                    _siegeBlastRandom, out var height, out var horizontal, out var duration)) return;
+            var distance = horizontal.magnitude;
+            var direction = distance > .0001f ? horizontal / distance : Vector3.forward;
 
             if (height > .05f)
             {

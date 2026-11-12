@@ -45,6 +45,8 @@ namespace RecoilPathfinding
         private IEnumerator PreloadBattleAudio()
         {
             var clips = new HashSet<AudioClip> { battleAmbienceClip, armyMovementClip, warDrumClip };
+            var effects = RecoilBattleEffects.Load();
+            if (effects != null) clips.Add(effects.ExplosionSound);
             if (unitAudioBanks != null)
                 foreach (var bank in unitAudioBanks)
                 {

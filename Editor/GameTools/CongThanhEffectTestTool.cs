@@ -20,7 +20,9 @@ namespace CongThanh.EditorTools
     public sealed class CongThanhEffectTestTool : EditorWindow
     {
         private static readonly string[] Sides = { "Xanh", "Đỏ" };
-        private static readonly string[] Modes = { "Trận thật / xem trước", "Sân test Quân sư" };
+        private static readonly string[] Modes = { "Trận thật / xem trước", "Sân test Quân sư", "Sân test nổ" };
+        private const string BlastScenePath = "Assets/Scenes/ExplosionTestGround.unity";
+        private int _blastSoldier = -1;
         private const string GroundScenePath = "Assets/Scenes/AdvisorTestGround.unity";
         private const string VatFolder = "Assets/Data/Characters/Prefabs VAT";
         private const string ReturnSceneKey = "CongThanhEffectTest.ReturnScene";
@@ -118,9 +120,166 @@ namespace CongThanh.EditorTools
         {
             _mode = GUILayout.Toolbar(_mode, Modes, GUILayout.Height(24f));
             if (_mode == 1) DrawGround();
+            else if (_mode == 2) DrawBlastGround();
             else if (!EditorApplication.isPlaying) DrawPreview();
             else DrawLive();
             if (!string.IsNullOrEmpty(_status)) EditorGUILayout.HelpBox(_status, MessageType.None);
+        }
+
+        // ---------------------------------------------------------------- explosion test ground
+
+        private void DrawBlastGround()
+        {
+            var ground = EditorApplication.isPlaying ? Object.FindFirstObjectByType<RecoilExplosionTestGround>() : null;
+            if (ground != null)
+            {
+                _groundScroll = EditorGUILayout.BeginScrollView(_groundScroll);
+                DrawBlastLive(ground);
+                EditorGUILayout.EndScrollView();
+                return;
+            }
+            EditorGUILayout.HelpBox("Sân test nổ: scene nhẹ riêng (" + BlastScenePath + ") có một vòng lính đứng quanh tâm. " +
+                                    "Thả đá nổ để xem hiệu ứng, nghe tiếng nổ và xem lính bị hất (đúng công thức trong trận); " +
+                                    "thử cả vụ nổ thiên thạch cuối trận. Chỉnh xong được lưu vào Resources/RecoilBattleEffects.",
+                MessageType.Info);
+            if (EditorApplication.isPlaying)
+            {
+                EditorGUILayout.HelpBox("Đang Play một scene khác: dừng Play rồi mở sân test.", MessageType.Warning);
+                return;
+            }
+            var prefabs = TargetPrefabs();
+            if (prefabs.Length == 0)
+            {
+                EditorGUILayout.HelpBox("Không thấy prefab VAT trong " + VatFolder + ".", MessageType.Warning);
+                return;
+            }
+            var names = prefabs.Select(p => Path.GetFileNameWithoutExtension(p).Replace(" VAT", "")).ToArray();
+            if (_blastSoldier < 0 || _blastSoldier >= names.Length)
+                _blastSoldier = Mathf.Max(0, System.Array.FindIndex(names, n => n == "BO_BINH_red"));
+            _blastSoldier = EditorGUILayout.Popup("Loại lính đứng", _blastSoldier, names);
+            if (GUILayout.Button("▶ Mở sân test nổ (vào Play)", GUILayout.Height(30f))) OpenBlastGround(prefabs[_blastSoldier]);
+            var back = SessionState.GetString(ReturnSceneKey, "");
+            if (!string.IsNullOrEmpty(back) && SceneManager.GetActiveScene().path == BlastScenePath &&
+                GUILayout.Button("Quay lại scene trước (" + Path.GetFileNameWithoutExtension(back) + ")"))
+            {
+                EditorSceneManager.OpenScene(back, OpenSceneMode.Single);
+                SessionState.EraseString(ReturnSceneKey);
+            }
+        }
+
+        private void OpenBlastGround(string soldierPath)
+        {
+            var soldier = AssetDatabase.LoadAssetAtPath<GameObject>(soldierPath);
+            if (soldier == null) { _status = "Không thấy " + soldierPath; return; }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            var current = SceneManager.GetActiveScene().path;
+            if (!string.IsNullOrEmpty(current) && current != BlastScenePath && current != GroundScenePath)
+                SessionState.SetString(ReturnSceneKey, current);
+            Scene scene;
+            if (File.Exists(BlastScenePath)) scene = EditorSceneManager.OpenScene(BlastScenePath, OpenSceneMode.Single);
+            else
+            {
+                scene = CreateGroundScene(BlastScenePath, typeof(RecoilExplosionTestGround), "Sân test nổ");
+                var cameraObject = scene.GetRootGameObjects().FirstOrDefault(go => go.GetComponent<Camera>() != null);
+                if (cameraObject != null)
+                {
+                    cameraObject.transform.position = new Vector3(0f, 14f, -16f);
+                    cameraObject.transform.LookAt(new Vector3(0f, 1f, 0f));
+                }
+                EditorSceneManager.SaveScene(scene);
+            }
+            var ground = scene.GetRootGameObjects().Select(go => go.GetComponentInChildren<RecoilExplosionTestGround>(true))
+                .FirstOrDefault(found => found != null);
+            if (ground == null)
+            {
+                ground = new GameObject("Sân test nổ", typeof(RecoilExplosionTestGround)).GetComponent<RecoilExplosionTestGround>();
+                SceneManager.MoveGameObjectToScene(ground.gameObject, scene);
+            }
+            ground.soldierPrefab = soldier;
+            EditorUtility.SetDirty(ground);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            _status = null;
+            EditorApplication.isPlaying = true;
+        }
+
+        private void DrawBlastLive(RecoilExplosionTestGround ground)
+        {
+            var settings = RecoilBattleEffects.Load();
+            if (settings == null)
+            {
+                EditorGUILayout.HelpBox("Không tìm thấy Resources/RecoilBattleEffects.asset.", MessageType.Warning);
+                return;
+            }
+            if (_settings == null || _settings.targetObject != settings) _settings = new SerializedObject(settings);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("💥 Nổ ở tâm", GUILayout.Height(28f))) ground.SiegeBlast(Vector3.zero);
+                if (GUILayout.Button("💥 Nổ chỗ ngẫu nhiên", GUILayout.Height(28f))) ground.SiegeBlastRandom();
+            }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("☄ Nổ thiên thạch cuối trận")) ground.EndgameBlast();
+                if (GUILayout.Button("↺ Đặt lại lính")) ground.ResetSoldiers();
+            }
+            ground.killOnBlast = EditorGUILayout.ToggleLeft("Lính trúng nổ chết luôn (vừa bay vừa chết)", ground.killOnBlast);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                ground.autoRepeat = EditorGUILayout.ToggleLeft("Tự nổ lặp lại mỗi", ground.autoRepeat, GUILayout.Width(130f));
+                ground.repeatSeconds = EditorGUILayout.Slider(ground.repeatSeconds, .5f, 10f);
+            }
+            var speed = EditorGUILayout.Slider("Tốc độ", Time.timeScale, .05f, 1f);
+            if (!Mathf.Approximately(speed, Time.timeScale)) Time.timeScale = speed;
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("×0.1")) Time.timeScale = .1f;
+                if (GUILayout.Button("×0.25")) Time.timeScale = .25f;
+                if (GUILayout.Button("×0.5")) Time.timeScale = .5f;
+                if (GUILayout.Button("×1")) Time.timeScale = 1f;
+            }
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Sân", EditorStyles.boldLabel);
+            ground.blastRadius = EditorGUILayout.Slider("Bán kính nổ", ground.blastRadius, .5f, 12f);
+            EditorGUI.BeginChangeCheck();
+            ground.soldierCount = EditorGUILayout.IntSlider("Số lính", ground.soldierCount, 1, 80);
+            ground.formationRadius = EditorGUILayout.Slider("Bán kính vòng lính", ground.formationRadius, .5f, 12f);
+            if (EditorGUI.EndChangeCheck()) ground.Rebuild();
+            ground.endgameScale = EditorGUILayout.Slider("Thiên thạch to gấp", ground.endgameScale, .5f, 6f);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Tiếng nổ và hất tung (lưu vào RecoilBattleEffects, trận thật dùng chung)", EditorStyles.boldLabel);
+            _settings.Update();
+            void Field(string name, string label) => EditorGUILayout.PropertyField(_settings.FindProperty(name), new GUIContent(label));
+            Field("ExplosionSound", "Tiếng nổ");
+            Field("SiegeExplosionVolume", "Âm lượng nổ đá");
+            Field("SiegeExplosionMinInterval", "Khoảng cách 2 tiếng nổ đá (giây)");
+            Field("EndgameExplosionVolume", "Âm lượng nổ cuối trận");
+            Field("SiegeImpactPrefab", "Hiệu ứng nổ");
+            Field("SiegeBlastToss", "Hất tung");
+            Field("SiegeBlastHeight", "Độ cao tối đa");
+            Field("SiegeBlastDistance", "Quãng văng tối đa");
+            Field("SiegeBlastDuration", "Thời gian trên không (giây)");
+            Field("SiegeBlastRandomness", "Độ ngẫu nhiên");
+            Field("SiegeBlastAngleJitter", "Lệch hướng tối đa (độ)");
+            if (_settings.ApplyModifiedProperties()) EditorUtility.SetDirty(settings);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("💾 Lưu"))
+                {
+                    EditorUtility.SetDirty(settings);
+                    AssetDatabase.SaveAssetIfDirty(settings);
+                    _status = "Đã lưu vào Resources/RecoilBattleEffects.asset.";
+                }
+                if (GUILayout.Button("Chọn asset")) Selection.activeObject = settings;
+            }
+
+            EditorGUILayout.Space(4f);
+            var log = ground.Log;
+            EditorGUILayout.LabelField("Nhật ký (mới nhất ở trên)", EditorStyles.miniBoldLabel);
+            for (var i = log.Count - 1; i >= 0 && i >= log.Count - 12; i--)
+                EditorGUILayout.LabelField($"  {Time.time - log[i].Time,5:0.00}s trước   {log[i].Text}", EditorStyles.miniLabel);
         }
 
         // ---------------------------------------------------------------- Quân sư test ground
@@ -171,7 +330,7 @@ namespace CongThanh.EditorTools
             if (GUILayout.Button("▶ Mở sân test (vào Play)", GUILayout.Height(30f))) OpenGround(prefabs[_groundTarget]);
 
             var back = SessionState.GetString(ReturnSceneKey, "");
-            if (!string.IsNullOrEmpty(back) && SceneManager.GetActiveScene().path == GroundScenePath &&
+            if (!string.IsNullOrEmpty(back) && SceneManager.GetActiveScene().path is GroundScenePath or BlastScenePath &&
                 GUILayout.Button("Quay lại scene trước (" + Path.GetFileNameWithoutExtension(back) + ")"))
             {
                 EditorSceneManager.OpenScene(back, OpenSceneMode.Single);
@@ -187,10 +346,11 @@ namespace CongThanh.EditorTools
             if (advisor == null) { _status = "Không thấy " + advisorPath; return; }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             var current = SceneManager.GetActiveScene().path;
-            if (!string.IsNullOrEmpty(current) && current != GroundScenePath) SessionState.SetString(ReturnSceneKey, current);
+            if (!string.IsNullOrEmpty(current) && current != GroundScenePath && current != BlastScenePath)
+                SessionState.SetString(ReturnSceneKey, current);
             var scene = File.Exists(GroundScenePath)
                 ? EditorSceneManager.OpenScene(GroundScenePath, OpenSceneMode.Single)
-                : CreateGroundScene();
+                : CreateGroundScene(GroundScenePath, typeof(RecoilAdvisorTestGround), "Sân test Quân sư");
             var ground = scene.GetRootGameObjects().Select(go => go.GetComponentInChildren<RecoilAdvisorTestGround>(true))
                 .FirstOrDefault(found => found != null);
             if (ground == null)
@@ -207,8 +367,8 @@ namespace CongThanh.EditorTools
             EditorApplication.isPlaying = true;
         }
 
-        /// <summary>A bare scene: camera on the side of the two units, a sun, a flat ground.</summary>
-        private static Scene CreateGroundScene()
+        /// <summary>A bare scene: camera on the side, a sun, a flat ground, and a <paramref name="ground"/> component.</summary>
+        private static Scene CreateGroundScene(string path, System.Type ground, string groundName)
         {
             if (!AssetDatabase.IsValidFolder("Assets/Scenes")) AssetDatabase.CreateFolder("Assets", "Scenes");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -226,8 +386,8 @@ namespace CongThanh.EditorTools
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.name = "Ground";
             floor.transform.localScale = new Vector3(4f, 1f, 4f);
-            new GameObject("Sân test Quân sư", typeof(RecoilAdvisorTestGround));
-            EditorSceneManager.SaveScene(scene, GroundScenePath);
+            new GameObject(groundName, ground);
+            EditorSceneManager.SaveScene(scene, path);
             return scene;
         }
 

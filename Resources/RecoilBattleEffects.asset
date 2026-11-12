@@ -13,14 +13,22 @@ MonoBehaviour:
   m_Name: RecoilBattleEffects
   m_EditorClassIdentifier: Assembly-CSharp::RecoilPathfinding.RecoilBattleEffects
   SiegeImpactPrefab: {fileID: 3578031762403071458, guid: 179a65dba7aebb347b1d00888b90141a, type: 3}
+  ExplosionSound: {fileID: 8300000, guid: d08887eddbdc454e9106438c3791c8cc, type: 3}
+  SiegeExplosionVolume: 0.9
+  SiegeExplosionMinInterval: 0.15
+  EndgameExplosionVolume: 3
+  SiegeBlastToss: 1
+  SiegeBlastHeight: 7
+  SiegeBlastDistance: 4
+  SiegeBlastDuration: 0.8
+  SiegeBlastRandomness: 0.5
+  SiegeBlastAngleJitter: 30
   AdvisorSummonPrefab: {fileID: 3460763028093827427, guid: 3ced5ee9db3861348850ce833ee32513, type: 3}
   AdvisorCastPrefab: {fileID: 130744013502130647, guid: 10499872f4230274a95143b1a54c0547, type: 3}
   AdvisorHitPrefab: {fileID: 6633122209064573709, guid: dda5003cfaaa82e4d940246fd467f1c8, type: 3}
   AdvisorSummonScale: 0.6
   AdvisorCastScale: 0.6
   AdvisorHitScale: 0.8
-  AdvisorCastOffset: {x: 0, y: 0, z: 0}
-  AdvisorHitOffset: {x: 0, y: 0, z: 0}
   AdvisorCastHide: MainFlares
   AdvisorOrbSource: {fileID: 0}
   AdvisorOrbChild: Flares
@@ -34,3 +42,5 @@ MonoBehaviour:
   AdvisorOrbFlight: 0.35
   AdvisorOrbArc: 0.8
   AdvisorOrbTargetHeight: 1
+  AdvisorCastOffset: {x: 0, y: 0, z: 0}
+  AdvisorHitOffset: {x: 0, y: 0, z: 0}
