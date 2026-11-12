@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RecoilPathfinding
@@ -6,8 +7,8 @@ namespace RecoilPathfinding
     /// Leaderboard button in the battle screen's bottom-left corner: the Font Awesome "ranking-star" icon
     /// (Font Awesome Free 6.7.2, CC BY 4.0 — see _Game/UI/FontAwesome/ATTRIBUTION.txt).
     /// Clicking it pulls the top 1-2-3 of both sides in (score bars into their frames, frames off the screen edges),
-    /// then slides a leaderboard in on the left. Clicking again plays it backwards. The leaderboard shows sample
-    /// (made-up) players for now.
+    /// then slides a leaderboard in on the left. Clicking again plays it backwards. The leaderboard is read from the
+    /// Unity Cloud leaderboard (cloudLeaderboardId, "Weekly") each time it opens, at most every 30 s.
     /// </summary>
     public sealed partial class RecoilAutoBattleDemo
     {
@@ -38,25 +39,73 @@ namespace RecoilPathfinding
         /// <summary>0 = the leaderboard is off screen, 1 = in place. Starts once the tops are mostly in.</summary>
         private float LeaderboardShown => Mathf.Clamp01((_leaderboardProgress - .45f) / .55f);
 
-        private readonly struct SampleRanking
+        [Header("Bảng xếp hạng (Unity Cloud)")]
+        [SerializeField, Tooltip("ID leaderboard trên Unity Cloud.")] private string cloudLeaderboardId = RecoilCloudLeaderboard.DefaultLeaderboardId;
+        [SerializeField, Tooltip("Tên môi trường Unity Cloud (Dashboard > Environments).")] private string cloudLeaderboardEnvironment = "production";
+        [SerializeField, Range(1, 100), Tooltip("Số người đầu bảng được tải.")] private int cloudLeaderboardLimit = 100;
+        private const float CloudLeaderboardRefreshSeconds = 30f;
+
+        private readonly List<RecoilCloudLeaderboard.Entry> _cloudEntries = new();
+        private bool _cloudLoading;
+        private string _cloudError;
+        private float _cloudFetchedAt = -999f;
+        private readonly Dictionary<string, Texture2D> _cloudAvatars = new();
+        private readonly HashSet<string> _cloudAvatarsRequested = new();
+
+        /// <summary>Reads the cloud leaderboard (if the last read is older than 30 s).</summary>
+        private void RefreshCloudLeaderboard()
         {
-            public readonly string Name;
-            public readonly long Points;
-            public SampleRanking(string name, long points) { Name = name; Points = points; }
+            if (_cloudLoading || Time.unscaledTime - _cloudFetchedAt < CloudLeaderboardRefreshSeconds) return;
+            _cloudLoading = true;
+            _cloudError = null;
+            StartCoroutine(RecoilCloudLeaderboard.Fetch(cloudLeaderboardId, cloudLeaderboardEnvironment, cloudLeaderboardLimit,
+                (page, error) =>
+                {
+                    _cloudLoading = false;
+                    _cloudFetchedAt = Time.unscaledTime;
+                    _cloudError = error;
+                    if (page == null) return;
+                    _cloudEntries.Clear();
+                    _cloudEntries.AddRange(page.Entries);
+                }));
         }
 
-        /// <summary>Made-up players, best first, until the real leaderboard data is wired in.</summary>
-        private static readonly SampleRanking[] SampleLeaderboard =
+        /// <summary>The viewer's picture, round, once loaded (null until then or without a picture).</summary>
+        private Texture2D CloudAvatar(RecoilCloudLeaderboard.Entry entry)
         {
-            new("Rồng Lửa 99", 1_284_500), new("Tiểu Long Nữ", 1_102_350), new("Anh Ba Sài Gòn", 986_200),
-            new("Hổ Vằn Bắc Bộ", 845_900), new("Bé Mèo Cam", 731_400), new("Kiếm Sĩ Mù", 652_050),
-            new("Gió Bắc", 540_800), new("Thợ Săn Đêm", 433_300), new("Hoa Hồng Gai", 371_900),
-            new("Sói Cô Đơn", 298_450), new("Mây Trắng Bay", 214_700), new("Quân Sư Quạt Mo", 156_200),
-            new("Đại Bàng Núi", 132_800), new("Cô Ba Miền Tây", 118_400), new("Lão Hạc", 97_650),
-            new("Trăng Khuyết", 86_300), new("Bão Cát", 71_900), new("Hiệp Sĩ Bóng Đêm", 64_250),
-            new("Mèo Mun", 52_100), new("Tướng Quân Nhỏ", 43_800), new("Cáo Già", 35_500),
-            new("Sấm Sét", 27_900), new("Chim Sẻ", 19_400), new("Người Lạ", 12_050),
-        };
+            var url = entry.avatarurl;
+            if (string.IsNullOrWhiteSpace(url)) return null;
+            if (_cloudAvatars.TryGetValue(url, out var avatar)) return avatar;
+            if (_cloudAvatarsRequested.Add(url))
+                TikTokAvatarCache.RequestAvatar(this, url, texture =>
+                {
+                    if (this == null || texture == null) return;
+                    _cloudAvatars[url] = RoundAvatar(texture);
+                });
+            return null;
+        }
+
+        /// <summary>A 128 px round crop of the middle of the picture, like the top 1-2-3 avatars.</summary>
+        private static Texture2D RoundAvatar(Texture2D texture)
+        {
+            const int size = 128;
+            var pixels = new Color[size * size];
+            float crop = Mathf.Min(texture.width, texture.height);
+            for (var y = 0; y < size; y++)
+            for (var x = 0; x < size; x++)
+            {
+                var uv = new Vector2((x + .5f) / size, (y + .5f) / size);
+                var color = texture.GetPixelBilinear(.5f + (uv.x - .5f) * crop / texture.width,
+                    .5f + (uv.y - .5f) * crop / texture.height);
+                color.a *= Mathf.Clamp01((.5f - Vector2.Distance(uv, Vector2.one * .5f)) * size);
+                pixels[y * size + x] = color;
+            }
+            var avatar = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { name = "Leaderboard avatar", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            avatar.SetPixels(pixels);
+            avatar.Apply(false, true);
+            return avatar;
+        }
 
         private void DrawBattleLeaderboardButton()
         {
@@ -68,10 +117,14 @@ namespace RecoilPathfinding
             var size = LeaderboardIconSize * scale;
             var margin = LeaderboardIconMargin * scale;
             var iconRect = new Rect(margin, Screen.height - margin - size, size, size);
-            if (LeaderboardShown > 0f) DrawSampleLeaderboard(scale, iconRect.y - 14f * scale);
+            if (LeaderboardShown > 0f) DrawCloudLeaderboard(scale, iconRect.y - 14f * scale);
 
             var icon = LeaderboardIcon;
-            if (icon != null && HudIconButton(iconRect, icon, _leaderboardOpen)) _leaderboardOpen = !_leaderboardOpen;
+            if (icon != null && HudIconButton(iconRect, icon, _leaderboardOpen))
+            {
+                _leaderboardOpen = !_leaderboardOpen;
+                if (_leaderboardOpen) RefreshCloudLeaderboard();
+            }
         }
 
         /// <summary>Closed and the top columns back in place (new match / retry).</summary>
@@ -80,6 +133,7 @@ namespace RecoilPathfinding
             _leaderboardOpen = false;
             _leaderboardProgress = 0f;
             _leaderboardScroll = Vector2.zero;
+            _cloudLoading = false; // a read cut short by the clearing (its coroutine was stopped)
         }
 
         /// <summary>The top 1-2-3 frame and its score bar while the leaderboard pulls them in.</summary>
@@ -124,7 +178,7 @@ namespace RecoilPathfinding
             GUI.color = old;
         }
 
-        private void DrawSampleLeaderboard(float scale, float bottom)
+        private void DrawCloudLeaderboard(float scale, float bottom)
         {
             var shown = LeaderboardShown;
             var ease = EndgameBack(Mathf.SmoothStep(0f, 1f, shown));
@@ -165,11 +219,25 @@ namespace RecoilPathfinding
             var rowHeight = 68f * scale;
             var rowGap = 6f * scale;
             var view = new Rect(panel.x, header.yMax + 18f * scale, panel.width, panel.yMax - header.yMax - 26f * scale);
-            var content = new Rect(0f, 0f, view.width - 10f * scale, SampleLeaderboard.Length * (rowHeight + rowGap) - rowGap);
+            var entries = _cloudEntries;
+            if (entries.Count == 0)
+            {
+                // Nothing to list yet: say why.
+                _leaderboardNameStyle.fontSize = Mathf.RoundToInt(20f * scale);
+                var message = _cloudLoading ? "Đang tải bảng xếp hạng…"
+                    : !string.IsNullOrEmpty(_cloudError) ? "Không tải được bảng xếp hạng.\n" + _cloudError
+                    : "Chưa có ai trên bảng xếp hạng.";
+                _leaderboardNameStyle.wordWrap = true;
+                ShadowLabel(new Rect(view.x + 16f * scale, view.y, view.width - 32f * scale, 120f * scale), message,
+                    _leaderboardNameStyle, new Color(1f, 1f, 1f, .85f * alpha), scale);
+                _leaderboardNameStyle.wordWrap = false;
+                return;
+            }
+            var content = new Rect(0f, 0f, view.width - 10f * scale, entries.Count * (rowHeight + rowGap) - rowGap);
             _leaderboardScroll = GUI.BeginScrollView(view, _leaderboardScroll, content, false, false,
                 GUIStyle.none, GUIStyle.none);
             var firstVisible = Mathf.Max(0, Mathf.FloorToInt(_leaderboardScroll.y / (rowHeight + rowGap)));
-            var lastVisible = Mathf.Min(SampleLeaderboard.Length - 1,
+            var lastVisible = Mathf.Min(entries.Count - 1,
                 Mathf.CeilToInt((_leaderboardScroll.y + view.height) / (rowHeight + rowGap)));
             for (var i = firstVisible; i <= lastVisible; i++)
             {
@@ -179,7 +247,7 @@ namespace RecoilPathfinding
                 var rowEase = EndgameBack(rowT);
                 var row = new Rect(10f * scale - (1f - rowEase) * 60f * scale, i * (rowHeight + rowGap),
                     content.width - 10f * scale, rowHeight);
-                DrawSampleLeaderboardRow(row, i, SampleLeaderboard[i], alpha * Mathf.Clamp01(rowT * 2f), scale);
+                DrawCloudLeaderboardRow(row, i, entries[i], alpha * Mathf.Clamp01(rowT * 2f), scale);
             }
             GUI.EndScrollView();
 
@@ -197,8 +265,9 @@ namespace RecoilPathfinding
             }
         }
 
-        private void DrawSampleLeaderboardRow(Rect row, int rank, SampleRanking entry, float alpha, float scale)
+        private void DrawCloudLeaderboardRow(Rect row, int rank, RecoilCloudLeaderboard.Entry entry, float alpha, float scale)
         {
+            if (entry.Rank > 0) rank = entry.Rank - 1; // the service's own rank
             var top3 = rank < 3;
             // The row: dark on the left fading out to the right (a touch of gold on the top 3).
             DrawFadeRight(row, top3 ? new Color(.35f, .24f, 0f, .55f * alpha) : new Color(0f, 0f, 0f, .5f * alpha));
@@ -224,18 +293,32 @@ namespace RecoilPathfinding
                 GUI.DrawTexture(avatar, _healthFillRoundTexture, ScaleMode.StretchToFill, true);
                 GUI.color = old;
             }
-            _leaderboardRankStyle.fontSize = Mathf.RoundToInt(26f * scale);
-            ShadowLabel(avatar, Initial(entry.Name), _leaderboardRankStyle, new Color(1f, 1f, 1f, .9f * alpha), scale);
+            var picture = CloudAvatar(entry);
+            if (picture != null)
+            {
+                if (Event.current.type == EventType.Repaint)
+                {
+                    var old = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, alpha);
+                    GUI.DrawTexture(avatar, picture, ScaleMode.ScaleToFit, true);
+                    GUI.color = old;
+                }
+            }
+            else
+            {
+                _leaderboardRankStyle.fontSize = Mathf.RoundToInt(26f * scale);
+                ShadowLabel(avatar, Initial(entry.DisplayName), _leaderboardRankStyle, new Color(1f, 1f, 1f, .9f * alpha), scale);
+            }
 
             // Name (white) above its points (gold).
             var textX = avatar.xMax + 12f * scale;
             var textWidth = row.xMax - textX - 8f * scale;
             _leaderboardNameStyle.fontSize = Mathf.RoundToInt(24f * scale);
-            var name = FitTopName(entry.Name, _leaderboardNameStyle, textWidth);
+            var name = FitTopName(entry.DisplayName, _leaderboardNameStyle, textWidth);
             ShadowLabel(new Rect(textX, row.y + 4f * scale, textWidth, row.height * .52f), name, _leaderboardNameStyle,
                 new Color(1f, 1f, 1f, alpha), scale);
             _leaderboardPointsStyle.fontSize = Mathf.RoundToInt(20f * scale);
-            ShadowLabel(new Rect(textX, row.y + row.height * .5f, textWidth, row.height * .44f), entry.Points.ToString("N0") + " điểm",
+            ShadowLabel(new Rect(textX, row.y + row.height * .5f, textWidth, row.height * .44f), entry.score.ToString("N0") + " điểm",
                 _leaderboardPointsStyle, new Color(LeaderboardGold.r, LeaderboardGold.g, LeaderboardGold.b, alpha), scale);
         }
 
