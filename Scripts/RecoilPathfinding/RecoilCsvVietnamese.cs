@@ -9,6 +9,7 @@ namespace RecoilPathfinding
             ["Id"]="Mã", ["MaxHealth"]="Máu tối đa", ["Damage"]="Sát thương", ["Range"]="Tầm đánh",
             ["AttackSpeed"]="Tốc độ đánh", ["MoveSpeed"]="Tốc độ di chuyển", ["Armor"]="Giáp đánh gần",
             ["SecondaryArmor"]="Giáp đánh xa", ["AreaRadius"]="Bán kính sát thương", ["AttackType"]="Kiểu đánh (đánh gần)",
+            ["StructureBonus"]="Bonus đánh công trình",
             ["RespawnSeconds"]="Hồi sinh (giây)", ["UltiCooldown"]="Hồi Ulti (giây)", ["CastleHealth"]="Máu thành", ["RowType"]="Loại dòng",
             ["ParentId"]="Mã quy tắc cha", ["HeroRules"]="Quy định tướng", ["Name"]="Tên", ["Coins"]="Xu",
             ["Action"]="Hành động", ["Intro"]="Giới thiệu", ["TeamOneCombo"]="Combo phe 1", ["TeamTwoCombo"]="Combo phe 2",

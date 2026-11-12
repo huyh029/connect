@@ -13,6 +13,8 @@ namespace RecoilPathfinding
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
         public static readonly string[] EditableStats = { "MaxHealth", "Damage", "Range", "AttackSpeed", "MoveSpeed", "Armor", "SecondaryArmor", "AreaRadius", "AttackType" };
+        // Units only (heroes have no bonus against buildings); optional when reading, so older unit CSVs still load.
+        public const string StructureBonusColumn = "StructureBonus";
         public static RecoilUnitCombatStats ReadEditableStats(Dictionary<string, string> row, RecoilUnitCombatStats baseline)
         {
             object stats = baseline;
@@ -95,7 +97,7 @@ namespace RecoilPathfinding
         {
             var rows = new List<Dictionary<string, string>>();
             for (int i = 0; i < units.Length; i++) rows.Add(Record("Unit", Text(i), units[i]));
-            return Encode(new[] { "Id" }.Concat(EditableStats).ToArray(), rows);
+            return Encode(new[] { "Id" }.Concat(EditableStats).Append(StructureBonusColumn).ToArray(), rows);
         }
         public static string WriteCastle(int health) => Encode(new[] { "Id", "CastleHealth" },
             new List<Dictionary<string, string>> { new Dictionary<string, string> { ["Id"] = "battle", ["CastleHealth"] = Text(health) } });
@@ -126,7 +128,13 @@ namespace RecoilPathfinding
                 {
                     int id = int.Parse(row["Id"], Invariant);
                     if (id < 0 || id >= 8 || units.ContainsKey(id)) throw new InvalidDataException("Invalid or duplicate unit ID.");
-                    units.Add(id, ReadEditableStats(row, defaults != null && id < defaults.Length ? defaults[id] : default));
+                    var stats = ReadEditableStats(row, defaults != null && id < defaults.Length ? defaults[id] : default);
+                    // Bonus against buildings: a CSV without the column gets the role's default (catapult +100 %, elephant +50 %).
+                    stats.StructureBonus = row.TryGetValue(StructureBonusColumn, out var bonus) && !string.IsNullOrWhiteSpace(bonus)
+                        ? (float)ReadValue(bonus.Trim(), typeof(float))
+                        : RecoilUnitDamage.DefaultStructureBonus(RecoilAutoBattleDemo.DefaultCombatRoles[id]);
+                    if (stats.StructureBonus < 0) throw new InvalidDataException("StructureBonus must not be negative.");
+                    units.Add(id, stats);
                 }
                 else throw new InvalidDataException("Unknown unit CSV row type.");
             }

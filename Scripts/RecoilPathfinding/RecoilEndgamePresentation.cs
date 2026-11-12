@@ -21,6 +21,7 @@ namespace RecoilPathfinding
         private Quaternion _endgameStartRotation, _endgameCameraRotation;
         private readonly string[] _endgameNames = new string[3];
         private readonly int[] _endgameScores = new int[3];
+        private readonly RecoilScoreRow[] _endgameRows = new RecoilScoreRow[3];
         private readonly bool[] _endgameNameBlue = new bool[3]; // each top 3 name in its own side's colours
         private GUIStyle _endgameHeadingStyle, _endgameNameStyle, _endgameScoreStyle;
 
@@ -171,6 +172,7 @@ namespace RecoilPathfinding
                 _endgameNameBlue[i] = row?.Blue ?? blueWins;
                 _endgameDonors[i] = row != null && _donationTopUsers.TryGetValue(row.UserId, out var donor) ? donor : null;
                 _endgameScores[i] = row != null ? (int)System.Math.Min(int.MaxValue, decimal.Round(row.RankingPoints)) : 0;
+                _endgameRows[i] = row;
             }
             var losingTeam = blueWins ? RecoilCastleTeam.Red : RecoilCastleTeam.Blue;
             if (!TryGetCastleBounds(losingTeam, out var bounds))
@@ -345,20 +347,19 @@ namespace RecoilPathfinding
                 var nameRect = new Rect(x - 145 * scale, y + card.height + 4 * scale, 290 * scale, 30 * scale);
                 EnsureEndgameNameGradient();
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01(local * 4));
-                GUI.DrawTexture(new Rect(nameRect.x, nameRect.y, nameRect.width, nameRect.height + 54 * scale),
+                GUI.DrawTexture(new Rect(nameRect.x, nameRect.y, nameRect.width, nameRect.height + 96 * scale),
                     _endgameNameGradient, ScaleMode.StretchToFill, true);
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01(local * 4));
                 _endgameNameStyle.fontSize = Mathf.Max(12, Mathf.RoundToInt(22 * scale));
                 var fittedName = FitTopName(_endgameNames[rank], _endgameNameStyle, nameRect.width);
                 DrawOutlinedNameLabel(nameRect, fittedName, _endgameNameStyle, scale,
                     UserNameColor(_endgameNames[rank], _endgameNameBlue[rank]));
-                SetLabelTextColor(_endgameScoreStyle, new Color(1f, .82f, .3f));
-                var points = Mathf.RoundToInt(_endgameScores[rank] * Mathf.SmoothStep(0, 1, Mathf.Clamp01((local - .5f) / 1.2f)));
+                // Three lines, as the rules describe the card: fixed points (+bonus), streak (±change), place (±places).
+                var countUp = Mathf.SmoothStep(0, 1, Mathf.Clamp01((local - .5f) / 1.2f));
                 var scoreY = string.IsNullOrWhiteSpace(_endgameNames[rank])
-                    ? nameRect.y + 23 * scale : nameRect.yMax + 4 * scale;
-                _endgameScoreStyle.fontSize = Mathf.Max(14, Mathf.RoundToInt(28 * scale));
-                var scoreRect = new Rect(card.center.x - nameRect.width * .5f, scoreY, nameRect.width, 36 * scale);
-                DrawHighlightedLabel(scoreRect, points.ToString("N0"), _endgameScoreStyle, scale);
+                    ? nameRect.y + 23 * scale : nameRect.yMax + 2 * scale;
+                DrawEndgameCardDetails(new Rect(card.center.x - nameRect.width * .5f, scoreY, nameRect.width, 32 * scale),
+                    _endgameRows[rank], countUp, scale);
             }
             GUI.matrix = oldMatrix;
             GUI.color = Color.white;
@@ -366,6 +367,25 @@ namespace RecoilPathfinding
             GUI.EndScrollView();
             DrawEndgameButtons(reveal, scale);
             GUI.color = oldColor;
+        }
+
+        /// <summary>Under a top card's name: "fixed (+bonus)" in gold counting up, then the streak and the place with their changes.</summary>
+        private void DrawEndgameCardDetails(Rect line, RecoilScoreRow row, float countUp, float scale)
+        {
+            if (row == null) return;
+            SetLabelTextColor(_endgameScoreStyle, new Color(1f, .82f, .3f));
+            _endgameScoreStyle.fontSize = Mathf.Max(14, Mathf.RoundToInt(25 * scale));
+            var shown = (decimal)countUp;
+            DrawHighlightedLabel(line, PointsText(decimal.Round(row.FixedPoints * shown), decimal.Round(row.BonusPoints * shown)),
+                _endgameScoreStyle, scale);
+            _endgameScoreStyle.fontSize = Mathf.Max(11, Mathf.RoundToInt(17 * scale));
+            line.y += 31 * scale;
+            line.height = 22 * scale;
+            SetLabelTextColor(_endgameScoreStyle, StreakColor(row));
+            DrawHighlightedLabel(line, "Chuỗi thắng " + StreakText(row), _endgameScoreStyle, scale);
+            line.y += 22 * scale;
+            SetLabelTextColor(_endgameScoreStyle, RankColor(row));
+            DrawHighlightedLabel(line, "Hạng " + RankText(row), _endgameScoreStyle, scale);
         }
     }
 }

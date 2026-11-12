@@ -22,19 +22,19 @@ namespace RecoilPathfinding
             }
             Gift("Hoa Hồng", 1, 0, 7, 50, "+50 Bộ Binh", "Intro Bộ binh + số lượng");
             var rosa = Gift("Rosa", 10, 0, 0, 50, "+50 Cung Binh", "Intro Cung binh + số lượng");
-            rosa.BlueAccumulation = rosa.RedAccumulation = 20; rosa.BlueHeroId = 8; rosa.RedHeroId = 3;
+            rosa.BlueAccumulation = rosa.RedAccumulation = 20; rosa.BlueHeroId = 8; rosa.RedHeroId = 3; rosa.ComboThreshold = 10;
             rosa.TeamOneCombo = "x10 ra tướng Triệu Tử Long (hoặc tích đủ 20 Rosa) — đánh gần";
             rosa.TeamTwoCombo = "x10 ra tướng Hạ Hầu Đôn (hoặc tích đủ 20 Rosa) — đánh gần";
             var perfume = Gift("Perfume", 20, 0, 2, 20, "+20 Giáo Binh", "Intro Giáo binh + số lượng");
-            perfume.BlueAccumulation = perfume.RedAccumulation = 20; perfume.BlueHeroId = 6; perfume.RedHeroId = 4;
+            perfume.BlueAccumulation = perfume.RedAccumulation = 20; perfume.BlueHeroId = 6; perfume.RedHeroId = 4; perfume.ComboThreshold = 10;
             perfume.TeamOneCombo = "x10 ra tướng Quan Vũ (hoặc tích đủ 20 Perfume) — đánh gần";
             perfume.TeamTwoCombo = "x10 ra tướng Lữ Bố (hoặc tích đủ 20 Perfume) — đánh gần";
             var doughnut = Gift("Doughnut", 30, 5879, 3, 20, "+20 Kỵ Binh", "Intro Kỵ binh + số lượng");
-            doughnut.BlueAccumulation = doughnut.RedAccumulation = 20; doughnut.BlueHeroId = 2; doughnut.RedHeroId = 1;
+            doughnut.BlueAccumulation = doughnut.RedAccumulation = 20; doughnut.BlueHeroId = 2; doughnut.RedHeroId = 1; doughnut.ComboThreshold = 10;
             doughnut.TeamOneCombo = "x10 ra tướng Gia Cát Lượng (hoặc tích đủ 20 Doughnut) — đánh xa";
             doughnut.TeamTwoCombo = "x10 ra tướng Chu Du (hoặc tích đủ 20 Doughnut) — đánh xa";
             var crane = Gift("Hạc Giấy", 99, 5659, 6, 10, "+10 Voi Chiến", "Intro Voi chiến + số lượng");
-            crane.BlueAccumulation = crane.RedAccumulation = 10; crane.BlueHeroId = 5; crane.RedHeroId = 7;
+            crane.BlueAccumulation = crane.RedAccumulation = 10; crane.BlueHeroId = 5; crane.RedHeroId = 7; crane.ComboThreshold = 5;
             crane.TeamOneCombo = "x5 ra tướng Lưu Bị (hoặc tích đủ 10 Hạc Giấy) — đánh xa";
             crane.TeamTwoCombo = "x5 ra tướng Tào Tháo (hoặc tích đủ 10 Hạc Giấy) — đánh xa";
             Gift("Kính Râm", 199, 5509, 4, 4, "+4 Máy Bắn Đá", "Intro Máy bắn đá + số lượng");

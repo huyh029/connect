@@ -13,6 +13,8 @@ public sealed class TikTokArmyRule
 {
     public bool Like, Follow, Share;
     public int RedAccumulation, RedHeroId, BlueAccumulation, BlueHeroId;
+    /// <summary>A single combo of this many (x10, x5 …) also brings the hero, besides accumulating; 0 = off.</summary>
+    public int ComboThreshold;
     public bool MatchesEvent(string kind)
     {
         if (Like || Follow || Share) return kind == "like" && Like || kind == "follow" && Follow || kind == "share" && Share;

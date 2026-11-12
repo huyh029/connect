@@ -10,6 +10,7 @@ namespace RecoilPathfinding
         public decimal GetWinStreakPoints(string id) => streaks.TryGetValue(id, out var points) ? points : 1m;
         public RecoilMatchScoring BeginMatch() => new RecoilMatchScoring(this, new Dictionary<string, decimal>(streaks));
         internal void Apply(string id, decimal delta) => streaks[id] = GetWinStreakPoints(id) + delta;
+        internal void Set(string id, decimal points) => streaks[id] = points;
     }
 
     public sealed class RecoilScoreRow
@@ -24,6 +25,14 @@ namespace RecoilPathfinding
         public decimal FixedPoints => Coins * 50m;
         public decimal PoolBonus { get; internal set; }
         public decimal StartingStreak { get; internal set; }
+        /// <summary>The streak the rank server held when this match read it (the change is sent against it).</summary>
+        public decimal ServerStreak { get; internal set; }
+        public bool ServerStreakKnown { get; internal set; }
+        /// <summary>Place on the weekly leaderboard when they joined, and after this match's results were sent; 0 = unknown.</summary>
+        public int StartingRank { get; internal set; }
+        public int EndingRank { get; internal set; }
+        /// <summary>Everything on top of the fixed points: the pool share and the streak bonus.</summary>
+        public decimal BonusPoints => PoolBonus + StreakBonus;
         public decimal StreakDelta { get; internal set; }
         public decimal MatchEndingStreak => StartingStreak + StreakDelta;
         public bool Settled { get; internal set; }
@@ -75,6 +84,36 @@ namespace RecoilPathfinding
             row.Order = donationSequence++;
         }
         private int donationSequence;
+
+        /// <summary>
+        /// The viewer's streak as the rank server holds it, read after they joined: it becomes their starting
+        /// balance for this match (at least 1: a viewer the server does not know starts with 1 point).
+        /// </summary>
+        public bool SetStartingStreak(string id, decimal serverPoints)
+        {
+            if (Settled || string.IsNullOrWhiteSpace(id) || !users.TryGetValue(id, out var row)) return false;
+            var starting = Math.Max(1m, serverPoints);
+            row.StartingStreak = starting;
+            row.ServerStreak = serverPoints;
+            row.ServerStreakKnown = true;
+            snapshot[id] = starting;
+            session.Set(id, starting);
+            return true;
+        }
+
+        public bool SetStartingRank(string id, int rank)
+        {
+            if (string.IsNullOrWhiteSpace(id) || !users.TryGetValue(id, out var row)) return false;
+            row.StartingRank = Math.Max(0, rank);
+            return true;
+        }
+
+        public bool SetEndingRank(string id, int rank)
+        {
+            if (string.IsNullOrWhiteSpace(id) || !users.TryGetValue(id, out var row)) return false;
+            row.EndingRank = Math.Max(0, rank);
+            return true;
+        }
 
         public IReadOnlyList<RecoilScoreRow> Settle(bool blueWins)
         {

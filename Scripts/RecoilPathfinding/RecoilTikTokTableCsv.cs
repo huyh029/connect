@@ -11,6 +11,8 @@ namespace RecoilPathfinding
     public static class RecoilTikTokTableCsv
     {
         public static readonly string[] Headers = { "Like", "Follow", "Share", "Số xu", "ID", "Ngưỡng", "Số lượng", "Loại binh", "Số lượng tích phe đỏ", "Mã tướng phe đỏ", "Số lượng tích phe xanh", "Mã tướng phe xanh" };
+        // Optional when reading (older files): without it, a gift with a hero takes half its accumulation (20 → x10, 10 → x5).
+        public const string ComboHeader = "Combo ra tướng";
         private static readonly string[] ExtraHeaders = { "Tên", "Hành động", "Giới thiệu", "Combo phe 1", "Combo phe 2", "Bật", "Quy định tướng", "Quà ngẫu nhiên", "Trọng số ngẫu nhiên", "Hệ số ngẫu nhiên" };
         private static string Quote(string text) => text.IndexOfAny(new[] { ';', '"', '\r', '\n' }) >= 0 ? "\"" + text.Replace("\"", "\"\"") + "\"" : text;
         public static void ImportLegacyCombos(TikTokArmySettings settings)
@@ -33,7 +35,7 @@ namespace RecoilPathfinding
         }
         public static string Write(TikTokArmySettings settings)
         {
-            var csv = new StringBuilder(string.Join(";", Headers.Concat(ExtraHeaders)) + "\r\n");
+            var csv = new StringBuilder(string.Join(";", Headers.Append(ComboHeader).Concat(ExtraHeaders)) + "\r\n");
             bool first = true;
             foreach (var rule in settings.Rules)
             {
@@ -42,7 +44,8 @@ namespace RecoilPathfinding
                     rule.Coins.ToString(CultureInfo.InvariantCulture), rule.GiftId.ToString(CultureInfo.InvariantCulture), rule.Threshold.ToString(CultureInfo.InvariantCulture),
                     rule.UnitCount.ToString(CultureInfo.InvariantCulture), RecoilCsvVietnamese.UnitName(rule.UnitType.ToString(CultureInfo.InvariantCulture)),
                     rule.RedAccumulation.ToString(CultureInfo.InvariantCulture), rule.RedHeroId.ToString(CultureInfo.InvariantCulture),
-                    rule.BlueAccumulation.ToString(CultureInfo.InvariantCulture), rule.BlueHeroId.ToString(CultureInfo.InvariantCulture) };
+                    rule.BlueAccumulation.ToString(CultureInfo.InvariantCulture), rule.BlueHeroId.ToString(CultureInfo.InvariantCulture),
+                    rule.ComboThreshold.ToString(CultureInfo.InvariantCulture) };
                 var rewards = rule.RandomRewards ?? new List<TikTokRandomReward>();
                 var extra = new[] { rule.Name ?? "", rule.Action ?? "", rule.Intro ?? "", rule.TeamOneCombo ?? "", rule.TeamTwoCombo ?? "",
                     rule.Enabled.ToString().ToLowerInvariant(), first ? settings.HeroRules ?? "" : "",
@@ -77,6 +80,9 @@ namespace RecoilPathfinding
                     RedAccumulation = Number("Số lượng tích phe đỏ"), RedHeroId = Number("Mã tướng phe đỏ"),
                     BlueAccumulation = Number("Số lượng tích phe xanh"), BlueHeroId = Number("Mã tướng phe xanh") };
                 if (rule.UnitType < -1 || rule.UnitType > 7 || rule.RedHeroId > 8 || rule.BlueHeroId > 8) throw new InvalidDataException("Invalid unit or hero ID at row " + (row + 1));
+                rule.ComboThreshold = columns.ContainsKey(ComboHeader) && !string.IsNullOrWhiteSpace(Cell(ComboHeader))
+                    ? Number(ComboHeader)
+                    : (rule.RedHeroId > 0 || rule.BlueHeroId > 0) ? Math.Max(rule.RedAccumulation, rule.BlueAccumulation) / 2 : 0;
                 rule.EventType = rule.Like ? "like" : rule.Follow ? "follow" : rule.Share ? "share" : "gift";
                 // Join by stable event/gift identity, never by row number, so sorting
                 // the main CSV does not associate a gift with another reward rule.

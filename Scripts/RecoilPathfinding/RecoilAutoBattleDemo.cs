@@ -1646,6 +1646,10 @@ namespace RecoilPathfinding
             public RecoilCharacterPresentation VisualSource;
             public float NavigationVerticalOffset;
             public float VisualGroundCorrection;
+            // Last Stand: doubled for its side's 20 s; what to go back to afterwards.
+            public bool LastStandBuffed;
+            public RecoilUnitCombatStats LastStandBaseStats;
+            public float LastStandBaseSpeed;
         }
 
         private struct PendingCombatProjectile
@@ -2186,6 +2190,7 @@ namespace RecoilPathfinding
             using (ResolveMarker.Auto())
             using (RecoilCpuPhases.Measure(RecoilCpuPhase.ResolveCombat)) CompletePendingCombatJob();
             ProcessCastleAttacks();
+            UpdateLastStand(); // a castle at 30 %: its side fights doubled for 20 s
             if (_matchFinished) return;
             using (RecoilCpuPhases.Measure(RecoilCpuPhase.RetireCombat)) CompactRetiredSoldiers();
         }
@@ -2198,6 +2203,7 @@ namespace RecoilPathfinding
             _heroSkillsLoaded = true;
             _blueCastleHealthRemaining = castleHealth;
             _redCastleHealthRemaining = castleHealth;
+            ResetLastStand();
             SetCastleVisualBurning(RecoilCastleTeam.Blue, false);
             SetCastleVisualBurning(RecoilCastleTeam.Red, false);
             _castleAttackCount = 0;
@@ -2387,10 +2393,12 @@ namespace RecoilPathfinding
                 }
                 else
                 {
-                    if (blue) _redCastleHealthRemaining = Mathf.Max(0, _redCastleHealthRemaining - damage);
-                    else _blueCastleHealthRemaining = Mathf.Max(0, _blueCastleHealthRemaining - damage);
+                    // A blow on the wall: the unit's bonus against buildings applies (elephants +50 % by default).
+                    var wallDamage = RecoilUnitDamage.CalculateStructure(damage, state.Stats);
+                    if (blue) _redCastleHealthRemaining = Mathf.Max(0, _redCastleHealthRemaining - wallDamage);
+                    else _blueCastleHealthRemaining = Mathf.Max(0, _blueCastleHealthRemaining - wallDamage);
                     _castleAttackCount++;
-                    _castleDamageTotal += damage;
+                    _castleDamageTotal += wallDamage;
                 }
                 var pose = _entityManager.GetComponentData<RecoilUnitPose>(soldier.Entity);
                 RecoilCombatFacing.FaceTarget(ref pose, targetPoint);
@@ -3088,12 +3096,14 @@ namespace RecoilPathfinding
                         }
                         SetCastleVisualBurning(projectile.CastleTeam, true);
                         if (HasAliveSoldier(projectile.CastleTeam == RecoilCastleTeam.Blue ? _blueTeam : _redTeam)) continue;
+                        // A shot on the wall: the unit's bonus against buildings applies (catapults +100 % by default).
+                        var wallDamage = RecoilUnitDamage.CalculateStructure(projectile.Damage, projectile.AttackerStats);
                         if (projectile.CastleTeam == RecoilCastleTeam.Blue)
-                            _blueCastleHealthRemaining = Mathf.Max(0, _blueCastleHealthRemaining - projectile.Damage);
+                            _blueCastleHealthRemaining = Mathf.Max(0, _blueCastleHealthRemaining - wallDamage);
                         else
-                            _redCastleHealthRemaining = Mathf.Max(0, _redCastleHealthRemaining - projectile.Damage);
+                            _redCastleHealthRemaining = Mathf.Max(0, _redCastleHealthRemaining - wallDamage);
                         _castleAttackCount++;
-                        _castleDamageTotal += projectile.Damage;
+                        _castleDamageTotal += wallDamage;
                     }
                     else if (projectile.AreaRadius > 0f)
                     {
@@ -4252,6 +4262,7 @@ namespace RecoilPathfinding
             };
             team.Add(soldier);
             if (hero != null) _heroDuelists.Add(soldier);
+            if (LastStandActive(isBlue)) ApplyLastStandBuff(soldier); // arrives during its side's Last Stand
             _lastSpawnWasPrepared = preparedSpawn;
             if (preparedSpawn)
             {
@@ -5948,9 +5959,9 @@ namespace RecoilPathfinding
             if (Event.current.type == EventType.Repaint)
             {
                 DrawHealthFill(leftBar, currentRedHp, castleHealth,
-                    new Color(0.72f, 0.09f, 0.055f, 1f), true, scale);
+                    new Color(0.72f, 0.09f, 0.055f, 1f), true, scale, 1f, LastStandActive(false));
                 DrawHealthFill(rightBar, currentBlueHp, castleHealth,
-                    new Color(0.08f, 0.22f, 0.78f, 1f), false, scale, 0.9f);
+                    new Color(0.08f, 0.22f, 0.78f, 1f), false, scale, 0.9f, LastStandActive(true));
                 if (battleRedHealthFrameImage != null)
                     DrawFrameScaledToWidth(leftBar, battleRedHealthFrameImage, false, redDisplayedHeight);
                 if (battleBlueHealthFrameImage != null)
@@ -5980,6 +5991,7 @@ namespace RecoilPathfinding
                 (matchScoring?.TotalFixedPoints ?? 0m).ToString("N0"), poolStyle, scale * hud.poolScore.scale);
             DrawMatchTimer(RecoilBattleHudLayout.GuiRect(hud.timer, BattleHudPieceId.Timer, Screen.width),
                 poolStyle, scale * hud.poolScore.scale);
+            DrawLastStandHud(scale, top + height + 60f * scale);
         }
 
         /// <summary>A hero's body height (set when its VAT is baked / resized); 6 when unknown.</summary>
@@ -6113,7 +6125,7 @@ namespace RecoilPathfinding
             GUI.Label(text, score.ToString("N0"), style);
         }
         private static void DrawHealthFill(Rect rect, int current, int maximum,
-            Color teamColor, bool fillFromLeft, float scale, float heightScale = 1f)
+            Color teamColor, bool fillFromLeft, float scale, float heightScale = 1f, bool burning = false)
         {
             var horizontalInset = Mathf.Max(10f * scale, rect.width * 0.03f);
             var barHeight = 49f * scale * heightScale;
@@ -6127,9 +6139,10 @@ namespace RecoilPathfinding
             var fillAmount = Mathf.Clamp01((float)Mathf.Max(0, current) / Mathf.Max(1, maximum));
             var fillWidth = bar.width * fillAmount;
             GUI.color = teamColor;
-            DrawRoundedHealthFill(new Rect(fillFromLeft ? bar.x : bar.xMax - fillWidth,
-                bar.y, fillWidth, bar.height), 24f * scale);
+            var fill = new Rect(fillFromLeft ? bar.x : bar.xMax - fillWidth, bar.y, fillWidth, bar.height);
+            DrawRoundedHealthFill(fill, 24f * scale);
             GUI.color = oldColor;
+            if (burning) DrawHealthFillBurning(fill, scale); // Last Stand: the bar burns
         }
 
         private static void DrawRoundedHealthFill(Rect rect, float radius)

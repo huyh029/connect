@@ -305,8 +305,10 @@ namespace RecoilPathfinding
             heading.wordWrap = true;
             DrawSettingsTitle(new Rect(left, 16, width, 36), heroes ? "CẤU HÌNH TƯỚNG — áp dụng cho cả hai phe" : "CẤU HÌNH LÍNH — áp dụng cho cả hai phe");
             int count = heroes ? lobbyHeroStats.Length : lobbyUnitStats.Length;
-            string[] fields = { "Máu tối đa", "Sát thương", "Tầm đánh", "Tốc độ đánh", "Tốc độ di chuyển", "Armor gần (%)", "Armor xa (%)", "Bán kính sát thương", "Hồi ulti (giây)" };
-            int fieldCount = heroes ? 9 : 8;
+            // Ninth column: a hero's ulti cooldown; a unit's bonus against buildings (castle, tower) in percent.
+            string[] fields = { "Máu tối đa", "Sát thương", "Tầm đánh", "Tốc độ đánh", "Tốc độ di chuyển", "Armor gần (%)", "Armor xa (%)", "Bán kính sát thương",
+                heroes ? "Hồi ulti (giây)" : "Công trình (+%)" };
+            int fieldCount = 9;
             int selected = heroes ? _selectedHero : _selectedLobbyUnitType;
             if (!_settingsTableMode)
             {
@@ -337,8 +339,9 @@ namespace RecoilPathfinding
                 var previous = stats;
                 var limits = heroes ? _heroStatLimits[i] : GetLobbyStatLimits(i);
                 float cooldown = heroes ? lobbyHeroStats[i].UltiCooldown : 0;
-                float[] values = { stats.MaxHealth, stats.Damage, stats.Range, stats.AttackSpeed, stats.MoveSpeed, stats.Armor * 100, stats.SecondaryArmor * 100, stats.AreaRadius, cooldown };
-                float[] maxima = { limits.MaxHealth, limits.Damage, limits.Range, limits.AttackSpeed, limits.MoveSpeed, 100, 100, limits.AreaRadius, Mathf.Max(300, cooldown) };
+                float ninth = heroes ? cooldown : stats.StructureBonus * 100;
+                float[] values = { stats.MaxHealth, stats.Damage, stats.Range, stats.AttackSpeed, stats.MoveSpeed, stats.Armor * 100, stats.SecondaryArmor * 100, stats.AreaRadius, ninth };
+                float[] maxima = { limits.MaxHealth, limits.Damage, limits.Range, limits.AttackSpeed, limits.MoveSpeed, 100, 100, limits.AreaRadius, Mathf.Max(300, ninth) };
                 float[] minima = { 1, 0, .1f, .1f, .1f, 0, 0, 0, 0 };
                 float y = (i + 1) * 58;
                 if (_settingsTableMode && SettingsButton(new Rect(0, y, 188, 54),
@@ -364,7 +367,11 @@ namespace RecoilPathfinding
                     if (!previous.Equals(stats) || cooldown != values[8]) _heroSettingsDirty = true;
                     lobbyHeroStats[i].Stats = stats; lobbyHeroStats[i].UltiCooldown = values[8];
                 }
-                else lobbyUnitStats[i] = stats;
+                else
+                {
+                    stats.StructureBonus = Mathf.Max(0f, values[8]) / 100;
+                    lobbyUnitStats[i] = stats;
+                }
             }
             var radarStats = heroes ? lobbyHeroStats[selected].Stats : lobbyUnitStats[selected];
             var radarLimits = heroes ? _heroStatLimits[selected] : GetLobbyStatLimits(selected);
@@ -435,8 +442,9 @@ namespace RecoilPathfinding
                 rule.RedHeroId = Mathf.Clamp(Number(6, "Mã tướng đỏ (0: không)", rule.RedHeroId, 0, 8), 0, 8);
                 rule.BlueAccumulation = Number(7, "Tích phe xanh", rule.BlueAccumulation, 0, 100);
                 rule.BlueHeroId = Mathf.Clamp(Number(8, "Mã tướng xanh (0: không)", rule.BlueHeroId, 0, 8), 0, 8);
-                rule.Enabled = GUI.Toggle(new Rect(0, 530, w, 32), rule.Enabled, "Bật quy tắc này");
-                if (SettingsButton(new Rect(0, 580, 160, 40), new GUIContent("Xóa dòng"), GUI.skin.button))
+                rule.ComboThreshold = Number(9, "Combo ra tướng (x, 0: tắt)", rule.ComboThreshold, 0, 100);
+                rule.Enabled = GUI.Toggle(new Rect(0, 578, w, 32), rule.Enabled, "Bật quy tắc này");
+                if (SettingsButton(new Rect(0, 628, 160, 40), new GUIContent("Xóa dòng"), GUI.skin.button))
                 { _tikTokArmySettings.Rules.Remove(rule); ClearHeroSettingInputs(); }
                 GUI.EndScrollView();
             }
@@ -517,8 +525,8 @@ namespace RecoilPathfinding
             GUI.Label(new Rect(area.x + 10, area.y + 4, area.width - 20, 34), "SETUP QUÀ — SỰ KIỆN → QUÂN", heading);
             GUI.Label(new Rect(area.x + 10, area.y + 38, area.width - 20, 30), "Tích chọn Like / Follow / Share để bật. Bỏ chọn cả ba = quà tặng. Mã tướng 0 = không có; 1–8 theo bảng tướng.", cell);
             var viewport = new Rect(area.x + 10, area.y + 78, area.width - 20, Mathf.Max(30, area.height - 180));
-            var widths = new[] { 70f, 80f, 70f, 80f, 100f, 90f, 90f, 160f, 130f, 110f, 130f, 110f, 65f };
-            var headers = new[] { "Like", "Follow", "Share", "Số xu", "ID", "Ngưỡng", "Số lượng", "Loại binh", "Số lượng tích phe đỏ", "Mã tướng phe đỏ", "Số lượng tích phe xanh", "Mã tướng phe xanh", "Xóa" };
+            var widths = new[] { 70f, 80f, 70f, 80f, 100f, 90f, 90f, 160f, 130f, 110f, 130f, 110f, 110f, 65f };
+            var headers = new[] { "Like", "Follow", "Share", "Số xu", "ID", "Ngưỡng", "Số lượng", "Loại binh", "Số lượng tích phe đỏ", "Mã tướng phe đỏ", "Số lượng tích phe xanh", "Mã tướng phe xanh", "Combo ra tướng (x)", "Xóa" };
             const float rowHeight = 80f;
             cell.wordWrap = heading.wordWrap = true;
             var tableWidth = 0f;
@@ -567,7 +575,8 @@ namespace RecoilPathfinding
                         case 9: rule.RedHeroId = Mathf.Min(8, TikTokTableNumber(rect, rule.RedHeroId, 0, cell)); break;
                         case 10: rule.BlueAccumulation = TikTokTableNumber(rect, rule.BlueAccumulation, 0, cell); break;
                         case 11: rule.BlueHeroId = Mathf.Min(8, TikTokTableNumber(rect, rule.BlueHeroId, 0, cell)); break;
-                        case 12: if (SettingsButton(rect, new GUIContent("Xóa"), cell)) remove = row; break;
+                        case 12: rule.ComboThreshold = TikTokTableNumber(rect, rule.ComboThreshold, 0, cell); break;
+                        case 13: if (SettingsButton(rect, new GUIContent("Xóa"), cell)) remove = row; break;
                     }
                 }
                 if (rule != null) rule.EventType = rule.Like ? "like" : rule.Follow ? "follow" : rule.Share ? "share" : "gift";

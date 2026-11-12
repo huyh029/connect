@@ -110,6 +110,31 @@ namespace RecoilPathfinding
             done(entries, null);
         }
 
+        /// <summary>
+        /// One viewer's row on a board. <paramref name="done"/> gets the row; null and no error when the server has no
+        /// row for them (404, or { "message": "No rank" }); null and an error message when the call failed.
+        /// </summary>
+        public static IEnumerator FetchPlayer(string baseUrl, Board board, string tikTokUserId, Action<Entry, string> done)
+        {
+            using var request = UnityWebRequest.Get(UserUrl(baseUrl, board, tikTokUserId));
+            request.timeout = 15;
+            yield return request.SendWebRequest();
+            if (request.responseCode == 404) { done(null, null); yield break; }
+            if (request.result != UnityWebRequest.Result.Success) { done(null, Describe(request)); yield break; }
+            List<Entry> entries;
+            try { entries = ParseList(request.downloadHandler.text, board); }
+            catch (Exception exception) { done(null, "Dữ liệu người chơi không đọc được: " + exception.Message); yield break; }
+            done(entries.Count > 0 ? entries[0] : null, null);
+        }
+
+        /// <summary>POST /api/rank/update with these players. <paramref name="done"/> gets null, or an error message.</summary>
+        public static IEnumerator Push(string baseUrl, IEnumerable<Entry> players, Action<string> done)
+        {
+            using var request = JsonRequest(UpdateUrl(baseUrl), "POST", UpdateBody(players));
+            yield return request.SendWebRequest();
+            done(request.result == UnityWebRequest.Result.Success ? null : Describe(request));
+        }
+
         // ---------------------------------------------------------------- parsing (tolerant of the server's naming)
 
         /// <summary>

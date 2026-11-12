@@ -498,7 +498,8 @@ namespace RecoilPathfinding
                 if (castleHit && (!once || !cast.SweptCastle[zoneIndex]))
                 {
                     if (once) cast.SweptCastle[zoneIndex] = true;
-                    int damage = Mathf.Max(0, Mathf.RoundToInt(cast.Stats.Damage * zone.DamageScale(local)));
+                    int damage = RecoilUnitDamage.CalculateStructure(
+                        Mathf.Max(0, Mathf.RoundToInt(cast.Stats.Damage * zone.DamageScale(local))), cast.Stats);
                     if (cast.Caster.IsBlue) _redCastleHealthRemaining = Mathf.Max(0, _redCastleHealthRemaining - damage);
                     else _blueCastleHealthRemaining = Mathf.Max(0, _blueCastleHealthRemaining - damage);
                     if (damage > 0) { _castleAttackCount++; _castleDamageTotal += damage; }

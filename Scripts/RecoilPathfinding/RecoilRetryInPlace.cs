@@ -77,7 +77,7 @@ namespace RecoilPathfinding
             _combatSoldiers.Clear(); _combatIndicesByEntity.Clear(); _combatBodyRadiusCache.Clear();
             _scheduledSoldiers.Clear(); _scheduledSoldierEntities.Clear();
             ResetDonationTop();
-            _heroDuelists.Clear(); _heroRewards.Clear(); _tikTokHeroProgress.Clear();
+            _heroDuelists.Clear(); _heroRewards.Clear(); _tikTokHeroProgress.Clear(); _tikTokHeroCombos.Clear();
             _tikTokProgress.Clear(); _tikTokUserTeams.Clear(); _tikTokUnassignedEvents.Clear();
             _giftNormalizer.Clear();
             System.Array.Clear(_tikTokPendingUnits, 0, _tikTokPendingUnits.Length);

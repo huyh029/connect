@@ -20,6 +20,7 @@ namespace RecoilPathfinding
         [Range(0f, 1f), InspectorName("P. Armor / giáp đánh xa (0–1)")] public float SecondaryArmor;
         [Min(0f), InspectorName("Bán kính sát thương lan")] public float AreaRadius;
         [Range(0f, 1f), InspectorName("Hiệu quả sát thương ở rìa nổ")] public float AreaEdgeEffectiveness;
+        [Min(0f), InspectorName("Bonus đánh công trình (1 = +100%)")] public float StructureBonus;
         [HideInInspector] public bool SecondaryDamage; // Legacy serialization fallback for attack type.
         [Min(1), InspectorName("Salvo size")] public int SalvoSize;
         [Min(0f), InspectorName("Salvo delay (seconds)")] public float SalvoDelay;
@@ -68,6 +69,14 @@ namespace RecoilPathfinding
                 default: return 0f;
             }
         }
+
+        /// <summary>Default bonus against buildings by role: catapults +100 %, elephants +50 %, nobody else.</summary>
+        public static float DefaultStructureBonus(RecoilCombatRole role) =>
+            role == RecoilCombatRole.Siege ? 1f : role == RecoilCombatRole.Elephant ? .5f : 0f;
+
+        /// <summary>Damage to a castle or tower: the raw blow plus the unit's bonus against buildings (no armour).</summary>
+        public static int CalculateStructure(int raw, RecoilUnitCombatStats attacker) =>
+            math.max(0, (int)math.round(math.max(0, raw) * (1f + math.max(0f, attacker.StructureBonus))));
 
         public static int Calculate(float raw, RecoilUnitCombatStats attacker, RecoilUnitCombatStats target) =>
             Calculate(raw * (1f + Bonus(attacker.CombatRole, target.CombatRole)), target, UsesRangedArmor(attacker));

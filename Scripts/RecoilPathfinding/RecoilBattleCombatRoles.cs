@@ -4,7 +4,7 @@ namespace RecoilPathfinding
 {
     public sealed partial class RecoilAutoBattleDemo
     {
-        private static readonly RecoilCombatRole[] DefaultCombatRoles =
+        internal static readonly RecoilCombatRole[] DefaultCombatRoles =
         {
             RecoilCombatRole.Archer, RecoilCombatRole.Militia, RecoilCombatRole.Spearman,
             RecoilCombatRole.Cavalry, RecoilCombatRole.Siege, RecoilCombatRole.Mage,

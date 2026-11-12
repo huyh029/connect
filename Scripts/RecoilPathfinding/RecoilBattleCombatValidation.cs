@@ -1844,6 +1844,14 @@ namespace RecoilPathfinding
                 RecoilUnitDamage.Bonus(RecoilCombatRole.Cavalry, RecoilCombatRole.Militia) == 0f,
                 "Militia has no invented counter percentage: the numeric table defines none.");
             Require(math.abs(config.AttackInterval - 1.25f) < .0001f, "Attack speed is attacks per second.");
+            Require(RecoilUnitDamage.DefaultStructureBonus(RecoilCombatRole.Siege) == 1f &&
+                RecoilUnitDamage.DefaultStructureBonus(RecoilCombatRole.Elephant) == .5f &&
+                RecoilUnitDamage.DefaultStructureBonus(RecoilCombatRole.Infantry) == 0f,
+                "Catapults and elephants get the bonus against buildings by default.");
+            Require(RecoilUnitDamage.CalculateStructure(110, new RecoilUnitCombatStats { StructureBonus = 1f }) == 220 &&
+                RecoilUnitDamage.CalculateStructure(66, new RecoilUnitCombatStats { StructureBonus = .5f }) == 99 &&
+                RecoilUnitDamage.CalculateStructure(18, config) == 18,
+                "Building damage is the raw blow plus the building bonus, without armour.");
             using var ownedSnapshots = new NativeArray<RecoilBattleCombatSnapshot>(6, Allocator.TempJob);
             var snapshots = ownedSnapshots;
             using var ownedAttacks = new NativeArray<RecoilContactAttack>(6, Allocator.TempJob);

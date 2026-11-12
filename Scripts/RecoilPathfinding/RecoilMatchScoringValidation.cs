@@ -93,6 +93,25 @@ namespace RecoilPathfinding
             Equal(Find(win.Results, "user").MatchEndingStreak, 420m, "Bonus uses this match's result");
             Equal(concurrent.GetWinStreakPoints("user"), 260m, "Concurrent deltas add to balance");
 
+            var synced = new RecoilScoreSession().BeginMatch();
+            synced.Join("s", "S", true);
+            synced.Join("z", "Z", false);
+            Equal(synced.SetStartingStreak("s", 0m) ? 1m : 0m, 1m, "Server streak can be set after joining");
+            synced.SetStartingStreak("z", 40m);
+            Equal(Find(synced.Participants, "s").StartingStreak, 1m, "A viewer the server does not know starts at 1");
+            Equal(Find(synced.Participants, "z").StartingStreak, 40m, "The server's weekly streak is the starting balance");
+            synced.Settle(true);
+            Equal(Find(synced.Results, "z").MatchEndingStreak, 24m, "Loser keeps 60 percent of the server streak");
+            Equal(Find(synced.Results, "s").StreakDelta, 5m, "Winner gets 30 percent of the 16 lost, rounded");
+            Equal(Find(synced.Results, "s").ServerStreak, 0m, "The server's value is kept for the change sent back");
+            Equal(synced.SetStartingStreak("z", 99m) ? 1m : 0m, 0m, "A settled match ignores late server values");
+            synced.SetStartingRank("s", 7);
+            synced.SetEndingRank("s", 4);
+            Equal(Find(synced.Results, "s").StartingRank, 7m, "Leaderboard place when joining is kept");
+            Equal(Find(synced.Results, "s").EndingRank, 4m, "Leaderboard place after the results were sent is kept");
+            Equal(Find(synced.Results, "z").EndingRank, 0m, "Unknown place stays 0");
+            Equal(Find(synced.Results, "s").BonusPoints, Find(synced.Results, "s").PoolBonus + Find(synced.Results, "s").StreakBonus, "Bonus is pool plus streak");
+
             decimal[] points = { 0m, 10m, 10.5m, 50m, 51m, 100m, 101m, 150m, 151m, 200m, 201m, 300m, 301m, 400m, 401m, 499m, 500m };
             decimal[] rates = { .05m, .05m, .10m, .10m, .15m, .15m, .20m, .20m, .25m, .25m, .30m, .30m, .40m, .40m, .50m, .50m, .60m };
             for (int i = 0; i < points.Length; i++)

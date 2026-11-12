@@ -12,6 +12,8 @@ namespace RecoilPathfinding
         private readonly Dictionary<string, bool> _tikTokUserTeams = new(StringComparer.Ordinal);
         private readonly Dictionary<string, List<TikEvent>> _tikTokUnassignedEvents = new(StringComparer.Ordinal);
         private readonly Dictionary<TikTokArmyRule, Dictionary<string, long>> _tikTokHeroProgress = new();
+        // The size of each viewer's current combo of a gift, so a combo brings its hero once, when it reaches the threshold.
+        private readonly Dictionary<TikTokArmyRule, Dictionary<string, (int Size, float At)>> _tikTokHeroCombos = new();
         private sealed class HeroReward
         {
             public string User;
@@ -37,6 +39,29 @@ namespace RecoilPathfinding
             long total = previous + amount;
             users[user] = total % threshold;
             if (total < threshold) return;
+            GrantTikTokHero(rule, user, blue, id, displayName);
+        }
+
+        /// <summary>
+        /// The other way to the hero: one combo of ComboThreshold gifts (x10, x5 for Hạc Giấy). comboSize is the combo's
+        /// running total (TikTok's repeat_count), or the event's quantity when it is not part of a combo.
+        /// </summary>
+        private void CheckTikTokHeroCombo(TikTokArmyRule rule, string user, bool blue, int comboSize, bool streak, string displayName)
+        {
+            int id = blue ? rule.BlueHeroId : rule.RedHeroId;
+            if (rule.ComboThreshold <= 0 || id <= 0 || comboSize <= 0) return;
+            if (!_tikTokHeroCombos.TryGetValue(rule, out var users))
+                _tikTokHeroCombos[rule] = users = new Dictionary<string, (int Size, float At)>();
+            users.TryGetValue(user, out var last);
+            // A smaller total, a long pause or a one-off send starts a new combo.
+            var before = streak && comboSize >= last.Size && Time.unscaledTime - last.At <= 60f ? last.Size : 0;
+            users[user] = (streak ? comboSize : 0, Time.unscaledTime);
+            if (before < rule.ComboThreshold && comboSize >= rule.ComboThreshold)
+                GrantTikTokHero(rule, user, blue, id, displayName);
+        }
+
+        private void GrantTikTokHero(TikTokArmyRule rule, string user, bool blue, int id, string displayName)
+        {
             var reward = _heroRewards.Find(r => r.User == user && ReferenceEquals(r.Rule, rule));
             if (reward == null)
             {
@@ -226,6 +251,9 @@ namespace RecoilPathfinding
                 if (amount == 0) continue;
                 AccumulateTikTokHero(rule, user, blue, amount,
                     !string.IsNullOrWhiteSpace(message.user?.nickname) ? message.user.nickname : message.user?.unique_id ?? user);
+                if (kind == "gift")
+                    CheckTikTokHeroCombo(rule, user, blue, message.repeat_count > 0 ? message.repeat_count : (int)Math.Min(int.MaxValue, amount),
+                        message.repeat_count > 0, donorName);
                 if (!_tikTokProgress.TryGetValue(rule, out var users)) _tikTokProgress[rule] = users = new Dictionary<string, long>();
                 users.TryGetValue(user, out var previous);
                 var total = previous + amount;

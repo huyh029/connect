@@ -380,8 +380,14 @@ namespace RecoilPathfinding
                 SetLabelTextColor(rankingNameStyle, UserNameColor(entry.Score.Name ?? entry.Score.UserId, entry.Score.Blue));
                 GUI.Label(nameRect, entry.Score.Name ?? entry.Score.UserId, rankingNameStyle);
                 SetLabelTextColor(rankingNameStyle, Color.white);
-                string points = award >= 1 ? entry.Points : AnimatedRankingPoints(entry.Score, reveal).ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) + " điểm";
+                // The card's three figures in one line: fixed (+bonus, the pool share counting up as its award lands),
+                // streak (±change), place (±places).
+                var bonus = entry.Score.StreakBonus + entry.Score.PoolBonus * (decimal)award;
+                string points = PointsText(entry.Score.FixedPoints, decimal.Round(bonus)) +
+                    " · chuỗi " + StreakText(entry.Score) + " · hạng " + RankText(entry.Score);
+                rankingPointsStyle.fontSize = Mathf.Max(9, Mathf.RoundToInt(13 * scale));
                 GUI.Label(new Rect(nameX, y + rowHeight * .56f, nameWidth, rowHeight * .4f), points, rankingPointsStyle);
+                rankingPointsStyle.fontSize = Mathf.Max(10, Mathf.RoundToInt(16 * scale));
         }
     }
 }
