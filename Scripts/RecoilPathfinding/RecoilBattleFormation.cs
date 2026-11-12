@@ -306,6 +306,7 @@ namespace RecoilPathfinding
                     _startCountdownEndsAt = Time.realtimeSinceStartupAsDouble + 3.0;
                     _countdownDrumNumber = 3;
                     PlayCountdownWarDrum(); // the "3"; "2" and "1" follow in UpdateStartCountdown
+                    BeginCombatLaunchPlanning(); // work out the army's ways during the countdown
                 }
                 return false;
             }
@@ -317,8 +318,7 @@ namespace RecoilPathfinding
             ReleaseDeferredWaitingArmy();
             _waitingFormationActive = _waitingFormationDirty = _waitingHeroesDirty = false;
             InitializeCastleCombatState();
-            IssueInitialCombatMovement(_blueTeam);
-            IssueInitialCombatMovement(_redTeam);
+            StartCombatLaunch(); // the army sets off in a wave, front rows first (RecoilCombatLaunch)
             _lobbyStarting = false;
             return true;
         }
@@ -335,34 +335,6 @@ namespace RecoilPathfinding
                     rendered++;
                 }
             return rendered >= Mathf.Max(2, PreparedArmyTarget);
-        }
-
-        private void IssueInitialCombatMovement(List<Soldier> team)
-        {
-            for (var i = 0; i < team.Count; i++)
-            {
-                var soldier = team[i];
-                if (soldier == null || soldier.Retired || soldier.Simulation == null ||
-                    !soldier.Simulation.Exists || !IsAlive(soldier))
-                    continue;
-                soldier.FormationAssigned = soldier.FormationArrived = false;
-                soldier.Simulation.SetAssemblyMovement(false);
-                soldier.Simulation.SetPresentationFacing(false, Quaternion.identity);
-                soldier.LastMovementCommandTime = SimulationNow;
-                if (useFightCorridors && pathService != null && pathService.UsingTerrainMap)
-                {
-                    var timing = _entityManager.GetComponentData<RecoilUnitCombatTiming>(soldier.Entity);
-                    if (timing.Fight.Enabled != 0)
-                    {
-                        var settings = soldier.Simulation.Settings;
-                        if (pathService.TerrainHeightField.TryFindUnitApproach(soldier.Simulation.Position,
-                            timing.Fight.End, settings.AreaMask, out var destination, settings.BodyRadius + .05f))
-                            soldier.Simulation.SetDestination(destination);
-                        continue;
-                    }
-                }
-                UpdateNavigationBridge(soldier, null);
-            }
         }
 
         private void UpdateAssembly()

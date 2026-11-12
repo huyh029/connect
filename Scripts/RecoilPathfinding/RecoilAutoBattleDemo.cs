@@ -2089,6 +2089,7 @@ namespace RecoilPathfinding
 
             if (!_initialFormationLoading) FlushTikTokReinforcements();
             UpdateStartCountdown();
+            UpdateCombatLaunch();
             UpdateMatchTimer();
 
             var spawnKeyboard = UnityEngine.InputSystem.Keyboard.current;

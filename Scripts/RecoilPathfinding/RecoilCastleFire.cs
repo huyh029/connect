@@ -56,8 +56,9 @@ namespace RecoilPathfinding
         {
             for (var index = 0; index < 2; index++)
             {
-                if (_castleBurningEffects[index] == null && !CreateCastleBurningEffects(index)) continue;
+                // The castle's own renderers first: the burning copy becomes its child and must not be among them.
                 CacheCastleBaseRenderers(index);
+                if (_castleBurningEffects[index] == null && !CreateCastleBurningEffects(index)) continue;
                 renderRoots?.Add(_castleBurningEffects[index]);
             }
         }
@@ -69,7 +70,11 @@ namespace RecoilPathfinding
             var castle = GameObject.Find(index == 0 ? "CASTLE_blue" : "CASTLE_red");
             if (castle == null) return;
 
-            _castleBaseRenderers[index] = castle.GetComponentsInChildren<Renderer>(true);
+            // Only the castle's own renderers: never those of its burning copy (a child of the castle), which must
+            // stay visible when the castle is hidden.
+            var burning = _castleBurningEffects[index] != null ? _castleBurningEffects[index].transform : null;
+            _castleBaseRenderers[index] = System.Array.FindAll(castle.GetComponentsInChildren<Renderer>(true),
+                renderer => burning == null || !renderer.transform.IsChildOf(burning));
             _castleBaseRendererEnabled[index] = new bool[_castleBaseRenderers[index].Length];
             for (var i = 0; i < _castleBaseRenderers[index].Length; i++)
                 _castleBaseRendererEnabled[index][i] = _castleBaseRenderers[index][i] != null &&

@@ -86,6 +86,7 @@ namespace RecoilPathfinding
             for (var type = 0; type < CharacterTypeCount; type++)
             { _waitingSlots[team][type]?.Clear(); _waitingAssigned[team][type] = 0; }
             _waitingFormationActive = _waitingFormationDirty = _waitingHeroesDirty = false;
+            ResetCombatLaunch();
             _nextWaitingPlanAttempt = _nextStagingQueueCheck = _nextHeroFormationAttempt = 0;
             _initialBlueSoldiersSpawned = _initialRedSoldiersSpawned = 0;
             _waitingPositionTypes.Clear();
