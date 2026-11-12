@@ -11,57 +11,49 @@ using UnityEngine.Networking;
 namespace NhiQuoc.Tools
 {
     /// <summary>
-    /// Writes the Unity Cloud leaderboard the battle shows (Weekly by default): push, update and delete scores, one
-    /// entry at a time (Single) or a JSON list typed in or read from a .json file (Multi), and see what is on it.
-    /// Each entry: { "tiktokID", "name", "avatarurl", "score" }; the TikTok id is the leaderboard's player id and
-    /// tiktokID / name / avatarurl go in the score's metadata.
-    /// Only the leaderboard id is asked: the project is the one this Unity project is linked to, the environment is
-    /// "production" (looked up by name), and the calls are made as the Unity account signed in to the Editor. A
-    /// service account key can be given instead under "Nâng cao" (kept in EditorPrefs, never in the project).
+    /// Writes and reads the rank server the battle's leaderboard shows (<see cref="RecoilRankServer"/>):
+    /// push one player (Single) or a JSON list typed in or read from a .json file (Multi) to POST /api/rank/update,
+    /// look a player up, and list any of the four boards (weekly / monthly × điểm / chuỗi thắng).
+    /// Each entry: { "tikTokUserId", "username", "avatar", "matchPoint", "killCount" } — matchPoint is the SCORE and
+    /// killCount is the WIN STREAK (the server's names are misleading). Older files with
+    /// { "tiktokID", "name", "avatarurl", "score" } are read too.
+    /// The server has no delete or overwrite call: what a push does to an existing player is up to the server.
     /// </summary>
     public sealed class CongThanhLeaderboardTool : EditorWindow
     {
         private const string Prefix = "CongThanhLeaderboard.";
-        private const string AdminApi = "https://services.api.unity.com";
+        private static readonly string[] BoardNames = { "Tuần · Điểm", "Tuần · Chuỗi thắng", "Tháng · Điểm", "Tháng · Chuỗi thắng" };
 
-        private string _leaderboardId, _environmentName, _keyId, _secret;
-        private string _environmentId; // looked up from _environmentName
-        private bool _advanced;
-        private static string ProjectId => CloudProjectSettings.projectId;
-        private bool UseServiceAccount => !string.IsNullOrWhiteSpace(_keyId) && !string.IsNullOrWhiteSpace(_secret);
+        private string _serverUrl;
         private int _mode; // 0 single, 1 multi
-        private RecoilCloudLeaderboard.Entry _single = new();
-        private string _multiJson = "[\n  { \"tiktokID\": \"user1\", \"name\": \"Người chơi 1\", \"avatarurl\": \"\", \"score\": 1000 }\n]";
-        private readonly List<RecoilCloudLeaderboard.Entry> _listed = new();
-        private int _listedTotal;
+        private int _board; // RecoilRankServer.Board
+        private RecoilRankServer.Entry _single = new();
+        private string _multiJson = "[\n  { \"tikTokUserId\": \"user1\", \"username\": \"Người chơi 1\", \"avatar\": \"\", \"matchPoint\": 1000, \"killCount\": 2 }\n]";
+        private readonly List<RecoilRankServer.Entry> _listed = new();
         private Vector2 _scroll, _listScroll;
         private string _status;
         private MessageType _statusType = MessageType.Info;
-        private bool _busy, _showKey;
-        private string _accessToken;
-        private DateTime _accessTokenExpires;
+        private bool _busy;
 
-        [MenuItem("Game Tools/Công Thành/Leaderboard (Unity Cloud)")]
-        private static void Open() => GetWindow<CongThanhLeaderboardTool>("Leaderboard Cloud").minSize = new Vector2(460f, 520f);
+        private RecoilRankServer.Board Board => (RecoilRankServer.Board)_board;
+
+        [MenuItem("Game Tools/Công Thành/Leaderboard (Rank server)")]
+        private static void Open() => GetWindow<CongThanhLeaderboardTool>("Rank server").minSize = new Vector2(520f, 520f);
 
         private void OnEnable()
         {
-            _environmentName = EditorPrefs.GetString(Prefix + "EnvironmentName", "production");
-            _leaderboardId = EditorPrefs.GetString(Prefix + "Leaderboard", RecoilCloudLeaderboard.DefaultLeaderboardId);
-            _keyId = EditorPrefs.GetString(Prefix + "KeyId", "");
-            _secret = EditorPrefs.GetString(Prefix + "Secret", "");
+            _serverUrl = EditorPrefs.GetString(Prefix + "ServerUrl", RecoilRankServer.DefaultUrl);
             _mode = EditorPrefs.GetInt(Prefix + "Mode", 0);
-            _multiJson = EditorPrefs.GetString(Prefix + "MultiJson", _multiJson);
+            _board = Mathf.Clamp(EditorPrefs.GetInt(Prefix + "Board", 0), 0, BoardNames.Length - 1);
+            _multiJson = EditorPrefs.GetString(Prefix + "MultiJson2", _multiJson);
         }
 
         private void SaveSettings()
         {
-            EditorPrefs.SetString(Prefix + "EnvironmentName", _environmentName ?? "");
-            EditorPrefs.SetString(Prefix + "Leaderboard", _leaderboardId ?? "");
-            EditorPrefs.SetString(Prefix + "KeyId", _keyId ?? "");
-            EditorPrefs.SetString(Prefix + "Secret", _secret ?? "");
+            EditorPrefs.SetString(Prefix + "ServerUrl", _serverUrl ?? "");
             EditorPrefs.SetInt(Prefix + "Mode", _mode);
-            EditorPrefs.SetString(Prefix + "MultiJson", _multiJson ?? "");
+            EditorPrefs.SetInt(Prefix + "Board", _board);
+            EditorPrefs.SetString(Prefix + "MultiJson2", _multiJson ?? "");
         }
 
         // ---------------------------------------------------------------- UI
@@ -70,27 +62,14 @@ namespace NhiQuoc.Tools
         {
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             EditorGUI.BeginChangeCheck();
-            _leaderboardId = EditorGUILayout.TextField("Leaderboard ID", _leaderboardId);
-            EditorGUILayout.LabelField(
-                $"Project {(string.IsNullOrEmpty(ProjectId) ? "(chưa liên kết)" : ProjectId)} · môi trường {_environmentName} · " +
-                (UseServiceAccount ? "service account" : "tài khoản Unity đang đăng nhập Editor"), EditorStyles.miniLabel);
-            if (string.IsNullOrEmpty(ProjectId))
-                EditorGUILayout.HelpBox("Dự án chưa liên kết Unity Cloud (Edit > Project Settings > Services).", MessageType.Warning);
-            _advanced = EditorGUILayout.Foldout(_advanced, "Nâng cao", true);
-            if (_advanced)
+            using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUI.indentLevel++;
-                _environmentName = EditorGUILayout.TextField("Tên môi trường", _environmentName);
-                _keyId = EditorGUILayout.TextField(new GUIContent("Service account Key ID",
-                    "Để trống: dùng tài khoản Unity đang đăng nhập Editor."), _keyId);
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    _secret = _showKey ? EditorGUILayout.TextField("Secret key", _secret) : EditorGUILayout.PasswordField("Secret key", _secret);
-                    _showKey = GUILayout.Toggle(_showKey, "Hiện", GUILayout.Width(44f));
-                }
-                EditorGUI.indentLevel--;
+                _serverUrl = EditorGUILayout.TextField("Server", _serverUrl);
+                if (GUILayout.Button("Swagger", GUILayout.Width(64f)))
+                    Application.OpenURL(RecoilRankServer.BoardUrl(_serverUrl, 0).Replace("/api/rank/weekly/point", "/swagger/index.html"));
             }
-            if (EditorGUI.EndChangeCheck()) { SaveSettings(); _accessToken = null; _environmentId = null; }
+            if (EditorGUI.EndChangeCheck()) SaveSettings();
+            EditorGUILayout.LabelField("matchPoint = điểm · killCount = chuỗi thắng (tên trường trên server đặt chưa đúng)", EditorStyles.miniLabel);
 
             EditorGUILayout.Space(6f);
             EditorGUI.BeginChangeCheck();
@@ -111,19 +90,17 @@ namespace NhiQuoc.Tools
 
         private void DrawSingle()
         {
-            _single.tiktokID = EditorGUILayout.TextField("tiktokID", _single.tiktokID);
-            _single.name = EditorGUILayout.TextField("name", _single.name);
-            _single.avatarurl = EditorGUILayout.TextField("avatarurl", _single.avatarurl);
-            _single.score = EditorGUILayout.DoubleField("score", _single.score);
+            _single.tikTokUserId = EditorGUILayout.TextField("tikTokUserId", _single.tikTokUserId);
+            _single.username = EditorGUILayout.TextField("username", _single.username);
+            _single.avatar = EditorGUILayout.TextField("avatar (URL)", _single.avatar);
+            _single.matchPoint = EditorGUILayout.IntField(new GUIContent("Điểm (matchPoint)", "Điểm của người chơi. Server gọi là matchPoint."), _single.matchPoint);
+            _single.killCount = EditorGUILayout.IntField(new GUIContent("Chuỗi thắng (killCount)", "Chuỗi thắng của người chơi. Server gọi là killCount, không phải số mạng hạ."), _single.killCount);
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button(new GUIContent("Push", "Gửi điểm. Bảng giữ điểm theo kiểu cập nhật đã đặt trên Dashboard (vd. giữ điểm cao nhất)."), GUILayout.Height(26f)))
-                    Run(() => PushAll(new List<RecoilCloudLeaderboard.Entry> { _single }, false));
-                if (GUILayout.Button(new GUIContent("Update", "Đặt đúng điểm này (xoá điểm cũ rồi ghi lại), kể cả khi thấp hơn."), GUILayout.Height(26f)))
-                    Run(() => PushAll(new List<RecoilCloudLeaderboard.Entry> { _single }, true));
-                if (GUILayout.Button("Delete", GUILayout.Height(26f)) &&
-                    EditorUtility.DisplayDialog("Xoá điểm", $"Xoá {_single.tiktokID} khỏi {_leaderboardId}?", "Xoá", "Huỷ"))
-                    Run(() => DeleteAll(new List<string> { _single.tiktokID }));
+                if (GUILayout.Button(new GUIContent("Push", "POST /api/rank/update với một người."), GUILayout.Height(26f)))
+                    Run(() => PushAll(new List<RecoilRankServer.Entry> { _single }));
+                if (GUILayout.Button(new GUIContent("Xem người này", "GET /api/rank/me/{id} và hạng trên bảng đang chọn."), GUILayout.Height(26f)))
+                    Run(() => Lookup(_single.tikTokUserId));
             }
         }
 
@@ -131,7 +108,7 @@ namespace NhiQuoc.Tools
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.LabelField("Mảng JSON: [{ \"tiktokID\", \"name\", \"avatarurl\", \"score\" }, …]", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField("Mảng JSON: [{ \"tikTokUserId\", \"username\", \"avatar\", \"matchPoint\", \"killCount\" }, …]", EditorStyles.miniLabel);
                 if (GUILayout.Button("📂 Nhập từ file JSON…", GUILayout.Width(150f))) ImportJsonFile();
             }
             EditorGUI.BeginChangeCheck();
@@ -139,20 +116,15 @@ namespace NhiQuoc.Tools
             if (EditorGUI.EndChangeCheck()) SaveSettings();
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Push tất cả", GUILayout.Height(26f)) && TryParseMulti(out var push)) Run(() => PushAll(push, false));
-                if (GUILayout.Button("Update tất cả", GUILayout.Height(26f)) && TryParseMulti(out var update)) Run(() => PushAll(update, true));
-                if (GUILayout.Button("Delete tất cả", GUILayout.Height(26f)) && TryParseMulti(out var delete) &&
-                    EditorUtility.DisplayDialog("Xoá điểm", $"Xoá {delete.Count} người trong danh sách khỏi {_leaderboardId}?", "Xoá", "Huỷ"))
-                    Run(() => DeleteAll(delete.ConvertAll(e => e.tiktokID)));
-            }
-            if (GUILayout.Button("Lấy danh sách hiện tại vào ô JSON"))
-            {
-                var array = new JArray();
-                foreach (var entry in _listed)
-                    array.Add(new JObject { ["tiktokID"] = entry.tiktokID, ["name"] = entry.name, ["avatarurl"] = entry.avatarurl, ["score"] = entry.score });
-                _multiJson = array.ToString();
-                SaveSettings();
-                GUI.FocusControl(null);
+                if (GUILayout.Button(new GUIContent("Push tất cả", "Một lần POST /api/rank/update với cả danh sách."), GUILayout.Height(26f)) &&
+                    TryParseMulti(out var push))
+                    Run(() => PushAll(push));
+                if (GUILayout.Button("Lấy bảng đang xem vào ô JSON", GUILayout.Height(26f)))
+                {
+                    _multiJson = ToJson(_listed);
+                    SaveSettings();
+                    GUI.FocusControl(null);
+                }
             }
         }
 
@@ -160,36 +132,34 @@ namespace NhiQuoc.Tools
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.LabelField($"Trên bảng: {_listed.Count}/{_listedTotal}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"Trên bảng: {_listed.Count}", EditorStyles.boldLabel, GUILayout.Width(110f));
+                EditorGUI.BeginChangeCheck();
+                _board = GUILayout.Toolbar(_board, BoardNames);
+                if (EditorGUI.EndChangeCheck()) { SaveSettings(); Run(() => LoadList(true)); }
                 using (new EditorGUI.DisabledScope(_busy))
-                {
                     if (GUILayout.Button("↻ Tải", GUILayout.Width(70f))) Run(() => LoadList(true));
-                    if (GUILayout.Button("Xoá toàn bộ", GUILayout.Width(90f)) && _listed.Count > 0 &&
-                        EditorUtility.DisplayDialog("Xoá toàn bộ", $"Xoá cả {_listed.Count} người đã tải khỏi {_leaderboardId}?", "Xoá hết", "Huỷ"))
-                        Run(() => DeleteAll(_listed.ConvertAll(e => e.PlayerId ?? e.tiktokID)));
-                }
             }
+            var unit = RecoilRankServer.Unit(Board);
             _listScroll = EditorGUILayout.BeginScrollView(_listScroll, GUILayout.MinHeight(180f));
             foreach (var entry in _listed.ToArray())
                 using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
                 {
                     GUILayout.Label(entry.Rank.ToString(), GUILayout.Width(30f));
                     GUILayout.Label(entry.DisplayName, EditorStyles.boldLabel, GUILayout.MinWidth(100f));
-                    GUILayout.Label(entry.tiktokID, EditorStyles.miniLabel, GUILayout.MinWidth(80f));
-                    GUILayout.Label(entry.score.ToString("N0"), GUILayout.Width(90f));
+                    GUILayout.Label(entry.tikTokUserId, EditorStyles.miniLabel, GUILayout.MinWidth(80f));
+                    GUILayout.Label(entry.Value.ToString("N0") + " " + unit, GUILayout.Width(110f));
+                    GUILayout.Label($"điểm {entry.matchPoint:N0} · chuỗi {entry.killCount:N0}", EditorStyles.miniLabel, GUILayout.Width(150f));
                     using (new EditorGUI.DisabledScope(_busy))
-                    {
                         if (GUILayout.Button("Sửa", GUILayout.Width(40f)))
                         {
                             _mode = 0;
-                            _single = new RecoilCloudLeaderboard.Entry
-                                { tiktokID = entry.tiktokID, name = entry.name, avatarurl = entry.avatarurl, score = entry.score };
+                            _single = new RecoilRankServer.Entry
+                            {
+                                tikTokUserId = entry.tikTokUserId, username = entry.username, avatar = entry.avatar,
+                                matchPoint = entry.matchPoint, killCount = entry.killCount
+                            };
                             GUI.FocusControl(null);
                         }
-                        if (GUILayout.Button("✕", GUILayout.Width(24f)) &&
-                            EditorUtility.DisplayDialog("Xoá điểm", $"Xoá {entry.DisplayName} khỏi {_leaderboardId}?", "Xoá", "Huỷ"))
-                            Run(() => DeleteAll(new List<string> { entry.PlayerId ?? entry.tiktokID }));
-                    }
                 }
             EditorGUILayout.EndScrollView();
         }
@@ -207,30 +177,31 @@ namespace NhiQuoc.Tools
             var previous = _multiJson;
             _multiJson = text;
             if (!TryParseMulti(out var entries)) { _multiJson = previous; return; }
-            // Shown back as a tidy list, ready to push / update / delete.
-            var array = new JArray();
-            foreach (var entry in entries)
-                array.Add(new JObject { ["tiktokID"] = entry.tiktokID, ["name"] = entry.name, ["avatarurl"] = entry.avatarurl, ["score"] = entry.score });
-            _multiJson = array.ToString();
+            // Shown back as a tidy list in the server's field names, ready to push.
+            _multiJson = ToJson(entries);
             _mode = 1;
             SaveSettings();
             GUI.FocusControl(null);
-            SetStatus($"Đã nhập {entries.Count} người từ {System.IO.Path.GetFileName(path)}. Bấm Push / Update để gửi lên.", MessageType.Info);
+            SetStatus($"Đã nhập {entries.Count} người từ {System.IO.Path.GetFileName(path)}. Bấm Push tất cả để gửi lên.", MessageType.Info);
         }
 
-        private bool TryParseMulti(out List<RecoilCloudLeaderboard.Entry> entries)
+        private static string ToJson(List<RecoilRankServer.Entry> entries)
         {
-            entries = new List<RecoilCloudLeaderboard.Entry>();
+            var array = new JArray();
+            foreach (var entry in entries) array.Add(entry.ToRequest());
+            return array.ToString();
+        }
+
+        private bool TryParseMulti(out List<RecoilRankServer.Entry> entries)
+        {
+            entries = new List<RecoilRankServer.Entry>();
             try
             {
                 var token = JToken.Parse(_multiJson);
+                if (token is JObject holder && holder["players"] is JArray players) token = players;
                 var array = token as JArray ?? new JArray(token);
                 foreach (var item in array)
-                    entries.Add(new RecoilCloudLeaderboard.Entry
-                    {
-                        tiktokID = (string)item["tiktokID"], name = (string)item["name"],
-                        avatarurl = (string)item["avatarurl"], score = item["score"] != null ? (double)item["score"] : 0d
-                    });
+                    if (item is JObject row) entries.Add(RecoilRankServer.ParseEntry(row, RecoilRankServer.Board.WeeklyPoint));
                 return true;
             }
             catch (Exception exception)
@@ -240,125 +211,66 @@ namespace NhiQuoc.Tools
             }
         }
 
-        // ---------------------------------------------------------------- service calls
+        // ---------------------------------------------------------------- server calls
 
         private async void Run(Func<Task> work)
         {
             if (_busy) return;
-            if (string.IsNullOrWhiteSpace(ProjectId) || string.IsNullOrWhiteSpace(_leaderboardId))
-            {
-                SetStatus(string.IsNullOrWhiteSpace(ProjectId) ? "Dự án chưa liên kết Unity Cloud." : "Nhập Leaderboard ID.", MessageType.Warning);
-                return;
-            }
             _busy = true;
             try { await work(); }
             catch (Exception exception) { SetStatus(exception.Message, MessageType.Error); }
             finally { _busy = false; Repaint(); }
         }
 
-        private async Task PushAll(List<RecoilCloudLeaderboard.Entry> entries, bool replace)
+        /// <summary>One POST /api/rank/update with every player that has an id.</summary>
+        private async Task PushAll(List<RecoilRankServer.Entry> entries)
         {
-            var done = 0;
-            var failures = new List<string>();
+            var players = new List<RecoilRankServer.Entry>();
+            var skipped = 0;
             foreach (var entry in entries)
-            {
-                if (string.IsNullOrWhiteSpace(entry.tiktokID)) { failures.Add("(thiếu tiktokID)"); continue; }
-                SetStatus($"{(replace ? "Update" : "Push")} {done + 1}/{entries.Count}: {entry.tiktokID}…", MessageType.Info);
-                // Update sets exactly this score: the old one goes first (the board may keep only the best).
-                if (replace)
-                {
-                    var removed = await Send("DELETE", await AdminScoreUrl(entry.tiktokID), null);
-                    if (removed.Error != null && removed.Code != 404) { failures.Add($"{entry.tiktokID}: {removed.Error}"); continue; }
-                }
-                var body = new JObject { ["score"] = entry.score, ["metadata"] = entry.Metadata() }.ToString();
-                await EnvironmentId();
-                var result = await Send("POST", PlayerScoreUrl(entry.tiktokID, true), body);
-                if (result.Code == 404 || result.Code == 405) result = await Send("POST", PlayerScoreUrl(entry.tiktokID, false), body);
-                if (result.Error != null) failures.Add($"{entry.tiktokID}: {result.Error}");
-                else done++;
-            }
-            Report(done, entries.Count, replace ? "cập nhật" : "đẩy", failures);
+                if (string.IsNullOrWhiteSpace(entry.tikTokUserId)) skipped++;
+                else players.Add(entry);
+            if (players.Count == 0) { SetStatus("Không có người nào có tikTokUserId để gửi.", MessageType.Warning); return; }
+            SetStatus($"Đang gửi {players.Count} người…", MessageType.Info);
+            var result = await Send("POST", RecoilRankServer.UpdateUrl(_serverUrl), RecoilRankServer.UpdateBody(players));
+            if (result.Error != null) { SetStatus("Gửi thất bại: " + result.Error, MessageType.Error); return; }
+            var note = skipped > 0 ? $" Bỏ qua {skipped} người thiếu tikTokUserId." : "";
+            var reply = string.IsNullOrWhiteSpace(result.Body) ? "" : "\nServer trả về: " + Trim(result.Body);
+            SetStatus($"Đã gửi {players.Count} người.{note}{reply}", skipped > 0 ? MessageType.Warning : MessageType.Info);
             await LoadList();
         }
 
-        private async Task DeleteAll(List<string> ids)
+        /// <summary>GET /api/rank/me/{id} plus the player's row on the board being viewed.</summary>
+        private async Task Lookup(string tikTokUserId)
         {
-            var done = 0;
-            var failures = new List<string>();
-            foreach (var id in ids)
-            {
-                if (string.IsNullOrWhiteSpace(id)) continue;
-                SetStatus($"Xoá {done + 1}/{ids.Count}: {id}…", MessageType.Info);
-                var result = await Send("DELETE", await AdminScoreUrl(id), null);
-                if (result.Error != null && result.Code != 404) failures.Add($"{id}: {result.Error}");
-                else done++;
-            }
-            Report(done, ids.Count, "xoá", failures);
-            await LoadList();
+            if (string.IsNullOrWhiteSpace(tikTokUserId)) { SetStatus("Nhập tikTokUserId.", MessageType.Warning); return; }
+            SetStatus($"Đang tìm {tikTokUserId}…", MessageType.Info);
+            var me = await Send("GET", RecoilRankServer.MeUrl(_serverUrl, tikTokUserId), null);
+            var board = await Send("GET", RecoilRankServer.UserUrl(_serverUrl, Board, tikTokUserId), null);
+            var text = new StringBuilder();
+            text.Append("/me: ").Append(me.Error ?? Trim(me.Body));
+            text.Append('\n').Append(BoardNames[_board]).Append(": ").Append(board.Error ?? Trim(board.Body));
+            SetStatus(text.ToString(), me.Error != null && board.Error != null ? MessageType.Warning : MessageType.Info);
         }
 
         private async Task LoadList(bool announce = false)
         {
-            var entries = new List<RecoilCloudLeaderboard.Entry>();
-            var total = 0;
-            for (var offset = 0; offset < 1000; offset += 100)
-            {
-                var query = $"/leaderboards/{Uri.EscapeDataString(_leaderboardId)}/scores?offset={offset}&limit=100&includeMetadata=true";
-                var environment = await EnvironmentId();
-                var result = await Send("GET", $"{RecoilCloudLeaderboard.PlayerApi}/projects/{ProjectId}/environments/{environment}{query}", null);
-                if (result.Code == 404 || result.Code == 405)
-                    result = await Send("GET", $"{RecoilCloudLeaderboard.PlayerApi}/projects/{ProjectId}{query}", null);
-                if (result.Error != null)
-                {
-                    SetStatus("Không tải được bảng: " + result.Error, MessageType.Error);
-                    return;
-                }
-                var page = RecoilCloudLeaderboard.ParseScores(result.Body);
-                entries.AddRange(page.Entries);
-                total = Mathf.Max(page.Total, entries.Count);
-                if (page.Entries.Count < 100 || entries.Count >= total) break;
-            }
+            var result = await Send("GET", RecoilRankServer.BoardUrl(_serverUrl, Board), null);
+            if (result.Error != null) { SetStatus("Không tải được bảng: " + result.Error, MessageType.Error); return; }
+            List<RecoilRankServer.Entry> entries;
+            try { entries = RecoilRankServer.ParseList(result.Body, Board); }
+            catch (Exception exception) { SetStatus("Bảng trả về không đọc được: " + exception.Message + "\n" + Trim(result.Body), MessageType.Error); return; }
             _listed.Clear();
             _listed.AddRange(entries);
-            _listedTotal = total;
-            // After a push / delete its own report stays on screen.
-            if (announce) SetStatus($"Đã tải {entries.Count} người từ {_leaderboardId}.", MessageType.Info);
+            // After a push its own report stays on screen.
+            if (announce) SetStatus($"Đã tải {entries.Count} người ({BoardNames[_board]}).", MessageType.Info);
         }
 
-        private void Report(int done, int count, string verb, List<string> failures)
+        private static string Trim(string body)
         {
-            if (failures.Count == 0) SetStatus($"Đã {verb} {done}/{count}.", MessageType.Info);
-            else SetStatus($"Đã {verb} {done}/{count}. Lỗi:\n" + string.Join("\n", failures), MessageType.Warning);
+            body = (body ?? "").Trim();
+            return body.Length > 600 ? body.Substring(0, 600) + "…" : body;
         }
-
-        /// <summary>Adding a score for a given player (the server form, in the environment; or the plain form).</summary>
-        private string PlayerScoreUrl(string playerId, bool inEnvironment) =>
-            $"{RecoilCloudLeaderboard.PlayerApi}/projects/{ProjectId}" + (inEnvironment ? $"/environments/{_environmentId}" : "") +
-            $"/leaderboards/{Uri.EscapeDataString(_leaderboardId)}/scores/players/{Uri.EscapeDataString(playerId)}";
-
-        private async Task<string> AdminScoreUrl(string playerId) =>
-            $"{AdminApi}/leaderboards/v1/projects/{ProjectId}/environments/{await EnvironmentId()}/leaderboards/" +
-            $"{Uri.EscapeDataString(_leaderboardId)}/scores/players/{Uri.EscapeDataString(playerId)}";
-
-        /// <summary>The id of the environment named _environmentName ("production"), looked up once.</summary>
-        private async Task<string> EnvironmentId()
-        {
-            if (!string.IsNullOrEmpty(_environmentId)) return _environmentId;
-            using var request = UnityWebRequest.Get($"{AdminApi}/unity/v1/projects/{ProjectId}/environments");
-            request.SetRequestHeader("Authorization", UseServiceAccount ? BasicAuth() : "Bearer " + await AccessToken());
-            await request.SendWebRequest();
-            if (request.result != UnityWebRequest.Result.Success)
-                throw new Exception("Không lấy được danh sách môi trường: " + RecoilCloudLeaderboard.Describe(request));
-            var root = JToken.Parse(request.downloadHandler.text);
-            var list = root as JArray ?? root["results"] as JArray ?? new JArray();
-            foreach (var environment in list)
-                if (string.Equals((string)environment["name"], _environmentName, StringComparison.OrdinalIgnoreCase))
-                    return _environmentId = (string)environment["id"];
-            throw new Exception($"Dự án không có môi trường \"{_environmentName}\".");
-        }
-
-        private string BasicAuth() =>
-            "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(_keyId.Trim() + ":" + _secret.Trim()));
 
         private readonly struct Response
         {
@@ -367,70 +279,25 @@ namespace NhiQuoc.Tools
             public Response(long code, string body, string error) { Code = code; Body = body; Error = error; }
         }
 
-        /// <summary>One call with the service account's token; waits and retries when the service asks to slow down.</summary>
-        private async Task<Response> Send(string method, string url, string body)
+        /// <summary>One call; waits and retries when the server asks to slow down.</summary>
+        private static async Task<Response> Send(string method, string url, string body)
         {
             for (var attempt = 0; ; attempt++)
             {
-                var token = await AccessToken();
-                using var request = new UnityWebRequest(url, method) { downloadHandler = new DownloadHandlerBuffer() };
-                if (body != null)
-                {
-                    request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
-                    request.SetRequestHeader("Content-Type", "application/json");
-                }
-                request.SetRequestHeader("Authorization", "Bearer " + token);
+                using var request = body != null
+                    ? RecoilRankServer.JsonRequest(url, method, body)
+                    : new UnityWebRequest(url, method) { downloadHandler = new DownloadHandlerBuffer(), timeout = 30 };
                 await request.SendWebRequest();
                 if (request.result == UnityWebRequest.Result.Success)
                     return new Response(request.responseCode, request.downloadHandler.text, null);
-                if (request.responseCode == 429 && attempt < 4)
+                if ((request.responseCode == 429 || request.responseCode == 503) && attempt < 3)
                 {
                     var wait = float.TryParse(request.GetResponseHeader("Retry-After"), out var seconds) ? seconds : 2f;
                     await Task.Delay(TimeSpan.FromSeconds(Mathf.Clamp(wait, 1f, 30f)));
                     continue;
                 }
-                if (request.responseCode == 401 && attempt == 0) { _accessToken = null; continue; }
-                return new Response(request.responseCode, request.downloadHandler.text, RecoilCloudLeaderboard.Describe(request));
+                return new Response(request.responseCode, request.downloadHandler.text, RecoilRankServer.Describe(request));
             }
-        }
-
-        /// <summary>
-        /// A short-lived services token: from the service account key when one is given, otherwise from the Unity
-        /// account signed in to the Editor.
-        /// </summary>
-        private async Task<string> AccessToken()
-        {
-            if (!string.IsNullOrEmpty(_accessToken) && DateTime.UtcNow < _accessTokenExpires) return _accessToken;
-            UnityWebRequest request;
-            if (UseServiceAccount)
-            {
-                var environment = await EnvironmentId();
-                request = new UnityWebRequest($"{AdminApi}/auth/v1/token-exchange?projectId={ProjectId}&environmentId={environment}", "POST")
-                    { uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes("{}")) };
-                request.SetRequestHeader("Authorization", BasicAuth());
-            }
-            else
-            {
-                var editorToken = CloudProjectSettings.accessToken;
-                if (string.IsNullOrEmpty(editorToken))
-                    throw new Exception("Editor chưa đăng nhập tài khoản Unity (góc trên bên phải Editor).");
-                request = new UnityWebRequest($"{AdminApi}/auth/v1/genesis-token-exchange/unity", "POST")
-                    { uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(new JObject { ["token"] = editorToken }.ToString())) };
-            }
-            using (request)
-            {
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.SetRequestHeader("Content-Type", "application/json");
-                await request.SendWebRequest();
-                if (request.result != UnityWebRequest.Result.Success)
-                    throw new Exception((UseServiceAccount ? "Không lấy được token từ service account: " : "Không lấy được token từ tài khoản Editor: ") +
-                                        RecoilCloudLeaderboard.Describe(request));
-                var json = JObject.Parse(request.downloadHandler.text);
-                _accessToken = (string)json["accessToken"] ?? (string)json["token"];
-            }
-            if (string.IsNullOrEmpty(_accessToken)) throw new Exception("Dịch vụ không trả về token.");
-            _accessTokenExpires = DateTime.UtcNow.AddMinutes(50);
-            return _accessToken;
         }
 
         private void SetStatus(string text, MessageType type)

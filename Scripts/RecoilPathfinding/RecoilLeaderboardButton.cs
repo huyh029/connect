@@ -8,7 +8,7 @@ namespace RecoilPathfinding
     /// (Font Awesome Free 6.7.2, CC BY 4.0 — see _Game/UI/FontAwesome/ATTRIBUTION.txt).
     /// Clicking it pulls the top 1-2-3 of both sides in (score bars into their frames, frames off the screen edges),
     /// then slides a leaderboard in on the left. Clicking again plays it backwards. The leaderboard is read from the
-    /// Unity Cloud leaderboard (cloudLeaderboardId, "Weekly") each time it opens, at most every 30 s.
+    /// rank server (<see cref="RecoilRankServer"/>, board rankBoard) each time it opens, at most every 30 s.
     /// </summary>
     public sealed partial class RecoilAutoBattleDemo
     {
@@ -39,41 +39,40 @@ namespace RecoilPathfinding
         /// <summary>0 = the leaderboard is off screen, 1 = in place. Starts once the tops are mostly in.</summary>
         private float LeaderboardShown => Mathf.Clamp01((_leaderboardProgress - .45f) / .55f);
 
-        [Header("Bảng xếp hạng (Unity Cloud)")]
-        [SerializeField, Tooltip("ID leaderboard trên Unity Cloud.")] private string cloudLeaderboardId = RecoilCloudLeaderboard.DefaultLeaderboardId;
-        [SerializeField, Tooltip("Tên môi trường Unity Cloud (Dashboard > Environments).")] private string cloudLeaderboardEnvironment = "production";
-        [SerializeField, Range(1, 100), Tooltip("Số người đầu bảng được tải.")] private int cloudLeaderboardLimit = 100;
+        [Header("Bảng xếp hạng (rank server)")]
+        [SerializeField, Tooltip("Địa chỉ rank server (Swagger tại /swagger/index.html).")] private string rankServerUrl = RecoilRankServer.DefaultUrl;
+        [SerializeField, Tooltip("Bảng được hiện: tuần / tháng × điểm / chuỗi thắng (server gọi chuỗi thắng là \"kill\").")]
+        private RecoilRankServer.Board rankBoard = RecoilRankServer.Board.WeeklyPoint;
         private const float CloudLeaderboardRefreshSeconds = 30f;
 
-        private readonly List<RecoilCloudLeaderboard.Entry> _cloudEntries = new();
+        private readonly List<RecoilRankServer.Entry> _cloudEntries = new();
         private bool _cloudLoading;
         private string _cloudError;
         private float _cloudFetchedAt = -999f;
         private readonly Dictionary<string, Texture2D> _cloudAvatars = new();
         private readonly HashSet<string> _cloudAvatarsRequested = new();
 
-        /// <summary>Reads the cloud leaderboard (if the last read is older than 30 s).</summary>
+        /// <summary>Reads the rank server's board (if the last read is older than 30 s).</summary>
         private void RefreshCloudLeaderboard()
         {
             if (_cloudLoading || Time.unscaledTime - _cloudFetchedAt < CloudLeaderboardRefreshSeconds) return;
             _cloudLoading = true;
             _cloudError = null;
-            StartCoroutine(RecoilCloudLeaderboard.Fetch(cloudLeaderboardId, cloudLeaderboardEnvironment, cloudLeaderboardLimit,
-                (page, error) =>
-                {
-                    _cloudLoading = false;
-                    _cloudFetchedAt = Time.unscaledTime;
-                    _cloudError = error;
-                    if (page == null) return;
-                    _cloudEntries.Clear();
-                    _cloudEntries.AddRange(page.Entries);
-                }));
+            StartCoroutine(RecoilRankServer.Fetch(rankServerUrl, rankBoard, (entries, error) =>
+            {
+                _cloudLoading = false;
+                _cloudFetchedAt = Time.unscaledTime;
+                _cloudError = error;
+                if (entries == null) return;
+                _cloudEntries.Clear();
+                _cloudEntries.AddRange(entries);
+            }));
         }
 
         /// <summary>The viewer's picture, round, once loaded (null until then or without a picture).</summary>
-        private Texture2D CloudAvatar(RecoilCloudLeaderboard.Entry entry)
+        private Texture2D CloudAvatar(RecoilRankServer.Entry entry)
         {
-            var url = entry.avatarurl;
+            var url = entry.avatar;
             if (string.IsNullOrWhiteSpace(url)) return null;
             if (_cloudAvatars.TryGetValue(url, out var avatar)) return avatar;
             if (_cloudAvatarsRequested.Add(url))
@@ -265,9 +264,9 @@ namespace RecoilPathfinding
             }
         }
 
-        private void DrawCloudLeaderboardRow(Rect row, int rank, RecoilCloudLeaderboard.Entry entry, float alpha, float scale)
+        private void DrawCloudLeaderboardRow(Rect row, int rank, RecoilRankServer.Entry entry, float alpha, float scale)
         {
-            if (entry.Rank > 0) rank = entry.Rank - 1; // the service's own rank
+            if (entry.Rank > 0) rank = entry.Rank - 1; // the server's own rank
             var top3 = rank < 3;
             // The row: dark on the left fading out to the right (a touch of gold on the top 3).
             DrawFadeRight(row, top3 ? new Color(.35f, .24f, 0f, .55f * alpha) : new Color(0f, 0f, 0f, .5f * alpha));
@@ -318,7 +317,9 @@ namespace RecoilPathfinding
             ShadowLabel(new Rect(textX, row.y + 4f * scale, textWidth, row.height * .52f), name, _leaderboardNameStyle,
                 new Color(1f, 1f, 1f, alpha), scale);
             _leaderboardPointsStyle.fontSize = Mathf.RoundToInt(20f * scale);
-            ShadowLabel(new Rect(textX, row.y + row.height * .5f, textWidth, row.height * .44f), entry.score.ToString("N0") + " điểm",
+            // The board's value in its unit: điểm, or trận thắng on a streak board (the server's "kill" boards).
+            ShadowLabel(new Rect(textX, row.y + row.height * .5f, textWidth, row.height * .44f),
+                entry.Value.ToString("N0") + " " + RecoilRankServer.Unit(rankBoard),
                 _leaderboardPointsStyle, new Color(LeaderboardGold.r, LeaderboardGold.g, LeaderboardGold.b, alpha), scale);
         }
 
